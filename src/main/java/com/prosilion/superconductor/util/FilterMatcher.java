@@ -60,16 +60,25 @@ public class FilterMatcher {
   }
 
   private Set<AddNostrEvent<GenericEvent>> getFilterMatchingEvents(List<Combo> combos, AddNostrEvent<GenericEvent> eventToCheck) {
-    return combos
-        .stream()
-        .map(combo ->
-            filterTypeMatchesEventAttribute(
-                combo.getSubscriberFilterType(),
-                combo.getBiPredicate(),
-                eventToCheck))
-        .takeWhile(aBoolean -> aBoolean.equals(true))
-        .map(result -> eventToCheck)
-        .collect(Collectors.toSet());
+//    return combos
+//        .stream()
+//        .map(combo ->
+//            filterTypeMatchesEventAttribute(
+//                combo.getSubscriberFilterType(),
+//                combo.getBiPredicate(),
+//                eventToCheck))
+//        .takeWhile(aBoolean -> aBoolean.equals(true))
+//        .map(result -> eventToCheck)
+//        .collect(Collectors.toSet());
+
+    boolean allMatch = combos
+            .stream()
+            .allMatch(combo ->
+                    filterTypeMatchesEventAttribute(
+                            combo.getSubscriberFilterType(),
+                            combo.getBiPredicate(),
+                            eventToCheck));
+    return allMatch ? Set.of(eventToCheck) : Set.of();
   }
 
   private boolean filterTypeMatchesEventAttribute(List<?> subscriberFilters, BiPredicate biPredicate, AddNostrEvent<GenericEvent> eventToCheck) {

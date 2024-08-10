@@ -15,10 +15,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -94,7 +91,7 @@ public class CachedSubscriberService extends AbstractSubscriberService {
         filters);
 
     if (!subscriberComboMap.containsKey(subscriberSessionHash)) {
-      subscriberComboMap.put(subscriberSessionHash, List.of(combo));
+      subscriberComboMap.put(subscriberSessionHash, new ArrayList<>(Collections.singleton(combo)));
       return;
     }
     subscriberComboMap.get(subscriberSessionHash).add(combo);

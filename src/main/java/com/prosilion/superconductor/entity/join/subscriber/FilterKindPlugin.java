@@ -14,8 +14,8 @@ import java.util.function.BiPredicate;
 public class FilterKindPlugin<T extends SubscriberFilterKind> implements FilterPlugin<T> {
 
   @Override
-  public BiPredicate<PublicKey, AddNostrEvent<GenericEvent>> getBiPredicate() {
-    return (t, u) -> t.toString().equals(u.event().getPubKey().toString());
+  public BiPredicate<Kind, AddNostrEvent<GenericEvent>> getBiPredicate() {
+    return (t, u) -> t.toString().equals(u.event().getKind().toString());
   }
 
   @Override

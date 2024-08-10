@@ -31,7 +31,7 @@ function replaceHash(id_hash) {
                 // 'authors': [$("#authors1").val()],
                 'kinds': [30402],
                 'genericTagQuery': {
-                'side': ["seller"]}
+                'side': ["sell"]}
                 // 'genericTagQuery': {
                 //     'tagName':'side',
                 //     'value': ['seller']

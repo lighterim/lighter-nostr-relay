@@ -62,6 +62,10 @@ public class FilterGenericTagPlugin<T extends SubscriberFilterGenericTag> implem
 
     @Override
     public List<GenericTagQuery> getPluginFilters(Filters filters) {
-        return new ArrayList<>(Collections.singleton(filters.getGenericTagQuery()));
+        if (filters.getGenericTagQuery() == null) {
+            return null;
+        }else {
+            return new ArrayList<>(Collections.singleton(filters.getGenericTagQuery()));
+        }
     }
 }

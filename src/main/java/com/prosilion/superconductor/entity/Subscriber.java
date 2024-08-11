@@ -14,11 +14,13 @@ public class Subscriber implements Serializable {
   private Long id;
 
   private String subscriberId;
+  private String subscriptionId;
   private String sessionId;
   private boolean active;
 
-  public Subscriber(@NonNull String subscriberId, @NonNull String sessionId, boolean active) {
+  public Subscriber(@NonNull String subscriberId, @NonNull String subscriptionId, @NonNull String sessionId, boolean active) {
     this.subscriberId = subscriberId;
+    this.subscriptionId = subscriptionId;
     this.sessionId = sessionId;
     this.active = active;
   }

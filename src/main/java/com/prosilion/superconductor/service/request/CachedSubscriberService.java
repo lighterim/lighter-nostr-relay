@@ -21,7 +21,10 @@ import java.util.*;
 @Service
 public class CachedSubscriberService extends AbstractSubscriberService {
   private final Map<Long, List<Combo>> subscriberComboMap = Collections.synchronizedMap(new HashMap<>());
+
   private final BiMap<String, String> biMap = HashBiMap.create();
+
+  private final BiMap<String, String> subscriptionIdMap = HashBiMap.create();
 
   @Autowired
   public CachedSubscriberService(ApplicationEventPublisher publisher) {
@@ -57,9 +60,11 @@ public class CachedSubscriberService extends AbstractSubscriberService {
 
   @Override
   public List<Long> removeSubscriberBySessionId(@NonNull String sessionId) {
+    String subscriberId = biMap.inverse().get(sessionId);
     long hash = getHash(
         new Subscriber(
             biMap.inverse().get(sessionId),
+            subscriptionIdMap.get(subscriberId),
             sessionId,
             true));
     subscriberComboMap.remove(hash);
@@ -71,6 +76,7 @@ public class CachedSubscriberService extends AbstractSubscriberService {
     long hash = getHash(
         new Subscriber(
             subscriberId,
+            subscriptionIdMap.remove(subscriberId),
             biMap.remove(subscriberId),
             true));
     subscriberComboMap.remove(hash);
@@ -79,6 +85,7 @@ public class CachedSubscriberService extends AbstractSubscriberService {
 
   private void put(Subscriber subscriber, Filters filters) {
     biMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
+    subscriptionIdMap.put(subscriber.getSubscriberId(), subscriber.getSubscriptionId());
     long subscriberSessionHash = getHash(subscriber);
 
     Combo combo = new Combo(

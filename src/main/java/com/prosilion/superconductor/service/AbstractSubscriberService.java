@@ -19,6 +19,6 @@ public abstract class AbstractSubscriberService implements SubscriberService {
     publisher.publishEvent(
         new BroadcastMessageEvent<>(
             get(fireNostrEvent.subscriberId()).getSessionId(),
-            NIP01.createEventMessage(fireNostrEvent.event(), String.valueOf(fireNostrEvent.subscriberId()))));
+            NIP01.createEventMessage(fireNostrEvent.event(), this.get(fireNostrEvent.subscriberId()).getSubscriptionId())));
   }
 }

@@ -30,8 +30,8 @@ function replaceHash(id_hash) {
                 // 'authors': [$("#authors1").val(), $("#authors2").val()],
                 // 'authors': [$("#authors1").val()],
                 'kinds': [30402],
-                'genericTagQuery': {
-                'side': ["sell"]}
+                // 'genericTagQuery': {
+                // 'side': ["sell"]}
                 // 'genericTagQuery': {
                 //     'tagName':'side',
                 //     'value': ['seller']

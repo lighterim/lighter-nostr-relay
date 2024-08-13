@@ -29,30 +29,30 @@
             <form class="form-horizontal">
                 <div class="form-group">
                     <label for="title">Title: </label>
-                    <input type="text" value="classified title" id="title" class="form-control" placeholder="listing title...">
+                    <input type="text" value="Custom Title" id="title" class="form-control" placeholder="listing title...">
                 </div>
-                <div class="form-group">
-                    <label for="subject">Subject: </label>
-                    <input type="text" value="classified subject" id="subject" class="form-control" placeholder="subject...">
-                </div>
+<!--                <div class="form-group">-->
+<!--                    <label for="subject">Subject: </label>-->
+<!--                    <input type="text" value="classified subject" id="subject" class="form-control" placeholder="subject...">-->
+<!--                </div>-->
                 <div class="form-group">
                     <label >Side: </label>
                     <div class="btn-group" role="group" aria-label="...">
-                        <button type="button" class="btn btn-default active" data-value="sell">Sell</button>
-                        <button type="button" class="btn btn-default" data-value="buy">Buy</button>
+                        <button type="button" class="btn btn-default active" data-group="side" data-value="sell">Sell</button>
+                        <button type="button" class="btn btn-default" data-group="side" data-value="buy">Buy</button>
                     </div>
                 </div>
+<!--                <div class="form-group">-->
+<!--                    <label for="summary">Summary: </label>-->
+<!--                    <input type="text" value="classified summary" id="summary" class="form-control" placeholder="summary...">-->
+<!--                </div>-->
                 <div class="form-group">
-                    <label for="summary">Summary: </label>
-                    <input type="text" value="classified summary" id="summary" class="form-control" placeholder="summary...">
-                </div>
-                <div class="form-group">
-                    <label for="content">Content: </label>
-                    <input type="text" value="classified content" id="content" class="form-control" placeholder="content in markdown...">
+                    <label for="userId">UserId: </label>
+                    <input type="text" value="test.lighter.im" id="userId" class="form-control" placeholder="userId" readonly>
                 </div>
                 <div class="form-group">
                     <label for="pubkey">Pubkey: </label>
-                    <input type="text" value="cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984" id="pubkey" class="form-control" placeholder="pubkey">
+                    <input type="text" value="cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984" id="pubkey" class="form-control" placeholder="pubkey" readonly>
                 </div>
 <!--                <div class="form-group">-->
 <!--                    <label for="g_tag">GeoTag: </label>-->
@@ -62,21 +62,53 @@
 <!--                    <label for="t_tag">HashTag: </label>-->
 <!--                    <input type="text" value="classified hash-tag-1111" id="t_tag" class="form-control" placeholder="t-tag">-->
 <!--                </div>-->
+<!--                <div class="form-group">-->
+<!--                    <label for="location">Location</label>-->
+<!--                    <input type="text" id="location" name="location" value="classified peroulades" class="form-control">-->
+<!--                </div>-->
                 <div class="form-group">
-                    <label for="location">Location</label>
-                    <input type="text" id="location" name="location" value="classified peroulades" class="form-control">
+                    <label >Token</label>
+                    <div class="btn-group" role="group" aria-label="...">
+                        <button type="button" class="btn btn-default active" data-group="token" data-value1="xrd" data-value2="resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc">XRD</button>
+                        <button type="button" class="btn btn-default" data-group="token" data-value1="usdt" data-value2="resource_tdx_2_1t42p2eyad03gly8txm28x4arzkx27wtjqtznz33smqt6ea2d7jlx2s">USDT</button>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="number">Number(Quantity)</label>
+                    <label >Amount</label>
+                    <input type="text" value="1000" id="amount" class="form-control" placeholder="amount">
+                </div>
+                <div class="form-group">
+                    <label >Currency</label>
+                    <div class="btn-group" role="group" aria-label="...">
+                        <button type="button" class="btn btn-default active" data-group="currency" data-value="CNY">CNY</button>
+                        <button type="button" class="btn btn-default" data-group="currency" data-value="DOLLAR">DOLLAR</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="number">Price</label>
                     <input type="text" id="number" name="number" value=271 class="form-control">
                 </div>
                 <div class="form-group">
-                    <label for="currency">Currency</label>
-                    <input type="text" id="currency" name="currency" value="XRD" class="form-control">
+                    <label>PaymentMethod</label>
+                    <div class="btn-group" role="group" aria-label="...">
+                        <button type="button" class="btn btn-default active" data-group="paymentMethod" data-value="cash" >CASH</button>
+                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="alipay">ALIPAY</button>
+                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="wechat">WECHAT</button>
+                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="bank">BANK</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="content">Content: </label>
+                    <input type="text" value="Custom Content" id="content" class="form-control" placeholder="content in markdown...">
                 </div>
                 <input type="hidden" id="frequency" name="frequency" value="1">
                 <input type="hidden" id="kind" name="kind" value=30402>
                 <input type="hidden" id="side" name="side" value="sell">
+                <input type="hidden" id="currency" name="currency" value="CNY">
+                <input type="hidden" id="symbol" name="symbol" value="xrd">
+                <input type="hidden" id="token_addr" name="token_addr" value="resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc">
+                <input type="hidden" id="paymentMethod" name="paymentMethod" value="cash">
                 <!--                    below refers to another event-->
 <!--                <input type="hidden" id="e_tag" name="e_tag"-->
 <!--                       value="494001ac0c8af2a10f60f23538e5b35d3cdacb8e1cc956fe7a16dfa5cbfc4346">-->
@@ -108,13 +140,47 @@
 <script>
     $(document).ready(function() {
         $('.btn-group button').click(function() {
-            // 获取被点击按钮的值
-            var value = $(this).data('value');
-            // 设置到隐藏字段
-            $('#side').val(value);
-            // 更改按钮的激活状态（可选）
-            $('.btn-group button').removeClass('active');
-            $(this).addClass('active');
+            var group = $(this).data('group');
+            if (group == "side") {
+                // 获取被点击按钮的值
+                var value = $(this).data('value');
+                // 设置到隐藏字段
+                $('#side').val(value);
+
+                $('.btn-group button[data-group="' + group + '"]').removeClass('active');
+                $(this).addClass('active');
+            }else if(group=="currency") {
+                var value1 = $(this).data('value1');
+                var value2 = $(this).data('value2');
+                // 设置到隐藏字段
+                $('#symbol').val(value1);
+                $('#token_addr').val(value2);
+
+                $('.btn-group button[data-group="' + group + '"]').removeClass('active');
+                $(this).addClass('active');
+            }else if(group == "token"){
+                // 获取被点击按钮的值
+                var value = $(this).data('value');
+                // 设置到隐藏字段
+                $('#token').val(value);
+
+                $('.btn-group button[data-group="' + group + '"]').removeClass('active');
+                $(this).addClass('active');
+            }else if(group == "paymentMethod"){
+                // 切换点击按钮的 active 类
+                $(this).toggleClass('active');
+
+                // 获取所有选中按钮的值
+                var selectedValues = [];
+                $('.btn-group button[data-group="' + group + '"].active').each(function() {
+                    selectedValues.push($(this).data('value'));
+                });
+
+                // 将选中的值拼接成一个字符串
+                $('#paymentMethod').val(selectedValues.join(','));
+            }
+
+
         });
     });
 </script>

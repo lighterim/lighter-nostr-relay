@@ -26,11 +26,9 @@ public class FilterGenericTagPlugin<T extends SubscriberFilterGenericTag> implem
         return (t, u) -> {
             String tagName = t.getTagName();
             List<String> value = t.getValue();
-            if (tagName == null || value == null)
+            if (tagName == null || value == null || value.isEmpty())
                 return true;
 
-//            String replacedTagName = tagName.replace("#", "");
-            String replacedTagName = tagName;
             List<BaseTag> baseTags = u.event().getTags();
             List<GenericTag> genericTags = baseTags.stream()
                     .filter(GenericTag.class::isInstance)
@@ -39,11 +37,11 @@ public class FilterGenericTagPlugin<T extends SubscriberFilterGenericTag> implem
             if (genericTags.isEmpty())
                 return false;
 
-            List<GenericTag> targetTags = genericTags.stream().filter(it->it.getCode()!=null && it.getCode().equals(replacedTagName)).toList();
+            List<GenericTag> targetTags = genericTags.stream().filter(it->it.getCode()!=null && it.getCode().equals(tagName)).toList();
             if (targetTags.isEmpty())
                 return false;
 
-            boolean bl = targetTags.stream().anyMatch(it->{
+            return targetTags.stream().anyMatch(it->{
                 List<ElementAttribute> attributes = it.getAttributes();
                 if (attributes == null || attributes.isEmpty()){
                     return false;
@@ -55,15 +53,16 @@ public class FilterGenericTagPlugin<T extends SubscriberFilterGenericTag> implem
                 }
                 return false;
             });
-
-            return bl;
         };
     }
 
     @Override
     public List<GenericTagQuery> getPluginFilters(Filters filters) {
         if (filters.getGenericTagQuery() == null) {
-            return null;
+            if (filters.getGenericTagQueryList() == null) {
+                return null;
+            }
+            return filters.getGenericTagQueryList();
         }else {
             return new ArrayList<>(Collections.singleton(filters.getGenericTagQuery()));
         }

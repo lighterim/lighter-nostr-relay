@@ -14,7 +14,7 @@ public class FilterAuthorPlugin<T extends SubscriberFilterAuthor> implements Fil
 
   @Override
   public BiPredicate<?, AddNostrEvent<GenericEvent>> getBiPredicate() {
-    return (t, u) -> t.toString().equals(u.event().getPubKey().toString());
+    return (t, u) -> t!=null && t.toString().equals(u.event().getPubKey().toString());
   }
 
   @Override

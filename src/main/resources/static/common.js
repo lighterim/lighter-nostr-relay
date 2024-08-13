@@ -8,6 +8,20 @@ function connect() {
     ws.onmessage = function (messageEvent) {
         showEvent(messageEvent.data);
     }
+    ws.onopen = function(event) {
+        console.log("WebSocket connection opened:", event);
+        // 连接成功后发送测试消息
+        // ws.send("Hello, WebSocket!");
+    };
+
+    ws.onerror = function(error) {
+        console.error("WebSocket error observed:", error);
+    };
+
+    ws.onclose = function(event) {
+        console.log("WebSocket connection closed:", event);
+    };
+
     setConnected(true);
     dateNow = Date.now();
     console.log("date now: " + dateNow);

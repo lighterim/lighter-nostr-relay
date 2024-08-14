@@ -101,7 +101,7 @@ public class CachedSubscriberService extends AbstractSubscriberService {
       subscriberComboMap.put(subscriberSessionHash, new ArrayList<>(Collections.singleton(combo)));
       return;
     }
-    subscriberComboMap.get(subscriberSessionHash).add(combo);
+//    subscriberComboMap.get(subscriberSessionHash).add(combo);
   }
 
   private long getHash(Subscriber subscriber) {

@@ -94,8 +94,13 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
   @Override
   public void handleTextMessage(@NotNull WebSocketSession session, TextMessage baseMessage) {
     log.info("Message from session [{}]", session.getId());
-    T message = (T) new BaseMessageDecoder<>().decode(baseMessage.getPayload());
-    messageServiceMap.get(message.getCommand()).processIncoming(message, session.getId());
+    try {
+      T message = (T) new BaseMessageDecoder<>().decode(baseMessage.getPayload());
+      messageServiceMap.get(message.getCommand()).processIncoming(message, session.getId());
+    }
+    catch(Throwable ex){
+      log.error("handleTextMessage: {}", baseMessage, ex);
+    }
   }
 
   @EventListener
@@ -103,7 +108,12 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
     TextMessage textMessage = message.getMessage();
     String sessionId = message.getSessionId();
     log.info("NostrEventController broadcast to\nsession:\n\t{}\nmessage:\n\t{}", sessionId, textMessage.getPayload());
-    broadcast(sessionId, textMessage);
+    try {
+      broadcast(sessionId, textMessage);
+    }
+    catch (Throwable ex){
+      log.error(String.format("broadcast:%s, %s", sessionId, textMessage), ex);
+    }
   }
 
   @EventListener
@@ -117,7 +127,7 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
   private void broadcast(String sessionId, TextMessage message) {
     try {
       mapSessions.get(sessionId).sendMessage(message);
-    } catch (IOException e) {
+    } catch (Throwable e) {
       log.info("Orphaned client session [{}], message [{}] not sent", sessionId, message);
     }
   }

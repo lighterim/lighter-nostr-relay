@@ -80,15 +80,15 @@ Superconductor spring boot docker uses [buildpacks](https://buildpacks.io/) ([pr
     $ mvn spring-boot:build-image
 
 ##### Start docker containers
-    $ docker compose -f docker-compose.yml up -d
+    $ docker compose -f docker-compose-dev.yml up -d
 
 Superconductor is now ready to use.
 
 ##### Stop docker containers
-    $ docker compose -f docker-compose.yml stop superconductor-app superconductor-db
+    $ docker compose -f docker-compose-dev.yml stop superconductor-app superconductor-db
 
 ##### Remove docker containers
-    $ docker compose -f docker-compose.yml down --remove-orphans
+    $ docker compose -f docker-compose-dev.yml down --remove-orphans
 
 ----
 
@@ -106,12 +106,12 @@ for full/debug developer console logging:
 ### 3.  Run locally as executable jar
 
     $ cd <your_git_home_dir>/superconductor
-    $ java -jar target/superconductor-1.7.0.war
+    $ java -jar target/superconductor-1.7.1.war
 
 ----
 ### 4.  Run using pre-existing local application-server-container instance
 
-    $ cp <your_git_home_dir>/superconductor/target/superconductor-1.7.0.war <your_container/instance/deployment_directory>
+    $ cp <your_git_home_dir>/superconductor/target/superconductor-1.7.1.war <your_container/instance/deployment_directory>
 
 ----
 
@@ -151,6 +151,8 @@ Display all framework table contents (case-sensitive quoted fields/tables when q
 	select id, number, currency, frequency from price_tag;
 
 ##### (Optional Use) bundled web-client URLs for convenience/dev-testing/etc
+
+http://localhost:5555/NIP00.html
 
 http://localhost:5555/NIP01.html
 

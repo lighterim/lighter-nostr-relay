@@ -43,13 +43,10 @@ function replaceHash(id_hash) {
                     ['user_id', $("#userId").val()],
                     ['published_at', Date.now()],
                     // ['summary', $("#summary").val()],
-                    // ['location', $("#location").val()],
-                    ['symbol', $("#symbol").val()],
-                    ['token_addr', $("#token_addr").val()],
-                    ['price', $("#number").val(), $("#currency").val(), $("#frequency").val()],
-                    ['currency', $("#currency").val()],
-                    ['amount', $("#amount").val()],
-                    ['payment_method'].concat($('#paymentMethod').val().split(","))
+                    ['limit', $("#currency").val(), "1", "1000"],
+                    ['token', $("#amount").val(), $("#symbol").val(), $("#chain").val(), "stokenet", $("#token_addr").val()],
+                    ['quote', $("#number").val(), $("#currency").val(), "7.19"],
+                    ['payment'].concat($('#paymentMethod').val().split(","))
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'seller'],
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'buyer'],
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'witness']

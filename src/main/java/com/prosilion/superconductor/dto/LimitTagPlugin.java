@@ -31,7 +31,7 @@ public class LimitTagPlugin<
 
   @Override
   public String getCode() {
-    return "quote";
+    return "limit";
   }
 
   @Override

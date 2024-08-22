@@ -37,7 +37,7 @@ public class TokenTagPlugin<
 
   @Override
   public String getCode() {
-    return "quote";
+    return "token";
   }
 
   @Override

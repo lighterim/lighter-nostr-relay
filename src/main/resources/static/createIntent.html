@@ -92,21 +92,22 @@
                 <div class="form-group">
                     <label>PaymentMethod</label>
                     <div class="btn-group" role="group" aria-label="...">
-                        <button type="button" class="btn btn-default active" data-group="paymentMethod" data-value="cash" >CASH</button>
-                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="alipay">ALIPAY</button>
-                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="wechat">WECHAT</button>
-                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="bank">BANK</button>
+                        <button type="button" class="btn btn-default active" data-group="paymentMethod" data-value="cash,1,2,3,4" >CASH</button>
+                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="alipay,dust_lee@189.cn,qrcode,111">ALIPAY</button>
+                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="wechat,dustplus,qrcode,111">WECHAT</button>
+                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="bank,123456789,qrcode,111">BANK</button>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="content">Content: </label>
                     <input type="text" value="Custom Content" id="content" class="form-control" placeholder="content in markdown...">
                 </div>
-                <input type="hidden" id="frequency" name="frequency" value="1">
+                <input type="hidden" id="account" name="account" value="dust_lee@189.cn">
                 <input type="hidden" id="kind" name="kind" value=30402>
                 <input type="hidden" id="side" name="side" value="sell">
                 <input type="hidden" id="currency" name="currency" value="CNY">
                 <input type="hidden" id="symbol" name="symbol" value="xrd">
+                <input type="hidden" id="chain" name="chain" value="radixDLT">
                 <input type="hidden" id="token_addr" name="token_addr" value="resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc">
                 <input type="hidden" id="paymentMethod" name="paymentMethod" value="cash">
                 <!--                    below refers to another event-->

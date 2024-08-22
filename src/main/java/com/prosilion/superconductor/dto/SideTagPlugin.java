@@ -31,7 +31,7 @@ public class SideTagPlugin<
 
   @Override
   public String getCode() {
-    return "quote";
+    return "side";
   }
 
   @Override

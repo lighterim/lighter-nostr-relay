@@ -37,22 +37,41 @@ public class FilterGenericTagPlugin<T extends SubscriberFilterGenericTag> implem
             if (genericTags.isEmpty())
                 return false;
 
-            List<GenericTag> targetTags = genericTags.stream().filter(it->it.getCode()!=null && it.getCode().equals(tagName)).toList();
-            if (targetTags.isEmpty())
-                return false;
-
-            return targetTags.stream().anyMatch(it->{
-                List<ElementAttribute> attributes = it.getAttributes();
-                if (attributes == null || attributes.isEmpty()){
+            if (tagName.equals("user_pub_key")) {
+                List<GenericTag> targetTags = genericTags.stream().filter(it->it.getCode()!=null && (it.getCode().equals("buyer_pub_key") || it.getCode().equals("seller_pub_key"))).toList();
+                if (targetTags.isEmpty())
                     return false;
-                }
-                for (ElementAttribute element: attributes) {
-                    if (element != null && value.contains(element.getValue())) {
-                        return true;
+
+                return targetTags.stream().anyMatch(it->{
+                    List<ElementAttribute> attributes = it.getAttributes();
+                    if (attributes != null && !attributes.isEmpty()){
+                        for (ElementAttribute element: attributes) {
+                            if (element != null && value.contains(element.getValue())) {
+                                return true;
+                            }
+                        }
                     }
-                }
-                return false;
-            });
+                    return false;
+                });
+            }else{
+                List<GenericTag> targetTags = genericTags.stream().filter(it->it.getCode()!=null && it.getCode().equals(tagName)).toList();
+                if (targetTags.isEmpty())
+                    return false;
+
+                return targetTags.stream().anyMatch(it->{
+                    List<ElementAttribute> attributes = it.getAttributes();
+                    if (attributes == null || attributes.isEmpty()){
+                        return false;
+                    }
+                    for (ElementAttribute element: attributes) {
+                        if (element != null && value.contains(element.getValue())) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+            }
+
         };
     }
 

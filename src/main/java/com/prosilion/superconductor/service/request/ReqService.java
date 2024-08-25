@@ -5,10 +5,13 @@ import com.prosilion.superconductor.service.AbstractSubscriberService;
 import com.prosilion.superconductor.service.NotifierService;
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
+import nostr.event.impl.Filters;
 import nostr.event.impl.GenericEvent;
 import nostr.event.message.ReqMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class ReqService<T extends ReqMessage, U extends GenericEvent> {

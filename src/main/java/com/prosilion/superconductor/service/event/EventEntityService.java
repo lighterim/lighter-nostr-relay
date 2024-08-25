@@ -4,6 +4,8 @@ import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.dto.generic.ElementAttributeDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import com.prosilion.superconductor.entity.EventEntity;
+import com.prosilion.superconductor.entity.TradeEventEntity;
+import com.prosilion.superconductor.entity.TradeMessageEntity;
 import com.prosilion.superconductor.entity.join.EventEntityAbstractTagEntity;
 import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
 import com.prosilion.superconductor.repository.EventEntityRepository;
@@ -12,14 +14,19 @@ import com.prosilion.superconductor.service.event.join.generic.GenericTagEntitie
 import jakarta.persistence.NoResultException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import nostr.base.ElementAttribute;
+import nostr.base.PublicKey;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.GenericTag;
+import nostr.event.tag.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +45,8 @@ public class EventEntityService<T extends GenericEvent> {
       concreteTagEntitiesService;
   private final GenericTagEntitiesService genericTagEntitiesService;
   private final EventEntityRepository eventEntityRepository;
+  private final TradeEventEntityService<? extends GenericEvent> tradeEventEntityService;
+  private final TradeMessageEntityService<? extends GenericEvent> tradeMessageEntityService;
 
   @Autowired
   public EventEntityService(
@@ -49,14 +58,24 @@ public class EventEntityService<T extends GenericEvent> {
           EventEntityAbstractTagEntityRepository<EventEntityAbstractTagEntity>>
           concreteTagEntitiesService,
       GenericTagEntitiesService genericTagEntitiesService,
-      EventEntityRepository eventEntityRepository) {
+      EventEntityRepository eventEntityRepository,
+      TradeEventEntityService<? extends GenericEvent> tradeEventEntityService,
+      TradeMessageEntityService<? extends GenericEvent> tradeMessageEntityService) {
 
     this.concreteTagEntitiesService = concreteTagEntitiesService;
     this.genericTagEntitiesService = genericTagEntitiesService;
     this.eventEntityRepository = eventEntityRepository;
+    this.tradeEventEntityService = tradeEventEntityService;
+    this.tradeMessageEntityService = tradeMessageEntityService;
   }
 
   protected Long saveEventEntity(@NonNull GenericEvent event) {
+    Integer kind = event.getKind();
+    if (kind == 30078) {
+      return tradeEventEntityService.saveEventEntity(event);
+    } else if(kind == 30079){
+      return tradeMessageEntityService.saveEventEntity(event);
+    }
     EventDto eventToSave = new EventDto(
         event.getPubKey(),
         event.getId(),
@@ -75,10 +94,20 @@ public class EventEntityService<T extends GenericEvent> {
   }
 
   public Map<Kind, Map<Long, T>> getAll() {
-    return eventEntityRepository.findAll().stream()
-        .map(this::populateEventEntity)
-        .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
-            Collectors.toMap(EventEntity::getId, EventEntity::convertEntityToDto)));
+    Map<Kind, Map<Long,T>> map = eventEntityRepository.findAll().stream()
+            .map(this::populateEventEntity)
+            .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
+                    Collectors.toMap(EventEntity::getId, EventEntity::convertEntityToDto)));
+
+    Map<Long, T> tradeEventMap = (Map<Long, T>) tradeEventEntityService.getAll().get(Kind.valueOf(30078));
+    Map<Long, T> tradeMessageMap = (Map<Long, T>) tradeMessageEntityService.getAll().get(Kind.valueOf(30079));
+    if (tradeEventMap != null)
+      map.put(Kind.valueOf(30078), tradeEventMap);
+
+    if (tradeMessageMap != null)
+      map.put(Kind.valueOf(30079), tradeMessageMap);
+
+    return map;
   }
 
   public T getEventById(@NonNull Long id) {

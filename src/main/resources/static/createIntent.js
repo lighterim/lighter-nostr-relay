@@ -1,6 +1,7 @@
 function hashThenSend() {
     const concat = [
         '0',
+        Date.now(),
         $("#pubkey").val(),
         $("#created_at").val(),
         $("#kind").val(),
@@ -24,6 +25,8 @@ function hashThenSend() {
         concat,
         ']'
     ].join('');
+
+    console.log(text)
 
     createDigest(text).then((hash) => sendContent(hash));
 }

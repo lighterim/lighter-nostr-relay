@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<link rel="shortcut icon" href="/favicon.ico">
+<html lang="en">
+<head>
+  <title>query trade</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link href="/main.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="/queryTrade.js"></script>
+  <script src="/common.js"></script>
+</head>
+<body>
+<noscript><h2 style="color: #ff0000">Enable Javascript to view this page</h2></noscript>
+<div id="main-content" class="container">
+  <div class="row">
+    <div class="col-md-6">
+      <form class="form-inline">
+        <div class="form-group">
+          <label for="connect">WebSocket connection:</label>
+          <div class="row">
+            <button id="connect" class="btn btn-default" type="submit">Connect</button>
+          </div>
+          <div class="row">
+            <button id="disconnect" class="btn btn-default" type="submit" disabled="disabled">WebSocket Disconnect
+            </button>
+          </div>
+          <div class="row">
+            <button id="reqclose" class="btn btn-default" type="submit" disabled="disabled">Nostr Close Disconnect
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="col-md-6">
+      <form class="form-horizontal">
+        <label for="connect">Search Filters:</label>
+        <div class="form-group">
+          <label for="kind">kind: </label>
+          <input type="text" id="kind" name="kind" value=30078 readonly>
+        </div>
+
+        <div class="form-group">
+          <label>User PubKey: </label>
+          <input type="text" value="aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984" id="pubKey" class="form-control" placeholder="pubKey">
+        </div>
+
+        <input type="hidden" id="side" name="side" value="">
+        <input type="hidden" id="paymentMethod" name="paymentMethod" value="">
+        <input type="hidden" id="symbol" name="symbol" value="">
+        <input type="hidden" id="currency" name="currency" value="">
+
+        <div class="row" align="center">
+          <button id="send" class="btn btn-default" type="submit">Send</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <br><br><br><br>
+  <div class="row">
+    <div class="col-md-12">
+      <table id="conversation" class="table table-striped">
+        <thead>
+        <tr>
+          <th>Events</th>
+        </tr>
+        </thead>
+        <tbody id="events">
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function() {
+    $('.btn-group button').click(function() {
+      var group = $(this).data('group');
+      var selectedValues = [];
+      // 切换点击按钮的 active 类
+      $(this).toggleClass('active');
+
+      // 获取所有选中按钮的值
+
+      $('.btn-group button[data-group="' + group + '"].active').each(function() {
+        selectedValues.push($(this).data('value'));
+      });
+
+      if (group == "side") {
+        $('#side').val(selectedValues.join(','));
+      }else if(group=="currency") {
+        $('#currency').val(selectedValues.join(','));
+      }else if(group == "symbol"){
+        $('#symbol').val(selectedValues.join(','));
+      }else if(group == "paymentMethod"){
+        // 将选中的值拼接成一个字符串
+        $('#paymentMethod').val(selectedValues.join(','));
+      }
+
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,19 +1,12 @@
 package com.prosilion.superconductor.service.event;
 
 import com.prosilion.superconductor.dto.EventTagPlugin;
-import com.prosilion.superconductor.dto.generic.ElementAttributeDto;
-import com.prosilion.superconductor.entity.AbstractTagEntity;
 import com.prosilion.superconductor.entity.EventEntity;
 import com.prosilion.superconductor.entity.TradeEventEntity;
 import com.prosilion.superconductor.entity.TradeMessageEntity;
-import com.prosilion.superconductor.entity.join.EventEntityAbstractTagEntity;
 import com.prosilion.superconductor.entity.standard.EventTagEntity;
-import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
-import com.prosilion.superconductor.repository.EventEntityRepository;
 import com.prosilion.superconductor.repository.TradeEventEntityRepository;
 import com.prosilion.superconductor.repository.TradeMessageEntityRepository;
-import com.prosilion.superconductor.repository.join.EventEntityAbstractTagEntityRepository;
-import com.prosilion.superconductor.service.event.join.generic.GenericTagEntitiesService;
 import com.prosilion.superconductor.util.TagUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service

@@ -16,21 +16,18 @@ import com.prosilion.superconductor.util.TagUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.ElementAttribute;
-import nostr.base.PublicKey;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.GenericTag;
+import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -73,6 +70,10 @@ public class TradeEventEntityService<T extends GenericEvent> {
 
     protected Long saveEventEntity(@NonNull GenericEvent event) {
         List<BaseTag> tagList = event.getTags();
+
+//        SideTag takeIntentSideTag = (SideTag) tagList.stream().filter(it -> it.getCode().equals("side")).findFirst().orElseThrow();
+//        String takeIntentSide = takeIntentSideTag.getSide();
+
         BaseTag eventTag = tagList.stream().filter(it->it.getCode().equals("e")).findFirst().orElseThrow();
         BigDecimal volume = new BigDecimal(Objects.requireNonNull(TagUtil.getGenericTagAttributeValue(tagList, "volume", 0)));
         String takerUserId = TagUtil.getGenericTagAttributeValue(tagList, "user_id", 0);
@@ -146,7 +147,7 @@ public class TradeEventEntityService<T extends GenericEvent> {
         eventEntity.setEventIdString(tradeEventEntity.getEventIdString());
         eventEntity.setNip(77);
         eventEntity.setContent("");
-        eventEntity.setKind(30078);
+        eventEntity.setKind(Kind.TAKE_INTENT.getValue());
         if (tradeEventEntity.getTaker().equals("BUY")) {
             eventEntity.setPubKey(tradeEventEntity.getBuyerPubKey());
         }else{
@@ -200,5 +201,10 @@ public class TradeEventEntityService<T extends GenericEvent> {
                 .map(this::populateTradeEventEntity)
                 .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
                         Collectors.toMap(EventEntity::getId, EventEntity::convertEntityToDto)));
+    }
+
+    public @NotNull GenericEvent getById(Long id){
+        TradeEventEntity entity = tradeEventEntityRepository.findById(id).orElseThrow();
+        return populateTradeEventEntity(entity).convertEntityToDto();
     }
 }

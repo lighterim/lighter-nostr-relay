@@ -10,4 +10,7 @@ import java.util.Optional;
 @Repository
 public interface TradeEventEntityRepository extends JpaRepository<TradeEventEntity, Long> {
     Optional<TradeEventEntity> findByEventIdString(String eventIdString);
+
+    @Override
+    Optional<TradeEventEntity> findById(Long aLong);
 }

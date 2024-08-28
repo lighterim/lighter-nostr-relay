@@ -5,6 +5,7 @@ import com.prosilion.superconductor.service.NotifierService;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import nostr.event.Kind;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.TextNoteEvent;
 import nostr.event.message.EventMessage;
@@ -17,11 +18,13 @@ import org.springframework.stereotype.Service;
 public class EventService {
   private final NotifierService<GenericEvent> notifierService;
   private final RedisCache<GenericEvent> redisCache;
+  private final TradeEventEntityService<? extends GenericEvent> tradeEventEntityService;
 
   @Autowired
-  public EventService(NotifierService<GenericEvent> notifierService, RedisCache<GenericEvent> redisCache) {
+  public EventService(NotifierService<GenericEvent> notifierService, RedisCache<GenericEvent> redisCache, TradeEventEntityService<? extends GenericEvent> tradeEventEntityService) {
     this.notifierService = notifierService;
     this.redisCache = redisCache;
+    this.tradeEventEntityService = tradeEventEntityService;
   }
 
   //  @Async
@@ -38,7 +41,12 @@ public class EventService {
     textNoteEvent.setCreatedAt(event.getCreatedAt());
     textNoteEvent.setSignature(event.getSignature());
 
-    redisCache.saveEventEntity(event);
-    notifierService.nostrEventHandler(new AddNostrEvent<>(event));
+    Long id = redisCache.saveEventEntity(event);
+
+    if (event.getKind() == Kind.TAKE_INTENT.getValue()) {
+      notifierService.nostrEventHandler(new AddNostrEvent<>(tradeEventEntityService.getById(id)));
+    }else {
+      notifierService.nostrEventHandler(new AddNostrEvent<>(event));
+    }
   }
 }

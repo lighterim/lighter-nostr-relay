@@ -16,18 +16,14 @@ import nostr.event.BaseTag;
 import nostr.event.Kind;
 import nostr.event.impl.GenericTag;
 import nostr.event.impl.PostIntentEvent;
-import nostr.event.tag.MakeTag;
-import nostr.event.tag.QuoteTag;
-import nostr.event.tag.TokenTag;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static nostr.event.NIP77Event.*;
 
 @Slf4j
 @Service
@@ -46,6 +42,8 @@ public class PostEventEntityService implements EventEntityServiceIF<PostIntentEv
 
     private final GenericTagEntitiesService genericTagEntitiesService;
 
+    private final Set<String> eventFieldNames;
+
     @Autowired
     public PostEventEntityService(
             ConcreteTagEntitiesService<
@@ -55,10 +53,11 @@ public class PostEventEntityService implements EventEntityServiceIF<PostIntentEv
                     EventEntityAbstractTagEntity,
                     EventEntityAbstractTagEntityRepository<EventEntityAbstractTagEntity>> concreteTagEntitiesService,
             GenericTagEntitiesService genericTagEntitiesService,
-            PostEventEntityRepository postEventEntityRepository){
+            PostEventEntityRepository postEventEntityRepository) {
         this.concreteTagEntitiesService = concreteTagEntitiesService;
         this.genericTagEntitiesService = genericTagEntitiesService;
         this.postEventEntityRepository = postEventEntityRepository;
+        this.eventFieldNames = new HashSet<>(List.of(MAKE_TAG_CODE, TOKEN_TAG_CODE, LIMIT_TAG_CODE, QUOTE_TAG_CODE));
     }
 
     @Override
@@ -68,13 +67,11 @@ public class PostEventEntityService implements EventEntityServiceIF<PostIntentEv
 
     @Override
     public Long saveEventEntity(@NonNull PostIntentEvent event) {
-        MakeTag side = event.getSideTag();
-        QuoteTag quoteTag = event.getQuoteTag();
-        TokenTag tokenTag = event.getTokenTag();
-
         PostIntentEventEntity savedEntity = Optional.of(postEventEntityRepository.save(EventDto.convertToEntity(event))).orElseThrow(NoResultException::new);
-        concreteTagEntitiesService.saveTags(savedEntity.getId(), event.getTags());
-        genericTagEntitiesService.saveGenericTags(savedEntity.getId(), event.getTags());
+        // remove key tag from INTENT event fields.
+        List<BaseTag> tags = event.getTags().stream().filter(t -> !eventFieldNames.contains(t.getCode())).toList();
+        concreteTagEntitiesService.saveTags(savedEntity.getId(), tags);
+        genericTagEntitiesService.saveGenericTags(savedEntity.getId(), tags);
         return savedEntity.getId();
     }
 
@@ -92,7 +89,7 @@ public class PostEventEntityService implements EventEntityServiceIF<PostIntentEv
                 .stream().map(AbstractTagEntity::getAsBaseTag).toList();
         List<BaseTag> genericTags = genericTagEntitiesService.getGenericTags(postIntentEventEntity.getId())
                 .stream().map(
-                        genericTag ->new GenericTag(genericTag.code(), 1, genericTag.atts().stream().map(ElementAttributeDto::getElementAttribute).toList()))
+                        genericTag -> new GenericTag(genericTag.code(), postIntentEventEntity.getNip(), genericTag.atts().stream().map(ElementAttributeDto::getElementAttribute).toList()))
                 .toList().stream().map(BaseTag.class::cast).toList();
         postIntentEventEntity.setTags(Stream.concat(concreteTags.stream(), genericTags.stream()).toList());
         return postIntentEventEntity;

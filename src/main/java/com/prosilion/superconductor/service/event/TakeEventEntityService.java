@@ -1,5 +1,6 @@
 package com.prosilion.superconductor.service.event;
 
+import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.dto.EventTagPlugin;
 import com.prosilion.superconductor.dto.generic.ElementAttributeDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
@@ -29,21 +30,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static nostr.event.NIP77Event.*;
+import static nostr.event.NIP77Event.QUOTE_TAG_CODE;
 
 @Slf4j
 @Service
 public class TakeEventEntityService implements EventEntityServiceIF<TakeIntentEvent> {
 
     private final TakeEventEntityRepository takeEventEntityRepository;
-
-//    private final EventEntityRepository eventEntityRepository;
-
-//    private final EventTagPlugin eventTagPlugin;
 
     private final ConcreteTagEntitiesService<
             BaseTag,
@@ -53,6 +51,8 @@ public class TakeEventEntityService implements EventEntityServiceIF<TakeIntentEv
             EventEntityAbstractTagEntityRepository<EventEntityAbstractTagEntity>>
             concreteTagEntitiesService;
     private final GenericTagEntitiesService genericTagEntitiesService;
+
+    private final Set<String> eventFieldNames;
     @Autowired
     public TakeEventEntityService(
             ConcreteTagEntitiesService<
@@ -66,6 +66,7 @@ public class TakeEventEntityService implements EventEntityServiceIF<TakeIntentEv
         this.concreteTagEntitiesService = concreteTagEntitiesService;
         this.genericTagEntitiesService = genericTagEntitiesService;
         this.takeEventEntityRepository = takeEventEntityRepository;
+        this.eventFieldNames = new HashSet<>(List.of(TAKE_TAG_CODE, TOKEN_TAG_CODE, PAYMENT_TAG_CODE, QUOTE_TAG_CODE));
     }
 
     @Override
@@ -74,83 +75,25 @@ public class TakeEventEntityService implements EventEntityServiceIF<TakeIntentEv
     }
 
     public Long saveEventEntity(@NonNull TakeIntentEvent event) {
-
-//        BaseTag eventTag = tagList.stream().filter(it->it.getCode().equals("e")).findFirst().orElseThrow();
-
-        TakeTag takeTag = event.getTakeTag();
-        TokenTag tokenTag = event.getTokenTag();
-        PaymentTag paymentTag = event.getPaymentTag();
-        QuoteTag quoteTag = event.getQuoteTag();
-        BigDecimal volume = takeTag.getVolume();
-
-//        String takerUserId = TagUtil.getGenericTagAttributeValue(tagList, "user_id", 0);
-//        EventTagEntity entity = eventTagPlugin.convertDtoToEntity((EventTag)eventTag);
-//        String eventIdString = entity.getEventIdString();
-
-//        EventEntity intentEvent = eventEntityRepository.findByEventIdString(eventIdString).orElseThrow();
-//        this.populateEventEntity(intentEvent);
-
-//        List<BaseTag> intentEventTags = intentEvent.getTags();
-//        String intentCreatorPubKey = intentEvent.getPubKey();
-//        SideTag sideTag = (SideTag) intentEventTags.stream().filter(it->it.getCode().equals("side")).findFirst().orElseThrow();
-//        QuoteTag quoteTag = (QuoteTag) intentEventTags.stream().filter(it->it.getCode().equals("quote")).findFirst().orElseThrow();
-//        PaymentTag paymentTag = (PaymentTag) intentEventTags.stream().filter(it->it.getCode().equals("payment")).findFirst().orElseThrow();
-//        GenericTag userIdTag = (GenericTag) intentEventTags.stream().filter(it->it.getCode().equals("user_id")).findFirst().orElseThrow();
-//        TokenTag tokenTag = (TokenTag) intentEventTags.stream().filter(it->it.getCode().equals("token")).findFirst().orElseThrow();
-//        String intentCreatorUserId = userIdTag.getAttributes().get(0).getValue().toString();
-        String buyerId;
-        String buyerPubKey;
-        String sellerId;
-        String sellerPubKey;
-
-        if (takeTag.getSide() == Side.BUY) {
-            buyerId = takeTag.getTakerNip05();
-            buyerPubKey = takeTag.getTakerPubkey();
-            sellerId = takeTag.getMakerNip05();
-            sellerPubKey = takeTag.getMakerPubkey();
-        } else {
-            buyerId = takeTag.getMakerNip05();
-            buyerPubKey = takeTag.getMakerPubkey();
-            sellerId = takeTag.getTakerNip05();
-            sellerPubKey = takeTag.getTakerPubkey();
-        }
-
-
-        TakeIntentEventEntity eventToSave = new TakeIntentEventEntity(
-                event.getKind(),
-                event.getId(),
-                takeTag.getSide().getSide(),
-                takeTag.getIntentEventId(),
-                volume,
-                buyerId,
-                buyerPubKey,
-                sellerId,
-                sellerPubKey,
-                tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChain(),
-                tokenTag.getNetwork(), quoteTag.getNumber(),  quoteTag.getCurrency(),
-                quoteTag.getUsdRate(), paymentTag.getMethod(), paymentTag.getAccount(),
-                paymentTag.getQrCode(), paymentTag.getMemo(), event.getSignature().getPubKey().toHexString(),
-                event.getCreatedAt()
-        );
-        takeEventEntityRepository.save(eventToSave);
-//        concreteTagEntitiesService.saveTags(eventToSave.getId(), event.getTags());
-//        genericTagEntitiesService.saveGenericTags(eventToSave.getId(), event.getTags());
-        return eventToSave.getId();
+        TakeIntentEventEntity savedEntity = Optional.of(takeEventEntityRepository.save(EventDto.convertToEntity(event))).orElseThrow(NoResultException::new);
+        // remove key tag from INTENT event fields.
+        List<BaseTag> tags = event.getTags().stream().filter(t -> !eventFieldNames.contains(t.getCode())).toList();
+        concreteTagEntitiesService.saveTags(savedEntity.getId(), event.getTags());
+        genericTagEntitiesService.saveGenericTags(savedEntity.getId(), event.getTags());
+        return savedEntity.getId();
     }
 
     private @NotNull TakeIntentEventEntity populateEventEntity(TakeIntentEventEntity eventEntity) {
-//        List<BaseTag> concreteTags = concreteTagEntitiesService.getTags(
-//                        eventEntity.getId()).stream()
-//                .map(AbstractTagEntity::getAsBaseTag).toList();
-//
-//        List<BaseTag> genericTags = genericTagEntitiesService.getGenericTags(
-//                        eventEntity.getId()).stream()
-//                .map(genericTag ->
-//                        new GenericTag(genericTag.code(), 1, genericTag.atts().stream()
-//                                .map(ElementAttributeDto::getElementAttribute).toList())).toList().stream()
-//                .map(BaseTag.class::cast).toList();
-//
-//        eventEntity.setTags(Stream.concat(concreteTags.stream(), genericTags.stream()).toList());
+        List<BaseTag> concreteTags = concreteTagEntitiesService.getTags(
+                        eventEntity.getId()).stream()
+                .map(AbstractTagEntity::getAsBaseTag).toList();
+        List<BaseTag> genericTags = genericTagEntitiesService.getGenericTags(
+                        eventEntity.getId()).stream()
+                .map(genericTag ->
+                        new GenericTag(genericTag.code(), eventEntity.getNip(), genericTag.atts().stream()
+                                .map(ElementAttributeDto::getElementAttribute).toList())).toList().stream()
+                .map(BaseTag.class::cast).toList();
+        eventEntity.setTags(Stream.concat(concreteTags.stream(), genericTags.stream()).toList());
         return eventEntity;
     }
 

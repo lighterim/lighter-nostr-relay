@@ -2,30 +2,29 @@ package com.prosilion.superconductor.dto;
 
 import com.prosilion.superconductor.dto.classified.MakeTagDto;
 import com.prosilion.superconductor.entity.classified.MakeTagEntity;
-import com.prosilion.superconductor.entity.join.classified.EventEntitySideTagEntity;
-import com.prosilion.superconductor.repository.classified.SideTagEntityRepository;
+import com.prosilion.superconductor.entity.join.classified.EventEntityMakeTagEntity;
+import com.prosilion.superconductor.repository.classified.MakeTagEntityRepository;
 import com.prosilion.superconductor.repository.join.classified.EventEntitySideTagEntityRepository;
 import jakarta.annotation.Nonnull;
 import lombok.NonNull;
-import nostr.event.tag.MakeTag;
 import nostr.event.tag.MakeTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SideTagPlugin<
+public class MakeTagPlugin<
     P extends MakeTag,
-    Q extends SideTagEntityRepository<R>,
+    Q extends MakeTagEntityRepository<R>,
     R extends MakeTagEntity,
-    S extends EventEntitySideTagEntity,
+    S extends EventEntityMakeTagEntity,
     T extends EventEntitySideTagEntityRepository<S>>
     implements TagPlugin<P, Q, R, S, T> {
 
-  private final SideTagEntityRepository<R> sideTagEntityRepository;
+  private final MakeTagEntityRepository<R> sideTagEntityRepository;
   private final EventEntitySideTagEntityRepository<S> join;
 
   @Autowired
-  public SideTagPlugin(@Nonnull SideTagEntityRepository<R> sideTagEntityRepository, @NonNull EventEntitySideTagEntityRepository<S> join) {
+  public MakeTagPlugin(@Nonnull MakeTagEntityRepository<R> sideTagEntityRepository, @NonNull EventEntitySideTagEntityRepository<S> join) {
     this.sideTagEntityRepository = sideTagEntityRepository;
     this.join = join;
   }
@@ -47,7 +46,7 @@ public class SideTagPlugin<
 
   @Override
   public S getEventEntityTagEntity(Long eventId, Long sideTagId) {
-    return (S) new EventEntitySideTagEntity(eventId, sideTagId);
+    return (S) new EventEntityMakeTagEntity(eventId, sideTagId);
   }
 
   @Override

@@ -45,7 +45,7 @@ public class EventService {
 //    if (event.getKind() == Kind.TAKE_INTENT.getValue()) {
 //      notifierService.nostrEventHandler(new AddNostrEvent<>(tradeEventEntityService.getById(id)));
 //    }else {
-//      notifierService.nostrEventHandler(new AddNostrEvent<>(event));
+      notifierService.nostrEventHandler(new AddNostrEvent<>(event));
 //    }
   }
 }

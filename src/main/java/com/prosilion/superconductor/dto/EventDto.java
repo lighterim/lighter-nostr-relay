@@ -2,16 +2,21 @@ package com.prosilion.superconductor.dto;
 
 import com.prosilion.superconductor.entity.EventEntity;
 import com.prosilion.superconductor.entity.PostIntentEventEntity;
+import com.prosilion.superconductor.entity.TakeIntentEventEntity;
+import com.prosilion.superconductor.entity.TradeMessageEntity;
+import com.prosilion.superconductor.service.event.TradeMessageEntityService;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
 import nostr.event.NIP01Event;
+import nostr.event.Side;
 import nostr.event.impl.PostIntentEvent;
-import nostr.event.tag.LimitTag;
-import nostr.event.tag.MakeTag;
-import nostr.event.tag.TokenTag;
+import nostr.event.impl.TakeIntentEvent;
+import nostr.event.impl.TradeMessageEvent;
+import nostr.event.tag.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class EventDto extends NIP01Event {
@@ -32,6 +37,7 @@ public class EventDto extends NIP01Event {
   public static PostIntentEventEntity convertToEntity(PostIntentEvent event){
     MakeTag make = event.getSideTag();
     TokenTag token = event.getTokenTag();
+    QuoteTag quote = event.getQuoteTag();
     LimitTag limit = event.getLimitTag();
 
     return new PostIntentEventEntity(
@@ -45,6 +51,9 @@ public class EventDto extends NIP01Event {
             token.getAddress(),
             token.getAmount(),
 
+            quote.getNumber(),
+            quote.getCurrency(),
+
             limit==null?null:limit.getCurrency(),
             limit==null||limit.getLowLimit()==null?null:limit.getLowLimit(),
             limit==null||limit.getUpLimit()==null?null:limit.getUpLimit(),
@@ -57,6 +66,66 @@ public class EventDto extends NIP01Event {
 
             event.getContent()
 
+    );
+  }
+
+  public static TakeIntentEventEntity convertToEntity(TakeIntentEvent event){
+    TakeTag takeTag = event.getTakeTag();
+    TokenTag tokenTag = event.getTokenTag();
+    PaymentTag paymentTag = event.getPaymentTag();
+    QuoteTag quoteTag = event.getQuoteTag();
+    BigDecimal volume = takeTag.getVolume();
+
+    String buyerId;
+    String buyerPubKey;
+    String sellerId;
+    String sellerPubKey;
+
+    if (takeTag.getSide() == Side.BUY) {
+      buyerId = takeTag.getTakerNip05();
+      buyerPubKey = takeTag.getTakerPubkey();
+      sellerId = takeTag.getMakerNip05();
+      sellerPubKey = takeTag.getMakerPubkey();
+    } else {
+      buyerId = takeTag.getMakerNip05();
+      buyerPubKey = takeTag.getMakerPubkey();
+      sellerId = takeTag.getTakerNip05();
+      sellerPubKey = takeTag.getTakerPubkey();
+    }
+
+
+    return  new TakeIntentEventEntity(
+            event.getNip(),
+            event.getKind(),
+            event.getId(),
+            takeTag.getSide().getSide(),
+            takeTag.getIntentEventId(),
+            volume,
+            buyerId,
+            buyerPubKey,
+            sellerId,
+            sellerPubKey,
+            tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChain(), tokenTag.getNetwork(),
+            quoteTag.getNumber(),  quoteTag.getCurrency(), quoteTag.getUsdRate(),
+            paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
+            event.getContent(),
+            event.getSignature().getPubKey().toHexString(),
+            event.getCreatedAt()
+    );
+  }
+
+  public static TradeMessageEntity convertToEntity(TradeMessageEvent event){
+    CreatedByTag createdByTag = event.getCreatedByTag();
+    return new TradeMessageEntity(
+            event.getNip(),
+            event.getKind(),
+            event.getId(),
+            createdByTag.getTakeIntentEventId(),
+            createdByTag.getNip05(),
+            createdByTag.getPubkey(),
+            event.getContent(),
+            event.getSignature().getPubKey().toHexString(),
+            event.getCreatedAt()
     );
   }
 }

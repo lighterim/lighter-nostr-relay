@@ -25,7 +25,7 @@ public class PostIntentEventEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    /** side **/
+    /** make **/
     private String side;
     private String nip05;
     private String pubkey;
@@ -36,6 +36,10 @@ public class PostIntentEventEntity {
     private String network;
     private String address;
     private BigDecimal amount;
+
+    /** quote **/
+    private BigDecimal price;
+    private String quoteCurrency;
 
     /** limit **/
     private String currency;
@@ -51,10 +55,15 @@ public class PostIntentEventEntity {
     @Lob
     private String content;
 
+    /**  **/
     @Transient
     private List<BaseTag> tags;
 
-    public PostIntentEventEntity(String side, String nip05, String pubkey, String symbol, String chain, String network, String address, BigDecimal amount, String currency, BigDecimal lowLimit, BigDecimal upLimit, String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content) {
+    public PostIntentEventEntity(String side, String nip05, String pubkey,
+                                 String symbol, String chain, String network, String address, BigDecimal amount,
+                                 BigDecimal price, String quoteCurrency,
+                                 String currency, BigDecimal lowLimit, BigDecimal upLimit,
+                                 String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content) {
         this.side = side;
         this.nip05 = nip05;
         this.pubkey = pubkey;
@@ -62,6 +71,9 @@ public class PostIntentEventEntity {
         this.chain = chain;
         this.network = network;
         this.address = address;
+        this.amount = amount;
+        this.price = price;
+        this.quoteCurrency = quoteCurrency;
         this.currency = currency;
         this.lowLimit = lowLimit;
         this.upLimit = upLimit;

@@ -11,14 +11,14 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "event-side_tag-join")
-public class EventEntitySideTagEntity extends EventEntityAbstractTagEntity {
+@Table(name = "event-make_tag-join")
+public class EventEntityMakeTagEntity extends EventEntityAbstractTagEntity {
 
-    private Long sideTagId;
+    private Long makeTagId;
 
-    public <T extends EventEntityAbstractTagEntity> EventEntitySideTagEntity(Long eventId, Long sideTagId){
+    public <T extends EventEntityAbstractTagEntity> EventEntityMakeTagEntity(Long eventId, Long sideTagId){
         super.setEventId(eventId);
-        this.sideTagId = sideTagId;
+        this.makeTagId = sideTagId;
     }
 
 }

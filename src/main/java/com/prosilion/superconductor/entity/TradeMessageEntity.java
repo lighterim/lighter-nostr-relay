@@ -26,6 +26,7 @@ public class TradeMessageEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Integer nip;
     private Integer kind;
     private String eventIdString;
     private String takeIntentEventId;
@@ -35,7 +36,8 @@ public class TradeMessageEntity {
     private String content;
     private String signature;
     private Long createAt;
-    public TradeMessageEntity(Integer kind, String eventIdString, String takeIntentEventId, String nip05, String pubKey, String content, String signature, Long createAt){
+    public TradeMessageEntity(Integer nip, Integer kind, String eventIdString, String takeIntentEventId, String nip05, String pubKey, String content, String signature, Long createAt){
+        this.nip = nip;
         this.kind = kind;
         this.eventIdString = eventIdString;
         this.takeIntentEventId = takeIntentEventId;

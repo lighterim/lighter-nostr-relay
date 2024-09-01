@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
+import nostr.event.BaseTag;
 import nostr.event.Side;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.TakeIntentEvent;
@@ -22,13 +23,14 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "trade_event")
+@Table(name = "trade")
 public class TakeIntentEventEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Integer kind;
+    private Integer nip;
     private String eventIdString;
 
     private String takeSide;
@@ -55,10 +57,16 @@ public class TakeIntentEventEntity {
     private String paymentQrCode;
     private String paymentMemo;
 
+    private String content;
     private String signature;
     private Long createAt;
 
+    /**  **/
+    @Transient
+    private List<BaseTag> tags;
+
     public TakeIntentEventEntity(
+            Integer nip,
             Integer kind,
             String eventIdString,
             String takeSide,
@@ -79,9 +87,11 @@ public class TakeIntentEventEntity {
              String paymentAccount,
              String paymentQrCode,
              String paymentMemo,
+             String content,
              String signature,
              Long createAt){
         this.kind = kind;
+        this.nip = nip;
         this.eventIdString = eventIdString;
         this.takeSide = takeSide;
         this.makeIntentEventId = makeIntentEventId;
@@ -101,6 +111,7 @@ public class TakeIntentEventEntity {
         this.paymentAccount = paymentAccount;
         this.paymentQrCode = paymentQrCode;
         this.paymentMemo = paymentMemo;
+        this.content = content;
         this.signature = signature;
         this.createAt = createAt;
     }
@@ -121,7 +132,7 @@ public class TakeIntentEventEntity {
                             new QuoteTag(price, currency, usdRate),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo)
                     ),
-                    ""
+                    content
             );
             case SELL -> takeEvent = new TakeIntentEvent(
                     new PublicKey(sellerPubKey),
@@ -131,7 +142,7 @@ public class TakeIntentEventEntity {
                             new QuoteTag(price, currency, usdRate),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo)
                     ),
-                    ""
+                    content
             );
         }
         return (T)takeEvent;

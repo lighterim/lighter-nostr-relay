@@ -1,21 +1,22 @@
 package com.prosilion.superconductor.dto;
 
-import com.prosilion.superconductor.dto.classified.SideTagDto;
-import com.prosilion.superconductor.entity.classified.SideTagEntity;
+import com.prosilion.superconductor.dto.classified.MakeTagDto;
+import com.prosilion.superconductor.entity.classified.MakeTagEntity;
 import com.prosilion.superconductor.entity.join.classified.EventEntitySideTagEntity;
 import com.prosilion.superconductor.repository.classified.SideTagEntityRepository;
 import com.prosilion.superconductor.repository.join.classified.EventEntitySideTagEntityRepository;
 import jakarta.annotation.Nonnull;
 import lombok.NonNull;
-import nostr.event.tag.SideTag;
+import nostr.event.tag.MakeTag;
+import nostr.event.tag.MakeTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SideTagPlugin<
-    P extends SideTag,
+    P extends MakeTag,
     Q extends SideTagEntityRepository<R>,
-    R extends SideTagEntity,
+    R extends MakeTagEntity,
     S extends EventEntitySideTagEntity,
     T extends EventEntitySideTagEntityRepository<S>>
     implements TagPlugin<P, Q, R, S, T> {
@@ -40,8 +41,8 @@ public class SideTagPlugin<
   }
 
   @Override
-  public SideTagDto getTagDto(P sideTag) {
-    return new SideTagDto(sideTag);
+  public MakeTagDto getTagDto(P sideTag) {
+    return new MakeTagDto(sideTag);
   }
 
   @Override

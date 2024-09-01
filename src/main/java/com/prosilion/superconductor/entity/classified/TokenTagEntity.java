@@ -44,12 +44,12 @@ public class TokenTagEntity extends AbstractTagEntity {
 
     @Override
     public AbstractTagDto convertEntityToDto() {
-        return new TokenTagDto(new TokenTag(amount, symbol, chain, network, address));
+        return new TokenTagDto(new TokenTag(symbol, chain, network, address, amount));
     }
 
     @Override
     public BaseTag getAsBaseTag() {
-        return new TokenTag(amount, symbol, chain, network, address);
+        return new TokenTag(symbol, chain, network, address, amount);
     }
 
     @Override

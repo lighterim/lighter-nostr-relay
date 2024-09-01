@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class EventService {
+
   private final NotifierService<GenericEvent> notifierService;
   private final RedisCache<GenericEvent> redisCache;
 

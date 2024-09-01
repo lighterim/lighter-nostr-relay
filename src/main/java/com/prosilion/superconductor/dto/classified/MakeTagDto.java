@@ -2,17 +2,17 @@ package com.prosilion.superconductor.dto.classified;
 
 import com.prosilion.superconductor.dto.AbstractTagDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
-import com.prosilion.superconductor.entity.classified.SideTagEntity;
+import com.prosilion.superconductor.entity.classified.MakeTagEntity;
 import lombok.Getter;
 import lombok.NonNull;
-import nostr.event.tag.SideTag;
+import nostr.event.tag.MakeTag;
 
 @Getter
-public class SideTagDto implements AbstractTagDto {
+public class MakeTagDto implements AbstractTagDto {
 
-    private final SideTag sideTag;
+    private final MakeTag sideTag;
 
-    public SideTagDto(@NonNull SideTag sideTag){
+    public MakeTagDto(@NonNull MakeTag sideTag){
         this.sideTag = sideTag;
     }
 
@@ -23,6 +23,6 @@ public class SideTagDto implements AbstractTagDto {
 
     @Override
     public AbstractTagEntity convertDtoToEntity() {
-        return new SideTagEntity(sideTag);
+        return new MakeTagEntity(sideTag);
     }
 }

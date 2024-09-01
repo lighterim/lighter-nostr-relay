@@ -28,8 +28,7 @@ function replaceHash(id_hash) {
                 'kind': parseInt($("#kind").val(), 10),
                 'content': $("#content").val(),
                 'tags': [
-                    ['e', $("#eventId").val()],
-                    ['user_id', $("#userId").val()],
+                    ['created_by', $("#eventId").val(), 'user_id', $("#userId").val(), $("#pubkey").val()]
                 ],
                 'pubkey': $("#pubkey").val(),
                 'created_at': Date.now(),

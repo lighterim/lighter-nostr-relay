@@ -32,9 +32,10 @@ function replaceHash(id_hash) {
                 'kind': parseInt($("#kind").val(), 10),
                 'content': "",
                 'tags': [
-                    ['take', $("#eventId").val()],
-                    ['user_id', $("#userId").val()],
-                    ['volume', $("#volume").val()],
+                    ['take','buy', $("#eventId").val(), $("#userId").val(), $("#pubkey").val(), $("#volume").val(), "seller1@lighter.im", $("#pubkey").val()],
+                    ["token", "XRD", "radixDLT", "stokenet", "resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc", "1000"],
+                    ["quote", "0.23", "CNY", "7.19"],
+                    ["payment", "alipay", "alipay.accountNo", "alipay.qrCode", "alipay.memo"],
                 ],
                 'pubkey': $("#pubkey").val(),
                 'created_at': Date.now(),

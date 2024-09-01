@@ -109,7 +109,7 @@ public class EventDto extends NIP01Event {
             quoteTag.getNumber(),  quoteTag.getCurrency(), quoteTag.getUsdRate(),
             paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
             event.getContent(),
-            event.getSignature().getPubKey().toHexString(),
+            event.getSignature().toString(),
             event.getCreatedAt()
     );
   }
@@ -124,7 +124,7 @@ public class EventDto extends NIP01Event {
             createdByTag.getNip05(),
             createdByTag.getPubkey(),
             event.getContent(),
-            event.getSignature().getPubKey().toHexString(),
+            event.getSignature().toString(),
             event.getCreatedAt()
     );
   }

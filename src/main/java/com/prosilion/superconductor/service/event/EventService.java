@@ -19,13 +19,11 @@ public class EventService {
 
   private final NotifierService<GenericEvent> notifierService;
   private final RedisCache<GenericEvent> redisCache;
-  private final TradeEventEntityService<? extends GenericEvent> tradeEventEntityService;
 
   @Autowired
-  public EventService(NotifierService<GenericEvent> notifierService, RedisCache<GenericEvent> redisCache, TradeEventEntityService<? extends GenericEvent> tradeEventEntityService) {
+  public EventService(NotifierService<GenericEvent> notifierService, RedisCache<GenericEvent> redisCache) {
     this.notifierService = notifierService;
     this.redisCache = redisCache;
-    this.tradeEventEntityService = tradeEventEntityService;
   }
 
   //  @Async
@@ -44,10 +42,10 @@ public class EventService {
 
     Long id = redisCache.saveEventEntity(event);
 
-    if (event.getKind() == Kind.TAKE_INTENT.getValue()) {
-      notifierService.nostrEventHandler(new AddNostrEvent<>(tradeEventEntityService.getById(id)));
-    }else {
-      notifierService.nostrEventHandler(new AddNostrEvent<>(event));
-    }
+//    if (event.getKind() == Kind.TAKE_INTENT.getValue()) {
+//      notifierService.nostrEventHandler(new AddNostrEvent<>(tradeEventEntityService.getById(id)));
+//    }else {
+//      notifierService.nostrEventHandler(new AddNostrEvent<>(event));
+//    }
   }
 }

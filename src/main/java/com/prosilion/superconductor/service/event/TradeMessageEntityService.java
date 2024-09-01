@@ -1,5 +1,8 @@
 package com.prosilion.superconductor.service.event;
 
+
+import com.prosilion.superconductor.dto.EventTagPlugin;
+
 import com.prosilion.superconductor.entity.EventEntity;
 import com.prosilion.superconductor.entity.TradeMessageEntity;
 import com.prosilion.superconductor.repository.TradeMessageEntityRepository;

@@ -25,7 +25,7 @@ function replaceHash(id_hash) {
         + JSON.stringify(
             {
                 'id': id_hash,
-                'kind': $("#kind").val(),
+                'kind': parseInt($("#kind").val(), 10),
                 'content': $("#content").val(),
                 'tags': [
                     ['e', $("#eventId").val()],

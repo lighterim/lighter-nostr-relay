@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 @Slf4j
 @Service
-public class EventEntityService<T extends GenericEvent> {
+public class EventEntityService<T extends GenericEvent> implements EventEntityServiceIF<GenericEvent> {
   private final ConcreteTagEntitiesService<
       BaseTag,
       AbstractTagEntityRepository<AbstractTagEntity>,
@@ -62,7 +62,12 @@ public class EventEntityService<T extends GenericEvent> {
 //    this.tradeMessageEntityService = tradeMessageEntityService;
   }
 
-  protected Long saveEventEntity(@NonNull GenericEvent event) {
+  @Override
+  public Kind getKind() {
+    return Kind.TEXT_NOTE;
+  }
+
+  public Long saveEventEntity(@NonNull GenericEvent event) {
 //    Integer kind = event.getKind();
 //    if (kind == 30078) {
 //      return tradeEventEntityService.saveEventEntity(event);
@@ -86,8 +91,8 @@ public class EventEntityService<T extends GenericEvent> {
     return savedEntity.getId();
   }
 
-  public Map<Kind, Map<Long, T>> getAll() {
-    Map<Kind, Map<Long,T>> map = eventEntityRepository.findAll().stream()
+  public Map<Kind, Map<Long, GenericEvent>> getAll() {
+    Map<Kind, Map<Long,GenericEvent>> map = eventEntityRepository.findAll().stream()
             .map(this::populateEventEntity)
             .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
                     Collectors.toMap(EventEntity::getId, EventEntity::convertEntityToDto)));
@@ -103,7 +108,7 @@ public class EventEntityService<T extends GenericEvent> {
     return map;
   }
 
-  public T getEventById(@NonNull Long id) {
+  public GenericEvent getEventById(@NonNull Long id) {
     return populateEventEntity(
         getById(id)
             .orElseThrow())

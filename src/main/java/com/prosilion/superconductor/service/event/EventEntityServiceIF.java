@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface EventEntityServiceIF<T> {
 
-    public Kind getKind();
+    Kind getKind();
 
 //    public void saveEventEntity(@NonNull GenericEvent event);
     Long saveEventEntity(@NonNull T event);

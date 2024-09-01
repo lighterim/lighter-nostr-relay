@@ -42,12 +42,11 @@ function replaceHash(id_hash) {
                 'tags': [
                     // ['subject', $("#subject").val()],
                     ['title', $("#title").val()],
-                    ['side', $("#side").val()],
-                    ['user_id', $("#userId").val()],
+                    ['make', $("#side").val(), $("#userId").val(), $("#pubkey").val()],
                     ['published_at', Date.now()],
                     // ['summary', $("#summary").val()],
                     ['limit', $("#currency").val(), "1", "1000"],
-                    ['token', $("#amount").val(), $("#symbol").val(), $("#chain").val(), "stokenet", $("#token_addr").val()],
+                    ['token', $("#symbol").val(), $("#chain").val(), "stokenet", $("#token_addr").val(), $("#amount").val()],
                     ['quote', $("#number").val(), $("#currency").val(), "7.19"],
                     ['payment'].concat($('#paymentMethod').val().split(","))
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'seller'],

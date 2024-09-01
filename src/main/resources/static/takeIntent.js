@@ -32,7 +32,7 @@ function replaceHash(id_hash) {
                 'kind': parseInt($("#kind").val(), 10),
                 'content': "",
                 'tags': [
-                    ['e', $("#eventId").val()],
+                    ['take', $("#eventId").val()],
                     ['user_id', $("#userId").val()],
                     ['volume', $("#volume").val()],
                 ],

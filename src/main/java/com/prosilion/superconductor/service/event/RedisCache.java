@@ -4,6 +4,9 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.Kind;
 import nostr.event.impl.GenericEvent;
+import nostr.event.impl.PostIntentEvent;
+import nostr.event.impl.TakeIntentEvent;
+import nostr.event.impl.TradeMessageEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,13 +38,31 @@ public class RedisCache<T extends GenericEvent> {
         eventEntityService = (EventEntityService<T>) eventEntityServiceMap.get(Kind.TEXT_NOTE);
     }
 
-    public <T extends GenericEvent> Map<Kind, Map<Long, GenericEvent>> getAll() {
-//    return eventEntityService.getAll();
-        return eventEntityService.getAll();
+    public Map<Kind, Map<Long, GenericEvent>> getAll() {
+        Map<Kind, Map<Long, GenericEvent>> map = new HashMap<>();
+        for (Map.Entry<Kind, Map<Long, GenericEvent>> kindMapEntry : eventEntityService.getAll().entrySet()) {
+            if (!kindMapEntry.getKey().equals(Kind.CLIENT_AUTH)) {
+                if (map.put(kindMapEntry.getKey(), kindMapEntry.getValue()) != null) {
+                    throw new IllegalStateException("Duplicate key");
+                }
+            }
+        }
+//        Map<Kind, Map<Long, PostIntentEvent>> map2 = postEventEntityService.getAll();
+//        for(Map.Entry<Kind, Map<Long, PostIntentEvent>> entry: map2.entrySet()){
+//            map.pu
+//        }
+
+        return map;
     }
 
     protected Long saveEventEntity(@NonNull GenericEvent event) {
-        return eventEntityService.saveEventEntity(event);
-
+        Kind kind = Kind.valueOf(event.getKind());
+        Long id = switch (kind){
+            case POST_INTENT -> postEventEntityService.saveEventEntity((PostIntentEvent) event);
+            case TAKE_INTENT -> takeEventEntityService.saveEventEntity((TakeIntentEvent) event);
+            case TRADE_MESSAGE -> tradeMessageEntityService.saveEventEntity((TradeMessageEvent) event);
+            default -> eventEntityService.saveEventEntity(event);
+        };
+        return id;
     }
 }

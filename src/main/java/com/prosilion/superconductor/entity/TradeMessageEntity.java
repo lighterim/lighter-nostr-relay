@@ -53,7 +53,6 @@ public class TradeMessageEntity {
         final Signature sig = new Signature();
         sig.setRawData(rawData);
 
-
         TradeMessageEvent takeEvent = new TradeMessageEvent(
                 new PublicKey(pubKey),
                 List.of(new CreatedByTag(takeIntentEventId, nip05, pubKey)),
@@ -61,6 +60,11 @@ public class TradeMessageEntity {
         );
         takeEvent.setSignature(sig);
         takeEvent.setCreatedAt(createAt);
+        takeEvent.setId(eventIdString);
+        takeEvent.setContent(content);
+        takeEvent.setKind(kind);
+        takeEvent.setPubKey(new PublicKey(pubKey));
+
         return (T)takeEvent;
     }
 }

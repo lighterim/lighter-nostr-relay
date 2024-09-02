@@ -87,6 +87,7 @@ public class PostEventEntityService implements EventEntityServiceIF<PostIntentEv
     private PostIntentEventEntity populateEventEntity(PostIntentEventEntity postIntentEventEntity) {
         List<BaseTag> concreteTags = concreteTagEntitiesService.getTags(postIntentEventEntity.getId())
                 .stream().map(AbstractTagEntity::getAsBaseTag).toList();
+
         List<BaseTag> genericTags = genericTagEntitiesService.getGenericTags(postIntentEventEntity.getId())
                 .stream().map(
                         genericTag -> new GenericTag(genericTag.code(), postIntentEventEntity.getNip(), genericTag.atts().stream().map(ElementAttributeDto::getElementAttribute).toList()))

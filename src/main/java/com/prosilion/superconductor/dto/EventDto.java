@@ -5,16 +5,15 @@ import com.prosilion.superconductor.entity.PostIntentEventEntity;
 import com.prosilion.superconductor.entity.TakeIntentEventEntity;
 import com.prosilion.superconductor.entity.TradeMessageEntity;
 import com.prosilion.superconductor.service.event.TradeMessageEntityService;
+import nostr.api.NIP77;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
-import nostr.event.BaseTag;
-import nostr.event.Kind;
-import nostr.event.NIP01Event;
-import nostr.event.Side;
+import nostr.event.*;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.impl.TradeMessageEvent;
 import nostr.event.tag.*;
+import nostr.util.NostrUtil;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -43,7 +42,7 @@ public class EventDto extends NIP01Event {
     return new PostIntentEventEntity(
             make.getSide().getSide(),
             make.getMakerNip05(),
-            event.getPubKey().toBech32String(),
+            event.getPubKey().toString(),
 
             token.getSymbol(),
             token.getChain(),

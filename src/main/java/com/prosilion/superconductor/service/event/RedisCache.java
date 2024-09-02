@@ -47,12 +47,37 @@ public class RedisCache<T extends GenericEvent> {
                 }
             }
         }
-//        Map<Kind, Map<Long, PostIntentEvent>> map2 = postEventEntityService.getAll();
-//        for(Map.Entry<Kind, Map<Long, PostIntentEvent>> entry: map2.entrySet()){
-//            map.pu
-//        }
+
+        Map<Kind, Map<Long, PostIntentEvent>> postEventMap = postEventEntityService.getAll();
+        for (Map.Entry<Kind, Map<Long, PostIntentEvent>> kindMapEntry : postEventMap.entrySet()) {
+            if (map.put(kindMapEntry.getKey(), convertToGenericEventMap(kindMapEntry.getValue())) != null) {
+                throw new IllegalStateException("Duplicate key");
+            }
+        }
+
+        Map<Kind, Map<Long, TakeIntentEvent>> takeEventMap = takeEventEntityService.getAll();
+        for (Map.Entry<Kind, Map<Long, TakeIntentEvent>> kindMapEntry : takeEventMap.entrySet()) {
+            if (map.put(kindMapEntry.getKey(), convertToGenericEventMap(kindMapEntry.getValue())) != null) {
+                throw new IllegalStateException("Duplicate key");
+            }
+        }
+
+        Map<Kind, Map<Long, TradeMessageEvent>> tradeMessageMap = tradeMessageEntityService.getAll();
+        for (Map.Entry<Kind, Map<Long, TradeMessageEvent>> kindMapEntry : tradeMessageMap.entrySet()) {
+            if (map.put(kindMapEntry.getKey(), convertToGenericEventMap(kindMapEntry.getValue())) != null) {
+                throw new IllegalStateException("Duplicate key");
+            }
+        }
 
         return map;
+    }
+
+    private Map<Long, GenericEvent> convertToGenericEventMap(Map<Long, ? extends GenericEvent> sourceMap) {
+        return sourceMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
     }
 
     protected Long saveEventEntity(@NonNull GenericEvent event) {

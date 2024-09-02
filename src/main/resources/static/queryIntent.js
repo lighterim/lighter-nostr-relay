@@ -25,7 +25,7 @@ function replaceHash(id_hash) {
         + "\"" + id_hash + "\","
         + JSON.stringify(
             {
-                'kinds': [30402],
+                'kinds': [30077],
                 'genericTagQueryList': [
                     {'side': $('#side').val() ? [].concat($('#side').val().split(",")) : []},
                     {'currency': $('#currency').val() ? [].concat($('#currency').val().split(",")) : []},

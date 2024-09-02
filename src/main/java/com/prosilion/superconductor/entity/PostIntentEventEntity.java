@@ -7,11 +7,18 @@ import lombok.Setter;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
 import nostr.event.BaseTag;
+import nostr.event.Kind;
+import nostr.event.Side;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.PostIntentEvent;
+import nostr.event.tag.LimitTag;
+import nostr.event.tag.MakeTag;
+import nostr.event.tag.QuoteTag;
+import nostr.event.tag.TokenTag;
 import nostr.util.NostrUtil;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Setter
@@ -87,14 +94,31 @@ public class PostIntentEventEntity {
     }
 
     public <T extends GenericEvent> T convertEntityToDto() {
+        PostIntentEvent event = new PostIntentEvent();
+        event.setPubKey(new PublicKey(pubkey));
+        event.setId(eventIdString);
+        event.setKind(Kind.POST_INTENT.getValue());
+        event.setNip(77);
+        event.setCreatedAt(createdAt);
+        event.setContent(content);
         byte[] rawData = NostrUtil.hexToBytes(signature);
-        final Signature sig = new Signature();
-        sig.setRawData(rawData);
-        return (T)new PostIntentEvent(
-               new PublicKey(pubkey),
-               tags,
-               content
-        );
+        Signature signature = new Signature();
+        signature.setRawData(rawData);
+        event.setSignature(signature);
 
+        MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey);
+        TokenTag token = new TokenTag(symbol, chain, network, address, amount);
+        QuoteTag quote = new QuoteTag(price, quoteCurrency, BigDecimal.ZERO);
+        LimitTag limit = new LimitTag(currency, lowLimit, upLimit);
+
+        List<BaseTag> tagList = new ArrayList<>(tags);
+        tagList.add(make);
+        tagList.add(token);
+        tagList.add(quote);
+        tagList.add(limit);
+
+        event.setTags(tagList);
+
+        return (T)event;
     }
 }

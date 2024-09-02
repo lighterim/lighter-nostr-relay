@@ -108,4 +108,9 @@ public class TakeEventEntityService implements EventEntityServiceIF<TakeIntentEv
     public TakeIntentEvent getEventById(@NonNull Long id) {
         return populateEventEntity(takeEventEntityRepository.findById(id).orElseThrow(NoResultException::new)).convertEntityToDto();
     }
+
+    @Override
+    public TakeIntentEvent getEventByEventIdString(@NonNull String eventIdString) {
+        return populateEventEntity(takeEventEntityRepository.findByEventIdString(eventIdString).orElseThrow(NoResultException::new)).convertEntityToDto();
+    }
 }

@@ -52,4 +52,9 @@ public class TradeMessageEntityService implements EventEntityServiceIF<TradeMess
     public TradeMessageEvent getEventById(@NonNull Long id) {
         return populateTradeMessageEntity(tradeMessageEntityRepository.findById(id).orElseThrow(NoResultException::new)).convertEntityToDto();
     }
+
+    @Override
+    public TradeMessageEvent getEventByEventIdString(@NonNull String eventIdString) {
+        return populateTradeMessageEntity(tradeMessageEntityRepository.findByEventIdString(eventIdString).orElseThrow(NoResultException::new)).convertEntityToDto();
+    }
 }

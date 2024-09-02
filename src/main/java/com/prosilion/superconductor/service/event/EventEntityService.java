@@ -102,14 +102,12 @@ public class EventEntityService<T extends GenericEvent> implements EventEntitySe
     }
 
     public GenericEvent getEventById(@NonNull Long id) {
-        return populateEventEntity(
-                getById(id)
-                        .orElseThrow())
-                .convertEntityToDto();
+        return populateEventEntity(eventEntityRepository.findById(id).orElseThrow(NoResultException::new)).convertEntityToDto();
     }
 
-    private @NotNull Optional<EventEntity> getById(Long id) {
-        return eventEntityRepository.findById(id);
+    @Override
+    public GenericEvent getEventByEventIdString(@NonNull String eventIdString) {
+        return populateEventEntity(eventEntityRepository.findByEventIdString(eventIdString).orElseThrow(NoResultException::new)).convertEntityToDto();
     }
 
     private @NotNull EventEntity populateEventEntity(EventEntity eventEntity) {

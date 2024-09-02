@@ -18,4 +18,6 @@ public interface EventEntityServiceIF<T> {
     public Map<Kind, Map<Long, T>> getAll();
 
     T getEventById(@NonNull Long id);
+
+    T getEventByEventIdString(@NonNull String eventIdString);
 }

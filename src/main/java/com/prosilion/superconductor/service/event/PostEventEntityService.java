@@ -100,4 +100,9 @@ public class PostEventEntityService implements EventEntityServiceIF<PostIntentEv
     public PostIntentEvent getEventById(@NonNull Long id) {
         return populateEventEntity(postEventEntityRepository.findById(id).orElseThrow(NoResultException::new)).convertEntityToDto();
     }
+
+    @Override
+    public PostIntentEvent getEventByEventIdString(@NonNull String eventIdString) {
+        return populateEventEntity(postEventEntityRepository.findByEventIdString(eventIdString).orElseThrow(NoResultException::new)).convertEntityToDto();
+    }
 }

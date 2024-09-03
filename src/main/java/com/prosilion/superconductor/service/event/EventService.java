@@ -1,11 +1,11 @@
 package com.prosilion.superconductor.service.event;
 
+
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.prosilion.superconductor.pubsub.AddNostrEvent;
-import com.prosilion.superconductor.service.NotifierService;
-import lombok.Getter;
+import com.prosilion.superconductor.service.request.NotifierService;
+import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
@@ -26,18 +26,17 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-@Getter
+
 @Slf4j
 @Service
-public class EventService {
-
+public class EventService<T extends EventMessage> implements EventServiceIF<T> {
+    private final NotifierService<GenericEvent> notifierService;
+    private final RedisCache<GenericEvent> redisCache;
+    private final LoadingCache<Pair<String, String>, Boolean> nip05ValidatorCache;
     @Value("${nip05.validator.cache.max.size:100}")
     private int nip05CacheMaxSize;
     @Value("${nip05.validator.cache.minutes:5}")
     private int nip05CacheMinutes;
-    private final NotifierService<GenericEvent> notifierService;
-    private final RedisCache<GenericEvent> redisCache;
-    private final LoadingCache<Pair<String, String>, Boolean> nip05ValidatorCache;
 
     @Autowired
     public EventService(NotifierService<GenericEvent> notifierService, RedisCache<GenericEvent> redisCache) {
@@ -62,7 +61,7 @@ public class EventService {
     }
 
     //  @Async
-    public void processIncomingEvent(@NonNull EventMessage eventMessage) {
+    public void processIncomingEvent(@NonNull T eventMessage) {
         log.info("processing incoming TEXT_NOTE: [{}]", eventMessage);
         GenericEvent event = (GenericEvent) eventMessage.getEvent();
 
@@ -105,7 +104,7 @@ public class EventService {
             takeIntentEvent.validate();
 
             TakeTag take = takeIntentEvent.getTakeTag();
-            if(!isValidNip05(take.getTakerNip05(), take.getTakerPubkey())){
+            if (!isValidNip05(take.getTakerNip05(), take.getTakerPubkey())) {
                 // 2. taker nip05 & pubkey
                 log.warn("invalid nip05: {}, {}", take.getMakerNip05(), take.getMakerPubkey());
                 throw new RuntimeException(String.format("invalid nip05: %s, %s", take.getMakerNip05(), take.getMakerPubkey()));
@@ -114,10 +113,10 @@ public class EventService {
             // 3. make.intent & take.make
             String makeEventId = take.getIntentEventId();
             GenericEvent event = redisCache.getEventEntityByEventId(Kind.POST_INTENT, makeEventId);
-            if(event instanceof  PostIntentEvent postIntentEvent){
+            if (event instanceof PostIntentEvent postIntentEvent) {
                 MakeTag make = postIntentEvent.getSideTag();
                 // 3.1 nip05, pubkey
-                if(!take.getMakerNip05().equals(make.getMakerNip05()) || !take.getMakerPubkey().equals(make.getMakerPubkey())){
+                if (!take.getMakerNip05().equals(make.getMakerNip05()) || !take.getMakerPubkey().equals(make.getMakerPubkey())) {
                     String msg = String.format("invalid intent.make nip05:%s, pubkey:%s, event id:%s", take.getMakerNip05(), take.getMakerPubkey(), makeEventId);
                     log.warn(msg);
                     throw new RuntimeException(msg);
@@ -126,10 +125,10 @@ public class EventService {
                 //3.2 token
                 TokenTag token = postIntentEvent.getTokenTag();
                 TokenTag takeToken = takeIntentEvent.getTokenTag();
-                if(!takeToken.getSymbol().equals(token.getSymbol())
+                if (!takeToken.getSymbol().equals(token.getSymbol())
                         || !takeToken.getChain().equals(token.getChain())
                         || !takeToken.getNetwork().equals(token.getNetwork())
-                        || !takeToken.getAddress().equals(token.getAddress())){
+                        || !takeToken.getAddress().equals(token.getAddress())) {
                     String msg = String.format("invalid intent token: %s, %s, %s, %s, event id:%s", takeToken.getSymbol(), takeToken.getChain(), takeToken.getNetwork(), takeToken.getAddress(), makeEventId);
                     log.warn(msg);
                     throw new RuntimeException(msg);
@@ -138,7 +137,7 @@ public class EventService {
                 //3.3 quote
                 QuoteTag quote = postIntentEvent.getQuoteTag();
                 QuoteTag takeQuote = takeIntentEvent.getQuoteTag();
-                if(!takeQuote.getCurrency().equals(quote.getCurrency()) || takeQuote.getNumber().compareTo(quote.getNumber()) < 0){
+                if (!takeQuote.getCurrency().equals(quote.getCurrency()) || takeQuote.getNumber().compareTo(quote.getNumber()) < 0) {
                     String msg = String.format("invalid intent quote: %s, %s, event id:%s", takeQuote.getNumber(), takeQuote.getCurrency(), makeEventId);
                     log.warn(msg);
                     throw new RuntimeException(msg);

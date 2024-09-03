@@ -8,6 +8,7 @@ services:
       org.springframework.boot.service-connection: mysql
     environment:
       MYSQL_DATABASE: superconductor
+#      set below db name and credentials as desired
       MYSQL_USER: mysqluser
       MYSQL_PASSWORD: mysqluserpass
       MYSQL_ROOT_PASSWORD: mysqlrootuserpass
@@ -18,19 +19,22 @@ services:
       retries: 10
       interval: 3s
       timeout: 30s
-  superconductor-app:
+  superconductor:
     container_name: superconductor-app
-    image: avlo/superconductor:1.7.1
+    image: avlo/superconductor:1.7.4
     ports:
       - "5555:5555"
     depends_on:
       superconductor-db:
         condition: service_healthy
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:mysql://superconductor-mysqldb:3306/superconductor
+#      set below spring datasource credentials as desired
       SPRING_DATASOURCE_USERNAME: mysqluser
       SPRING_DATASOURCE_PASSWORD: mysqluserpass
-      SPRING_PROFILES_ACTIVE: prod
+#      authentication is off by default.  update below with "true" to activate
+      superconductor.auth.active: false
     networks:
       docker-network:
 volumes:

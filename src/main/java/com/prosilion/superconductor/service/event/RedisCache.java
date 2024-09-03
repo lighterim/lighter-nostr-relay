@@ -10,8 +10,11 @@ import nostr.event.impl.TradeMessageEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+
 import java.util.*;
 import java.util.function.Function;
+import java.util.Map;
+
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -26,6 +29,7 @@ public class RedisCache<T extends GenericEvent> {
 
     private final EventEntityService<T> eventEntityService;
 
+
     @Autowired
     public RedisCache(List<EventEntityServiceIF<T>> eventEntityServiceList) {
 //    this.eventEntityService = eventEntityService;
@@ -37,6 +41,13 @@ public class RedisCache<T extends GenericEvent> {
         tradeMessageEntityService = (TradeMessageEntityService) eventEntityServiceMap.get(Kind.TRADE_MESSAGE);
         eventEntityService = (EventEntityService<T>) eventEntityServiceMap.get(Kind.TEXT_NOTE);
     }
+
+//  public Map<Kind, Map<Long, T>> getAll() {
+//    return eventEntityService.getAll().entrySet().stream()
+//        .filter(kindMapEntry -> !kindMapEntry.getKey().equals(Kind.CLIENT_AUTH))
+//        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+//  }
+
 
     public Map<Kind, Map<Long, GenericEvent>> getAll() {
         Map<Kind, Map<Long, GenericEvent>> map = new HashMap<>();

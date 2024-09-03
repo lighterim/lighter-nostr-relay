@@ -36,6 +36,7 @@
   - [NIP-36](https://nostr-nips.com/nip-36) (Sensitive Content / Content Warning)
   - [NIP-38](https://nostr-nips.com/nip-38) (User Statuses)
   - [NIP-39](https://nostr-nips.com/nip-39) (External Identities in Profiles)
+  - [NIP-42](https://nostr-nips.com/nip-42) (Authentication of clients to relays)
   - [NIP-46](https://nostr-nips.com/nip-46) (Nostr Connect)
   - [NIP-48](https://nostr-nips.com/nip-48) (Proxy Tags)
   - [NIP-52](https://nostr-nips.com/nip-52) (Calendar Events)
@@ -67,11 +68,11 @@
 ----
 
 #### Download Superconductor Docker Image from [hub.docker](https://hub.docker.com/repository/docker/avlo/superconductor-app/tags)
-    $ docker pull avlo/superconductor:1.7.1
+    $ docker pull avlo/superconductor:1.7.4
 
 ----
 
-#### Download Docker-Compose configuration file:
+#### Download Docker-Compose configuration file _(and optionally [edit various parameters](docker-compose-prod.yml?plain=1#L10,32,L36-L37) as desired)_:
 
 [docker-compose-prod.yml](docker-compose-prod.yml)
 
@@ -85,7 +86,7 @@ Superconductor is now ready to use.
 ----
 
 ##### Stop docker containers
-    $ docker compose -f docker-compose-prod.yml stop superconductor-app superconductor-db
+    $ docker compose -f docker-compose-prod.yml stop superconductor superconductor-db
 
 ##### Remove docker containers
     $ docker compose -f docker-compose-prod.yml down --remove-orphans

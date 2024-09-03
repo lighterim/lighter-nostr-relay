@@ -1,5 +1,6 @@
 package com.prosilion.superconductor;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.MoreExecutors;
 import lombok.Getter;
@@ -50,9 +51,8 @@ class MultipleZapRequestEventMessageIT {
 
   public final String textMessageEventJson;
   public final String textMessageEventJsonReordered;
+  public static final String EOSE = "[\"EOSE\",\"0000000000000000000000000000000000000000000000000\"]";
 
-  private static final String SCHEME_WS = "ws";
-  private static final String HOST = "localhost";
   private final String websocketUrl;
 
   private final String hexCounterSeed;
@@ -67,11 +67,11 @@ class MultipleZapRequestEventMessageIT {
   List<Callable<CompletableFuture<WebSocketSession>>> reqClients;
 
   MultipleZapRequestEventMessageIT(
-      @Value("${server.port}") String port,
+      @Value("${superconductor.relay.url}") String relayUrl,
       @Value("${superconductor.test.req.hexCounterSeed}") String hexCounterSeed,
       @Value("${superconductor.test.req.instances}") Integer reqInstances,
       @Value("${superconductor.test.req.success_threshold_pct}") Integer pctThreshold) throws IOException {
-    this.websocketUrl = SCHEME_WS + "://" + HOST + ":" + port;
+    this.websocketUrl = relayUrl;
     this.hexCounterSeed = hexCounterSeed;
     this.hexStartNumber = Integer.parseInt(hexCounterSeed, 16);
     this.targetCount = reqInstances;
@@ -108,7 +108,7 @@ class MultipleZapRequestEventMessageIT {
   }
 
   @Test
-  void testEventMessageThenReqMessage() {
+  void testEventMessageThenReqMessage() throws EvaluationException {
     executorService.shutdown();
     await().until(() -> executorService.awaitTermination(5000, TimeUnit.SECONDS));
     await().until(executorService::isTerminated);
@@ -146,7 +146,7 @@ class MultipleZapRequestEventMessageIT {
 
     public ReqMessageSocketHandler(Integer index, String reqId) {
       this.index = index;
-      reqJson = "[\"REQ\",\"" + reqId + "\",{\"ids\":[\"5f66a36101d3d152c6270e18f5622d1f8bce4ac5da9ab62d7c3cc0006e5914cc\"],\"authors\":[\"bbbd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984\"]}]";
+      reqJson = "[\"REQ\",\"0000000000000000000000000000000000000000000000000\",{\"ids\":[\"5f66a36101d3d152c6270e18f5622d1f8bce4ac5da9ab62d7c3cc0006e5914cc\"],\"authors\":[\"bbbd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984\"]}]";
     }
 
     @Override
@@ -156,9 +156,11 @@ class MultipleZapRequestEventMessageIT {
 
     @Override
     public void handleMessage(@NotNull WebSocketSession session, WebSocketMessage<?> message) throws EvaluationException, IOException {
-      boolean condition = ComparatorWithoutOrder.equalsJson(mapper.readTree(textMessageEventJsonReordered), mapper.readTree(message.getPayload().toString()));
+      JsonNode jsonNode = mapper.readTree(message.getPayload().toString());
+      boolean condition = ComparatorWithoutOrder.equalsJson(mapper.readTree(textMessageEventJsonReordered), jsonNode);
+      boolean eoseCondition = ComparatorWithoutOrder.equalsJson(mapper.readTree(EOSE), jsonNode);
 
-      if (!condition) {
+      if (!condition && !eoseCondition) {
         session.close();
         throw new EvaluationException(String.format("Json doesnt' match.  Expected value:%n%s%n but received:%n%s%n", textMessageEventJsonReordered, mapper.readTree(message.getPayload().toString()).toPrettyString()));
       }

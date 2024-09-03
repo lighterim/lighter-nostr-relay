@@ -79,13 +79,15 @@ Superconductor spring boot docker uses [buildpacks](https://buildpacks.io/) ([pr
     $ mvn -N wrapper:wrapper
     $ mvn spring-boot:build-image
 
+(*optionally edit various [docker-compose-dev.yml](docker-compose-dev.yml?plain=1#L10,L32,L36-L37) parameters as desired.*)
+
 ##### Start docker containers
     $ docker compose -f docker-compose-dev.yml up -d
 
 Superconductor is now ready to use.
 
 ##### Stop docker containers
-    $ docker compose -f docker-compose-dev.yml stop superconductor-app superconductor-db
+    $ docker compose -f docker-compose-dev.yml stop superconductor superconductor-db
 
 ##### Remove docker containers
     $ docker compose -f docker-compose-dev.yml down --remove-orphans
@@ -100,18 +102,18 @@ Superconductor is now ready to use.
 for full/debug developer console logging:
 
     $ cd <your_git_home_dir>/superconductor
-    $ mvn spring-boot:run -Dspring-boot.run.arguments=--logging.level.org.springframework=TRACE
+    $ mvn spring-boot:run -Dspring.profiles.active=local -Dspring-boot.run.arguments=--logging.level.org.springframework=TRACE
 ----
 
 ### 3.  Run locally as executable jar
 
     $ cd <your_git_home_dir>/superconductor
-    $ java -jar target/superconductor-1.7.1.war
+    $ java -jar target/superconductor-1.7.4.war
 
 ----
 ### 4.  Run using pre-existing local application-server-container instance
 
-    $ cp <your_git_home_dir>/superconductor/target/superconductor-1.7.1.war <your_container/instance/deployment_directory>
+    $ cp <your_git_home_dir>/superconductor/target/superconductor-1.7.4.war <your_container/instance/deployment_directory>
 
 ----
 
@@ -130,6 +132,7 @@ ws://localhost:5555
 
 Display all framework table contents (case-sensitive quoted fields/tables when querying):
 
+	select id, pub_key, session_id, challenge from auth;
 	select id, event_id_string, kind, nip, created_at, pub_key, content from event;
 	select id, event_id, event_tag_id from "event-event_tag-join";
 	select id, event_id_string, recommended_relay_url, marker from event_tag;
@@ -152,15 +155,9 @@ Display all framework table contents (case-sensitive quoted fields/tables when q
 
 ##### (Optional Use) bundled web-client URLs for convenience/dev-testing/etc
 
-http://localhost:5555/NIP00.html
+http://localhost:5555/api-tests.html <sup>_(nostr **events** web-client)_</sup>
 
-http://localhost:5555/NIP01.html
-
-http://localhost:5555/NIP57.html
-
-http://localhost:5555/NIP99.html
-
-http://localhost:5555/REQ.html
+http://localhost:5555/request-test.html <sup>_(nostr **request** web-client)_</sup>
 <br>
 <hr style="border:2px solid grey">
 

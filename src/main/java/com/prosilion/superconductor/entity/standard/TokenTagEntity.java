@@ -1,4 +1,4 @@
-package com.prosilion.superconductor.entity.classified;
+package com.prosilion.superconductor.entity.standard;
 
 import com.prosilion.superconductor.dto.AbstractTagDto;
 import com.prosilion.superconductor.dto.classified.TokenTagDto;

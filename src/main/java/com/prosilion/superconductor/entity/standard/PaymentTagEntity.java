@@ -1,4 +1,4 @@
-package com.prosilion.superconductor.entity.classified;
+package com.prosilion.superconductor.entity.standard;
 
 import com.prosilion.superconductor.dto.AbstractTagDto;
 import com.prosilion.superconductor.dto.classified.PaymentTagDto;
@@ -12,7 +12,6 @@ import lombok.Setter;
 import nostr.event.BaseTag;
 import nostr.event.tag.PaymentTag;
 
-import java.math.BigDecimal;
 import java.util.Objects;
 
 @Setter

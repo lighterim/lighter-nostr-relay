@@ -1,7 +1,7 @@
 package com.prosilion.superconductor.plugin.tag;
 
 import com.prosilion.superconductor.dto.classified.PaymentTagDto;
-import com.prosilion.superconductor.entity.classified.PaymentTagEntity;
+import com.prosilion.superconductor.entity.standard.PaymentTagEntity;
 import com.prosilion.superconductor.entity.join.classified.EventEntityPaymentTagEntity;
 import com.prosilion.superconductor.repository.classified.PaymentTagEntityRepository;
 import com.prosilion.superconductor.repository.join.classified.EventEntityPaymentTagEntityRepository;

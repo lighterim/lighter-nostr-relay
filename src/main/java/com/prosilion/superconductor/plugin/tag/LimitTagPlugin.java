@@ -1,7 +1,7 @@
 package com.prosilion.superconductor.plugin.tag;
 
 import com.prosilion.superconductor.dto.classified.LimitTagDto;
-import com.prosilion.superconductor.entity.classified.LimitTagEntity;
+import com.prosilion.superconductor.entity.standard.LimitTagEntity;
 import com.prosilion.superconductor.entity.join.classified.EventEntityLimitTagEntity;
 import com.prosilion.superconductor.repository.classified.LimitTagEntityRepository;
 import com.prosilion.superconductor.repository.join.classified.EventEntityLimitTagEntityRepository;

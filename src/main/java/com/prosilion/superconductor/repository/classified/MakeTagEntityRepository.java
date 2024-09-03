@@ -1,6 +1,6 @@
 package com.prosilion.superconductor.repository.classified;
 
-import com.prosilion.superconductor.entity.classified.MakeTagEntity;
+import com.prosilion.superconductor.entity.standard.MakeTagEntity;
 import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
 import org.springframework.stereotype.Repository;
 

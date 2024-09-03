@@ -1,7 +1,7 @@
 package com.prosilion.superconductor.plugin.tag;
 
 import com.prosilion.superconductor.dto.classified.MakeTagDto;
-import com.prosilion.superconductor.entity.classified.MakeTagEntity;
+import com.prosilion.superconductor.entity.standard.MakeTagEntity;
 import com.prosilion.superconductor.entity.join.classified.EventEntityMakeTagEntity;
 import com.prosilion.superconductor.repository.classified.MakeTagEntityRepository;
 import com.prosilion.superconductor.repository.join.classified.EventEntitySideTagEntityRepository;

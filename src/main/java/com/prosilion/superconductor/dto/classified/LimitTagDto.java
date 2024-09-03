@@ -2,7 +2,7 @@ package com.prosilion.superconductor.dto.classified;
 
 import com.prosilion.superconductor.dto.AbstractTagDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
-import com.prosilion.superconductor.entity.classified.LimitTagEntity;
+import com.prosilion.superconductor.entity.standard.LimitTagEntity;
 import lombok.Getter;
 import lombok.NonNull;
 import nostr.event.tag.LimitTag;

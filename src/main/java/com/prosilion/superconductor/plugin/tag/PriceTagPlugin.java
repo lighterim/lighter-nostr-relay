@@ -1,7 +1,7 @@
 package com.prosilion.superconductor.plugin.tag;
 
 import com.prosilion.superconductor.dto.classified.PriceTagDto;
-import com.prosilion.superconductor.entity.classified.PriceTagEntity;
+import com.prosilion.superconductor.entity.standard.PriceTagEntity;
 import com.prosilion.superconductor.entity.join.classified.EventEntityPriceTagEntity;
 import com.prosilion.superconductor.repository.classified.PriceTagEntityRepository;
 import com.prosilion.superconductor.repository.join.classified.EventEntityPriceTagEntityRepository;

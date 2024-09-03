@@ -1,18 +1,12 @@
 package com.prosilion.superconductor.plugin.tag;
 
-import com.prosilion.superconductor.dto.classified.QuoteTagDto;
 import com.prosilion.superconductor.dto.classified.TokenTagDto;
-import com.prosilion.superconductor.entity.classified.QuoteTagEntity;
-import com.prosilion.superconductor.entity.classified.TokenTagEntity;
-import com.prosilion.superconductor.entity.join.classified.EventEntityQuoteTagEntity;
+import com.prosilion.superconductor.entity.standard.TokenTagEntity;
 import com.prosilion.superconductor.entity.join.classified.EventEntityTokenTagEntity;
-import com.prosilion.superconductor.repository.classified.QuoteTagEntityRepository;
 import com.prosilion.superconductor.repository.classified.TokenTagEntityRepository;
-import com.prosilion.superconductor.repository.join.classified.EventEntityQuoteTagEntityRepository;
 import com.prosilion.superconductor.repository.join.classified.EventEntityTokenTagEntityRepository;
 import jakarta.annotation.Nonnull;
 import lombok.NonNull;
-import nostr.event.tag.QuoteTag;
 import nostr.event.tag.TokenTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

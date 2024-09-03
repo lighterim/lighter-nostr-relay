@@ -1,4 +1,4 @@
-package com.prosilion.superconductor.dto;
+package com.prosilion.superconductor.plugin.tag;
 
 import com.prosilion.superconductor.dto.classified.LimitTagDto;
 import com.prosilion.superconductor.entity.classified.LimitTagEntity;
@@ -54,8 +54,9 @@ public class LimitTagPlugin<
     return (T) join;
   }
 
+
   @Override
-  public Q getStandardTagEntityRepositoryRxR() {
+  public Q getStandardTagEntityRepository() {
     return (Q) limitTagEntityRepository;
   }
 }

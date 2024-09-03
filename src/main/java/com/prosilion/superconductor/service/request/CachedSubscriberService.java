@@ -98,7 +98,6 @@ public class CachedSubscriberService extends AbstractSubscriberService {
     long hash = getHash(
         new Subscriber(
             subscriberId,
-            subscriptionIdMap.remove(subscriberId),
             biMap.remove(subscriberId),
             true));
     subscriberSessionHashComboMap.remove(hash);
@@ -113,7 +112,7 @@ public class CachedSubscriberService extends AbstractSubscriberService {
       biMap.remove(existingKey);
     }
     biMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
-    subscriptionIdMap.put(subscriber.getSubscriberId(), subscriber.getSubscriptionId());
+    subscriptionIdMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
 //    biMap.forcePut(subscriber.getSubscriberId(), subscriber.getSessionId());
 
     long subscriberSessionHash = getHash(subscriber);

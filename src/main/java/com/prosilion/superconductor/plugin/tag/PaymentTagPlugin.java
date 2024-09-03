@@ -1,4 +1,4 @@
-package com.prosilion.superconductor.dto;
+package com.prosilion.superconductor.plugin.tag;
 
 import com.prosilion.superconductor.dto.classified.PaymentTagDto;
 import com.prosilion.superconductor.entity.classified.PaymentTagEntity;
@@ -55,7 +55,7 @@ public class PaymentTagPlugin<
   }
 
   @Override
-  public Q getStandardTagEntityRepositoryRxR() {
+  public Q getStandardTagEntityRepository() {
     return (Q) paymentTagEntityRepository;
   }
 }

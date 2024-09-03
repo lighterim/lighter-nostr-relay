@@ -28,7 +28,6 @@ public class ReqService<T extends ReqMessage, U extends GenericEvent> {
         abstractSubscriberService.save(
             new Subscriber(
                 reqMessage.getSubscriptionId(),
-                reqMessage.getSubscriptionId(),
                 sessionId,
                 true),
             reqMessage.getFiltersList()

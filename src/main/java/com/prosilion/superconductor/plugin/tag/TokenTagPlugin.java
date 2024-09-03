@@ -1,4 +1,4 @@
-package com.prosilion.superconductor.dto;
+package com.prosilion.superconductor.plugin.tag;
 
 import com.prosilion.superconductor.dto.classified.QuoteTagDto;
 import com.prosilion.superconductor.dto.classified.TokenTagDto;
@@ -61,7 +61,7 @@ public class TokenTagPlugin<
   }
 
   @Override
-  public Q getStandardTagEntityRepositoryRxR() {
+  public Q getStandardTagEntityRepository() {
     return (Q) tokenTagEntityRepository;
   }
 }

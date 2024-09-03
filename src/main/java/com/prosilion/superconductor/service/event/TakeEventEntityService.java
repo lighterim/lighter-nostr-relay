@@ -1,7 +1,6 @@
 package com.prosilion.superconductor.service.event;
 
 import com.prosilion.superconductor.dto.EventDto;
-import com.prosilion.superconductor.dto.EventTagPlugin;
 import com.prosilion.superconductor.dto.generic.ElementAttributeDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import com.prosilion.superconductor.entity.EventEntity;

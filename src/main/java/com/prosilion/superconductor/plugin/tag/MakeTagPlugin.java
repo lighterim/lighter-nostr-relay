@@ -1,4 +1,4 @@
-package com.prosilion.superconductor.dto;
+package com.prosilion.superconductor.plugin.tag;
 
 import com.prosilion.superconductor.dto.classified.MakeTagDto;
 import com.prosilion.superconductor.entity.classified.MakeTagEntity;
@@ -55,7 +55,7 @@ public class MakeTagPlugin<
   }
 
   @Override
-  public Q getStandardTagEntityRepositoryRxR() {
+  public Q getStandardTagEntityRepository() {
     return (Q) sideTagEntityRepository;
   }
 }

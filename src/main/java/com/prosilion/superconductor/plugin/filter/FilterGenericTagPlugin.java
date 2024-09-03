@@ -1,7 +1,5 @@
 package com.prosilion.superconductor.plugin.filter;
 
-import com.prosilion.superconductor.entity.join.subscriber.SubscriberFilterGenericTag;
-import com.prosilion.superconductor.plugin.filter.FilterPlugin;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
 import nostr.base.ElementAttribute;
 import nostr.base.GenericTagQuery;
@@ -22,7 +20,7 @@ import java.util.function.BiPredicate;
 import static nostr.event.Kind.TEXT_NOTE;
 
 @Component
-public class FilterGenericTagPlugin<T extends SubscriberFilterGenericTag> implements FilterPlugin<T> {
+public class FilterGenericTagPlugin<T extends GenericTagQuery> implements FilterPlugin<T> {
     private static boolean defaultPredicate(String tagName, List<String> value, GenericEvent event) {
         List<BaseTag> baseTags = event.getTags();
         List<GenericTag> genericTags = baseTags.stream().filter(GenericTag.class::isInstance).map(GenericTag.class::cast).toList();
@@ -53,8 +51,8 @@ public class FilterGenericTagPlugin<T extends SubscriberFilterGenericTag> implem
     @Override
     public BiPredicate<T, AddNostrEvent<GenericEvent>> getBiPredicate() {
         return (t, u) -> {
-            String tagName = t.getGenericTagQuery().getTagName();
-            List<String> value = t.getGenericTagQuery().getValue();
+            String tagName = t.getTagName();
+            List<String> value = t.getValue();
             if (tagName == null || value == null || value.isEmpty()) return true;
 
             GenericEvent event = u.event();
@@ -103,14 +101,14 @@ public class FilterGenericTagPlugin<T extends SubscriberFilterGenericTag> implem
     }
 
     @Override
-    public List<GenericTagQuery> getPluginFilters(Filters filters) {
+    public List<T> getPluginFilters(Filters filters) {
         if (filters.getGenericTagQuery() == null) {
             if (filters.getGenericTagQueryList() == null) {
                 return null;
             }
-            return filters.getGenericTagQueryList();
+            return (List<T>) filters.getGenericTagQueryList();
         } else {
-            return new ArrayList<>(Collections.singleton(filters.getGenericTagQuery()));
+            return (List<T>) new ArrayList<>(Collections.singleton(filters.getGenericTagQuery()));
         }
     }
 }

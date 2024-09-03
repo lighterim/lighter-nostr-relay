@@ -8,15 +8,14 @@ import nostr.event.NIP77Event;
 import nostr.event.impl.Filters;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.GenericTag;
-import nostr.event.tag.CreatedByTag;
-import nostr.event.tag.MakeTag;
-import nostr.event.tag.TakeTag;
+import nostr.event.tag.*;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
 
 @Component
 public class FilterGenericTagPlugin<T extends SubscriberFilterGenericTag> implements FilterPlugin<T>{
@@ -39,27 +38,51 @@ public class FilterGenericTagPlugin<T extends SubscriberFilterGenericTag> implem
                     .map(GenericTag.class::cast)
                     .toList();
 
-            if (tagName.equals("user_pub_key")) {
-                BaseTag takeTag = baseTags.stream().filter(it->it instanceof TakeTag).findFirst().orElse(null);
-                if (takeTag == null)
+            if (tagName.equals("side")) {
+                BaseTag makeTag = baseTags.stream().filter(it->it instanceof MakeTag).findFirst().orElse(null);
+                if (makeTag == null)
                     return false;
 
-                TakeTag take = (TakeTag) takeTag;
-                if (value.contains(take.getMakerPubkey()) || value.contains(take.getTakerPubkey())) {
+                MakeTag make = (MakeTag) makeTag;
+                if (value.contains(make.getSide().getSide())) {
                     return true;
                 }
                 return false;
-            } else if(tagName.equals("trade_event_id")){
-                BaseTag createdByTag = baseTags.stream().filter(it->it instanceof CreatedByTag).findFirst().orElse(null);
-                if (createdByTag == null)
+            } else if(tagName.equals("symbol")){
+                BaseTag tokenTag = baseTags.stream().filter(it->it instanceof TokenTag).findFirst().orElse(null);
+                if (tokenTag == null)
                     return false;
 
-                CreatedByTag createdBy = (CreatedByTag) createdByTag;
-                if (value.contains(createdBy.getTakeIntentEventId()))
+                TokenTag token = (TokenTag) tokenTag;
+                if (value.contains(token.getSymbol())) {
                     return true;
+                }
 
                 return false;
-            } else{
+            } else if(tagName.equals("currency")){
+                BaseTag quoteTag = baseTags.stream().filter(i -> i instanceof QuoteTag).findFirst().orElse(null);
+                if(quoteTag == null){
+                    return false;
+                }
+                QuoteTag quote = (QuoteTag) quoteTag;
+                if(value.contains(quote.getCurrency())){
+                    return true;
+                }
+                return false;
+            } else if(tagName.equals("payment_method")){
+                List<PaymentTag> paymentMethods = baseTags.stream().filter(i->i instanceof PaymentTag).map(PaymentTag.class::cast).toList();
+                if(paymentMethods.isEmpty()){
+                    return false;
+                }
+
+                for(PaymentTag p : paymentMethods){
+                    if(value.contains(p.getMethod())){
+                        return true;
+                    }
+                }
+                return false;
+
+            }else{
                 if (genericTags.isEmpty())
                     return false;
                 List<GenericTag> targetTags = genericTags.stream().filter(it->it.getCode()!=null && it.getCode().equals(tagName)).toList();

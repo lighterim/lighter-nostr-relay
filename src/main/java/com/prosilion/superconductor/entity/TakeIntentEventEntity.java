@@ -127,26 +127,31 @@ public class TakeIntentEventEntity {
             case BUY -> takeEvent = new TakeIntentEvent(
                     id,
                     new PublicKey(buyerPubKey),
+                    nip,
                     List.of(
                             new TakeTag(side, makeIntentEventId, sellerId, sellerPubKey, volume, buyerId, buyerPubKey),
                             new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO),
                             new QuoteTag(price, currency, usdRate),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo)
                     ),
+                    eventIdString,
                     content
             );
             case SELL -> takeEvent = new TakeIntentEvent(
                     id,
                     new PublicKey(sellerPubKey),
+                    nip,
                     List.of(
                             new TakeTag(side, makeIntentEventId, buyerId, buyerPubKey, volume, sellerId, sellerPubKey),
                             new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO),
                             new QuoteTag(price, currency, usdRate),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo)
                     ),
+                    eventIdString,
                     content
             );
         }
+
         return (T)takeEvent;
     }
 }

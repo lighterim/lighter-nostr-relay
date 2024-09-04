@@ -12,18 +12,15 @@ import nostr.base.PublicKey;
 import nostr.event.Kind;
 import nostr.event.impl.*;
 import nostr.event.message.EventMessage;
-import nostr.event.tag.MakeTag;
-import nostr.event.tag.QuoteTag;
-import nostr.event.tag.TakeTag;
-import nostr.event.tag.TokenTag;
+import nostr.event.tag.*;
 import nostr.event.util.Nip05Validator;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 
@@ -37,6 +34,10 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     private int nip05CacheMaxSize;
     @Value("${nip05.validator.cache.minutes:5}")
     private int nip05CacheMinutes;
+    @Value("${notice.lighter.im.pubkey:aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984}")
+    private String noticePusherPubkey;
+    @Value("${check.take:true}")
+    private boolean isSkipCheckTake;
 
     @Autowired
     public EventService(NotifierService<GenericEvent> notifierService, RedisCache<GenericEvent> redisCache) {
@@ -65,7 +66,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         log.info("processing incoming TEXT_NOTE: [{}]", eventMessage);
         GenericEvent event = (GenericEvent) eventMessage.getEvent();
 
-//        validateEventForwarding(event);
+        validateEventForwarding(event);
 
         TextNoteEvent textNoteEvent = new TextNoteEvent(
                 event.getPubKey(),
@@ -95,7 +96,26 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         }
     }
 
+    private void resetCreatedByTagForNoticePusher(TradeMessageEvent tradeMessageEvent) {
+        CreatedByTag createdBy = tradeMessageEvent.getCreatedByTag();
+        if (!isValidNip05(createdBy.getNip05(), createdBy.getPubkey())) {
+            // 2. taker nip05 & pubkey
+            log.warn("invalid nip05: {}, {}", createdBy.getNip05(), createdBy.getPubkey());
+            throw new RuntimeException(String.format("invalid nip05: %s, %s", createdBy.getNip05(), createdBy.getPubkey()));
+        }
+        LedgerTag ledger = tradeMessageEvent.getLedgerTag();
+        if (ledger != null && createdBy.getPubkey().equals(noticePusherPubkey) && !StringUtils.hasText(createdBy.getTakeIntentEventId()) && createdBy.getTradeId() > 0L) {
+            TakeIntentEvent takeIntent = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, createdBy.getTradeId());
+            tradeMessageEvent.setCreatedByTag(
+                    CreatedByTag.builder().takeIntentEventId(takeIntent.getId()).nip05(createdBy.getNip05()).pubkey(createdBy.getPubkey())
+                    .tradeId(createdBy.getTradeId()).build()
+            );
+        }
+    }
+
     private void validateTradeMessageEvent(TradeMessageEvent tradeMessageEvent) {
+        tradeMessageEvent.validate();
+        resetCreatedByTagForNoticePusher(tradeMessageEvent);
     }
 
     private void validateTakeIntentEvent(TakeIntentEvent takeIntentEvent) {
@@ -113,6 +133,9 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             // 3. make.intent & take.make
             String makeEventId = take.getIntentEventId();
             GenericEvent event = redisCache.getEventEntityByEventId(Kind.POST_INTENT, makeEventId);
+            if(isSkipCheckTake){
+                return;
+            }
             if (event instanceof PostIntentEvent postIntentEvent) {
                 MakeTag make = postIntentEvent.getSideTag();
                 // 3.1 nip05, pubkey
@@ -155,9 +178,14 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     }
 
     @NotNull
-    private Boolean isValidNip05(String nip05, String pubkey) throws ExecutionException {
-//    return nip05ValidatorCache.get(Pair.of(nip05, pubkey));
-        return Boolean.TRUE;
+    private Boolean isValidNip05(String nip05, String pubkey) {
+        try {
+//            return nip05ValidatorCache.get(Pair.of(nip05, pubkey));
+            return Boolean.TRUE;
+        } catch (Exception ex) {
+            log.warn(String.format("%s: %s, %s", ex.getMessage(), nip05, pubkey), ex);
+            throw new RuntimeException(ex.getMessage(), ex);
+        }
     }
 
     private void validatePostIntentEvent(PostIntentEvent postIntentEvent) {

@@ -111,4 +111,15 @@ public class RedisCache<T extends GenericEvent> {
         };
         return (T)event;
     }
+
+    public T getEventEntityById(Kind kind, Long id){
+        GenericEvent event = switch (kind){
+            case POST_INTENT -> postEventEntityService.getEventById(id);
+            case TAKE_INTENT -> takeEventEntityService.getEventById(id);
+            case TRADE_MESSAGE -> tradeMessageEntityService.getEventById(id);
+            default -> eventEntityService.getEventById(id);
+
+        };
+        return (T)event;
+    }
 }

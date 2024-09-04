@@ -4,10 +4,12 @@ import com.prosilion.superconductor.entity.join.classified.EventEntityMakeTagEnt
 import com.prosilion.superconductor.repository.join.EventEntityAbstractTagEntityRepository;
 import org.springframework.stereotype.Repository;
 
+import static nostr.event.NIP77Event.MAKE_TAG_CODE;
+
 @Repository
-public interface EventEntitySideTagEntityRepository<T extends EventEntityMakeTagEntity> extends EventEntityAbstractTagEntityRepository<T> {
+public interface EventEntityMakeTagEntityRepository<T extends EventEntityMakeTagEntity> extends EventEntityAbstractTagEntityRepository<T> {
 
     default String getCode(){
-        return "side";
+        return MAKE_TAG_CODE;
     }
 }

@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "event-token_tag-join")
+@Table(name = "intent_token_tag_join")
 public class EventEntityTokenTagEntity extends EventEntityAbstractTagEntity {
 
     private Long tokenTagId;

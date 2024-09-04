@@ -11,6 +11,8 @@ import nostr.event.tag.LimitTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import static nostr.event.NIP77Event.LIMIT_TAG_CODE;
+
 @Component
 public class LimitTagPlugin<
     P extends LimitTag,
@@ -31,7 +33,7 @@ public class LimitTagPlugin<
 
   @Override
   public String getCode() {
-    return "limit";
+    return LIMIT_TAG_CODE;
   }
 
   @Override

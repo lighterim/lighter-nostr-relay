@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "event-make_tag-join")
+@Table(name = "intent_make_tag_join")
 public class EventEntityMakeTagEntity extends EventEntityAbstractTagEntity {
 
     private Long makeTagId;

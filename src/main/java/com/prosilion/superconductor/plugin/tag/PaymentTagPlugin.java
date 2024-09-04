@@ -2,7 +2,7 @@ package com.prosilion.superconductor.plugin.tag;
 
 import com.prosilion.superconductor.dto.classified.PaymentTagDto;
 import com.prosilion.superconductor.entity.standard.PaymentTagEntity;
-import com.prosilion.superconductor.entity.join.classified.EventEntityPaymentTagEntity;
+import com.prosilion.superconductor.entity.join.classified.TradeMessageEntityLedgerTagEntity;
 import com.prosilion.superconductor.repository.classified.PaymentTagEntityRepository;
 import com.prosilion.superconductor.repository.join.classified.EventEntityPaymentTagEntityRepository;
 import jakarta.annotation.Nonnull;
@@ -11,12 +11,14 @@ import nostr.event.tag.PaymentTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import static nostr.event.NIP77Event.PAYMENT_TAG_CODE;
+
 @Component
 public class PaymentTagPlugin<
     P extends PaymentTag,
     Q extends PaymentTagEntityRepository<R>,
     R extends PaymentTagEntity,
-    S extends EventEntityPaymentTagEntity,
+    S extends TradeMessageEntityLedgerTagEntity,
     T extends EventEntityPaymentTagEntityRepository<S>>
     implements TagPlugin<P, Q, R, S, T> {
 
@@ -31,7 +33,7 @@ public class PaymentTagPlugin<
 
   @Override
   public String getCode() {
-    return "payment";
+    return PAYMENT_TAG_CODE;
   }
 
   @Override
@@ -46,7 +48,7 @@ public class PaymentTagPlugin<
 
   @Override
   public S getEventEntityTagEntity(Long eventId, Long paymentTagId) {
-    return (S) new EventEntityPaymentTagEntity(eventId, paymentTagId);
+    return (S) new TradeMessageEntityLedgerTagEntity(eventId, paymentTagId);
   }
 
   @Override

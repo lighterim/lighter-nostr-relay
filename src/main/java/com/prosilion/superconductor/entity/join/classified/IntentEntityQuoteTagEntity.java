@@ -11,14 +11,14 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "intent_limit_tag_join")
-public class EventEntityLimitTagEntity extends EventEntityAbstractTagEntity {
+@Table(name = "intent_quote_tag_join")
+public class IntentEntityQuoteTagEntity extends EventEntityAbstractTagEntity {
 
-    private Long limitTagId;
+    private Long quoteTagId;
 
-    public <T extends EventEntityAbstractTagEntity> EventEntityLimitTagEntity(Long eventId, Long limitTagId){
+    public <T extends EventEntityAbstractTagEntity> IntentEntityQuoteTagEntity(Long eventId, Long quoteTagId){
         super.setEventId(eventId);
-        this.limitTagId = limitTagId;
+        this.quoteTagId = quoteTagId;
     }
 
 }

@@ -11,6 +11,8 @@ import nostr.event.tag.TokenTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import static nostr.event.NIP77Event.TOKEN_TAG_CODE;
+
 @Component
 public class TokenTagPlugin<
     P extends TokenTag,
@@ -31,7 +33,7 @@ public class TokenTagPlugin<
 
   @Override
   public String getCode() {
-    return "token";
+    return TOKEN_TAG_CODE;
   }
 
   @Override

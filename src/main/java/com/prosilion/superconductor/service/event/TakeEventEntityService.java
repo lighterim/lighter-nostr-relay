@@ -3,38 +3,28 @@ package com.prosilion.superconductor.service.event;
 import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.dto.generic.ElementAttributeDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
-import com.prosilion.superconductor.entity.EventEntity;
 import com.prosilion.superconductor.entity.TakeIntentEventEntity;
 import com.prosilion.superconductor.entity.join.EventEntityAbstractTagEntity;
-import com.prosilion.superconductor.entity.standard.EventTagEntity;
 import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
-import com.prosilion.superconductor.repository.EventEntityRepository;
 import com.prosilion.superconductor.repository.TakeEventEntityRepository;
 import com.prosilion.superconductor.repository.join.EventEntityAbstractTagEntityRepository;
 import com.prosilion.superconductor.service.event.join.generic.GenericTagEntitiesService;
-import com.prosilion.superconductor.util.TagUtil;
 import jakarta.persistence.NoResultException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import nostr.base.ElementAttribute;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
-import nostr.event.Side;
 import nostr.event.impl.GenericTag;
 import nostr.event.impl.TakeIntentEvent;
-import nostr.event.impl.TradeMessageEvent;
-import nostr.event.tag.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static nostr.event.NIP77Event.*;
-import static nostr.event.NIP77Event.QUOTE_TAG_CODE;
 
 @Slf4j
 @Service
@@ -52,6 +42,7 @@ public class TakeEventEntityService implements EventEntityServiceIF<TakeIntentEv
     private final GenericTagEntitiesService genericTagEntitiesService;
 
     private final Set<String> eventFieldNames;
+
     @Autowired
     public TakeEventEntityService(
             ConcreteTagEntitiesService<
@@ -77,8 +68,8 @@ public class TakeEventEntityService implements EventEntityServiceIF<TakeIntentEv
         TakeIntentEventEntity savedEntity = Optional.of(takeEventEntityRepository.save(EventDto.convertToEntity(event))).orElseThrow(NoResultException::new);
         // remove key tag from INTENT event fields.
         List<BaseTag> tags = event.getTags().stream().filter(t -> !eventFieldNames.contains(t.getCode())).toList();
-        concreteTagEntitiesService.saveTags(savedEntity.getId(), event.getTags());
-        genericTagEntitiesService.saveGenericTags(savedEntity.getId(), event.getTags());
+        concreteTagEntitiesService.saveTags(savedEntity.getId(), tags);
+        genericTagEntitiesService.saveGenericTags(savedEntity.getId(), tags);
         return savedEntity.getId();
     }
 

@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "event-payment_tag-join")
+@Table(name = "intent_payment_tag_join")
 public class EventEntityPaymentTagEntity extends EventEntityAbstractTagEntity {
 
     private Long paymentTagId;

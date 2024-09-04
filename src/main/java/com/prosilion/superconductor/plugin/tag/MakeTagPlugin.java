@@ -4,12 +4,14 @@ import com.prosilion.superconductor.dto.classified.MakeTagDto;
 import com.prosilion.superconductor.entity.standard.MakeTagEntity;
 import com.prosilion.superconductor.entity.join.classified.EventEntityMakeTagEntity;
 import com.prosilion.superconductor.repository.classified.MakeTagEntityRepository;
-import com.prosilion.superconductor.repository.join.classified.EventEntitySideTagEntityRepository;
+import com.prosilion.superconductor.repository.join.classified.EventEntityMakeTagEntityRepository;
 import jakarta.annotation.Nonnull;
 import lombok.NonNull;
 import nostr.event.tag.MakeTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import static nostr.event.NIP77Event.MAKE_TAG_CODE;
 
 @Component
 public class MakeTagPlugin<
@@ -17,21 +19,21 @@ public class MakeTagPlugin<
     Q extends MakeTagEntityRepository<R>,
     R extends MakeTagEntity,
     S extends EventEntityMakeTagEntity,
-    T extends EventEntitySideTagEntityRepository<S>>
+    T extends EventEntityMakeTagEntityRepository<S>>
     implements TagPlugin<P, Q, R, S, T> {
 
   private final MakeTagEntityRepository<R> sideTagEntityRepository;
-  private final EventEntitySideTagEntityRepository<S> join;
+  private final EventEntityMakeTagEntityRepository<S> join;
 
   @Autowired
-  public MakeTagPlugin(@Nonnull MakeTagEntityRepository<R> sideTagEntityRepository, @NonNull EventEntitySideTagEntityRepository<S> join) {
+  public MakeTagPlugin(@Nonnull MakeTagEntityRepository<R> sideTagEntityRepository, @NonNull EventEntityMakeTagEntityRepository<S> join) {
     this.sideTagEntityRepository = sideTagEntityRepository;
     this.join = join;
   }
 
   @Override
   public String getCode() {
-    return "side";
+    return MAKE_TAG_CODE;
   }
 
   @Override

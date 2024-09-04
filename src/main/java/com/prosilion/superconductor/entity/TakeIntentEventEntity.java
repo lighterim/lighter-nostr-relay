@@ -125,6 +125,7 @@ public class TakeIntentEventEntity {
         TakeIntentEvent takeEvent = null;
         switch (side){
             case BUY -> takeEvent = new TakeIntentEvent(
+                    id,
                     new PublicKey(buyerPubKey),
                     List.of(
                             new TakeTag(side, makeIntentEventId, sellerId, sellerPubKey, volume, buyerId, buyerPubKey),
@@ -135,6 +136,7 @@ public class TakeIntentEventEntity {
                     content
             );
             case SELL -> takeEvent = new TakeIntentEvent(
+                    id,
                     new PublicKey(sellerPubKey),
                     List.of(
                             new TakeTag(side, makeIntentEventId, buyerId, buyerPubKey, volume, sellerId, sellerPubKey),

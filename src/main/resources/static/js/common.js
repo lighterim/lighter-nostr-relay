@@ -67,6 +67,16 @@ async function createDigest(message) {
         .join(""); // convert bytes to hex string
 }
 
+function sendContent(id_hash) {
+    console.log("\nsending content...\n\n");
+    console.log("sending w/ date now: " + dateNow);
+    currentSubscriptonId = id_hash;
+    let localjsonstring = replaceHash(id_hash);
+    console.log(localjsonstring);
+    console.log('\n\n');
+    ws.send(localjsonstring);
+}
+
 function sendClose() {
     let localjsonstring = replaceCloseHash(currentSubscriptonId);
     console.log(localjsonstring);
@@ -94,6 +104,7 @@ $(function () {
     $("#connect").click(() => connect());
     $("#disconnect").click(() => disconnect());
     $("#reqclose").click(() => sendClose());
+    $("#send").click(() => hashThenSend());
 });
 
 function syntaxHighlight(json) {

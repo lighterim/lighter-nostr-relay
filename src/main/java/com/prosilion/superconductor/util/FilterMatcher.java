@@ -74,8 +74,11 @@ public class FilterMatcher {
 //        .map(result -> eventToCheck)
 //        .collect(Collectors.toSet());
 
-    boolean allMatch = combos.stream().allMatch(combo -> filterTypeMatchesEventAttribute(combo, eventToCheck));
-    return allMatch ? Set.of(eventToCheck) : Set.of();
+//    boolean allMatch = combos.stream().allMatch(combo -> filterTypeMatchesEventAttribute(combo, eventToCheck));
+//    return allMatch ? Set.of(eventToCheck) : Set.of();
+
+    boolean anyMatch = combos.stream().anyMatch(combo -> filterTypeMatchesEventAttribute(combo, eventToCheck));
+    return anyMatch ? Set.of(eventToCheck) : Set.of();
   }
 
   private <U> boolean filterTypeMatchesEventAttribute(Combo<U> combo, AddNostrEvent<GenericEvent> eventToCheck) {

@@ -1,4 +1,5 @@
 function hashThenSend() {
+    console.log('11111')
     const concat = [
         '0',
         Date.now(),

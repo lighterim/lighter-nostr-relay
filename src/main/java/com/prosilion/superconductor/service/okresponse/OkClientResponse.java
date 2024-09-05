@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import nostr.api.factory.impl.NIP20Impl;
-import nostr.event.impl.FailedEvent;
 import nostr.event.impl.GenericEvent;
 import org.springframework.web.socket.TextMessage;
 
@@ -19,13 +18,6 @@ public class OkClientResponse {
         this.sessionId = sessionId;
         this.okResponseMessage = new TextMessage(
                 new NIP20Impl.OkMessageFactory(event, true, "").create().encode()
-        );
-    }
-
-    public OkClientResponse(@NonNull String sessionId, @NonNull FailedEvent event) throws JsonProcessingException {
-        this.sessionId = sessionId;
-        this.okResponseMessage = new TextMessage(
-                new NIP20Impl.OkMessageFactory(event, false, event.getMessage()).create().encode()
         );
     }
 }

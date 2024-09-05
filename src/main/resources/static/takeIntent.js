@@ -30,7 +30,7 @@ function replaceHash(id_hash) {
             {
                 'id': id_hash,
                 'kind': parseInt($("#kind").val(), 10),
-                'content': "",
+                'content': "take intent",
                 'tags': [
                     ['take','buy', $("#eventId").val(), $("#userId").val(), $("#pubkey").val(), $("#volume").val(), "seller1@lighter.im", $("#pubkey").val()],
                     ["token", "XRD", "radixDLT", "stokenet", "resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc", "1000"],

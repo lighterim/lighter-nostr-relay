@@ -22,7 +22,7 @@ import static nostr.event.NIP77Event.LEDGER_TAG_CODE;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "ledger_tag")
+@Table(name = "trade_message_ledger_tag")
 public class LedgerTagEntity extends AbstractTagEntity {
 
     private String chain;

@@ -10,7 +10,7 @@ import nostr.event.tag.EventTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("eventTagPlugin")
 public class EventTagPlugin<
     P extends EventTag,
     Q extends EventTagEntityRepository<R>,

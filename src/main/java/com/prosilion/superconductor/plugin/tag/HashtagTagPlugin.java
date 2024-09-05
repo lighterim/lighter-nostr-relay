@@ -11,7 +11,7 @@ import nostr.event.tag.HashtagTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("hashtagTagPlugin")
 public class HashtagTagPlugin<
     P extends HashtagTag,
     Q extends HashtagTagEntityRepository<R>,

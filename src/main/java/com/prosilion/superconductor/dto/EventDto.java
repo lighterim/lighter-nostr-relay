@@ -1,11 +1,9 @@
 package com.prosilion.superconductor.dto;
 
 import com.prosilion.superconductor.entity.EventEntity;
-import com.prosilion.superconductor.entity.PostIntentEventEntity;
+import com.prosilion.superconductor.entity.IntentEventEntity;
 import com.prosilion.superconductor.entity.TakeIntentEventEntity;
 import com.prosilion.superconductor.entity.TradeMessageEntity;
-import com.prosilion.superconductor.service.event.TradeMessageEntityService;
-import nostr.api.NIP77;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
 import nostr.event.*;
@@ -13,7 +11,6 @@ import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.impl.TradeMessageEvent;
 import nostr.event.tag.*;
-import nostr.util.NostrUtil;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -33,13 +30,13 @@ public class EventDto extends NIP01Event {
     return new EventEntity(getId(), getKind(), getNip(), getPubKey().toString(), getCreatedAt(), getSignature().toString(), getContent());
   }
 
-  public static PostIntentEventEntity convertToEntity(PostIntentEvent event){
+  public static IntentEventEntity convertToEntity(PostIntentEvent event){
     MakeTag make = event.getSideTag();
     TokenTag token = event.getTokenTag();
     QuoteTag quote = event.getQuoteTag();
     LimitTag limit = event.getLimitTag();
 
-    return new PostIntentEventEntity(
+    return new IntentEventEntity(
             make.getSide().getSide(),
             make.getMakerNip05(),
             event.getPubKey().toString(),

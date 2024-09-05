@@ -39,6 +39,7 @@ public class LighterController<T extends BaseMessage> {
             return resp;
         }
         catch (Exception ex){
+            log.warn(ex.getMessage(), ex);
             Map<String, String> resp = new HashMap<>();
             resp.put("status", "1");
             resp.put("message", ex.getMessage());

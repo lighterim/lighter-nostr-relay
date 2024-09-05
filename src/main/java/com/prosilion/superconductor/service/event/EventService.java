@@ -172,6 +172,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             log.warn("unknown event id: {}", makeEventId);
             throw new RuntimeException(String.format("unknown event id: %s", makeEventId));
         } catch (Throwable e) {
+            log.warn("exception on validate:"+e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
         }
 

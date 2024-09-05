@@ -135,7 +135,8 @@ public class TakeIntentEventEntity {
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo)
                     ),
                     eventIdString,
-                    content
+                    content,
+                    createAt
             );
             case SELL -> takeEvent = new TakeIntentEvent(
                     id,
@@ -148,7 +149,8 @@ public class TakeIntentEventEntity {
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo)
                     ),
                     eventIdString,
-                    content
+                    content,
+                    createAt
             );
         }
 

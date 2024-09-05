@@ -16,6 +16,7 @@ import nostr.event.tag.MakeTag;
 import nostr.event.tag.QuoteTag;
 import nostr.event.tag.TokenTag;
 import nostr.util.NostrUtil;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -25,8 +26,13 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "intent")
-public class PostIntentEventEntity {
+@Table(name = "intent", indexes={
+        @Index(name="IX_INTENT_EVENT_ID_STRING", columnList = "eventIdString", unique = true),
+        @Index(name="IX_INTENT_SYMBOL", columnList = "symbol" ),
+        @Index(name="IX_INTENT_SIDE", columnList = "side"),
+        @Index(name="IX_INTENT_QUOTE_CURRENCY", columnList = "quoteCurrency")
+})
+public class IntentEventEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -62,15 +68,15 @@ public class PostIntentEventEntity {
     @Lob
     private String content;
 
-    /**  **/
+    /** relays **/
     @Transient
     private List<BaseTag> tags;
 
-    public PostIntentEventEntity(String side, String nip05, String pubkey,
-                                 String symbol, String chain, String network, String address, BigDecimal amount,
-                                 BigDecimal price, String quoteCurrency,
-                                 String currency, BigDecimal lowLimit, BigDecimal upLimit,
-                                 String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content) {
+    public IntentEventEntity(String side, String nip05, String pubkey,
+                             String symbol, String chain, String network, String address, BigDecimal amount,
+                             BigDecimal price, String quoteCurrency,
+                             String currency, BigDecimal lowLimit, BigDecimal upLimit,
+                             String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content) {
         this.side = side;
         this.nip05 = nip05;
         this.pubkey = pubkey;
@@ -98,24 +104,26 @@ public class PostIntentEventEntity {
         event.setPubKey(new PublicKey(pubkey));
         event.setId(eventIdString);
         event.setKind(Kind.POST_INTENT.getValue());
-        event.setNip(77);
+        event.setNip(nip);
         event.setCreatedAt(createdAt);
         event.setContent(content);
+
         byte[] rawData = NostrUtil.hexToBytes(signature);
         Signature signature = new Signature();
         signature.setRawData(rawData);
         event.setSignature(signature);
 
+        List<BaseTag> tagList = new ArrayList<>(tags);
         MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey);
         TokenTag token = new TokenTag(symbol, chain, network, address, amount);
         QuoteTag quote = new QuoteTag(price, quoteCurrency, BigDecimal.ZERO);
-        LimitTag limit = new LimitTag(currency, lowLimit, upLimit);
-
-        List<BaseTag> tagList = new ArrayList<>(tags);
+        if(StringUtils.hasLength(currency)) {
+            LimitTag limit = new LimitTag(currency, lowLimit, upLimit);
+            tagList.add(limit);
+        }
         tagList.add(make);
         tagList.add(token);
         tagList.add(quote);
-        tagList.add(limit);
 
         event.setTags(tagList);
 

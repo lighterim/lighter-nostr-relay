@@ -5,9 +5,11 @@ import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import com.prosilion.superconductor.entity.TradeMessageEntity;
 import com.prosilion.superconductor.entity.join.EventEntityAbstractTagEntity;
+import com.prosilion.superconductor.entity.join.TradeMessageEntityAbstractTagEntity;
 import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
 import com.prosilion.superconductor.repository.TradeMessageEntityRepository;
 import com.prosilion.superconductor.repository.join.EventEntityAbstractTagEntityRepository;
+import com.prosilion.superconductor.repository.join.TradeMessageEntityAbstractTagEntityRepository;
 import jakarta.persistence.NoResultException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -29,23 +31,23 @@ import static nostr.event.NIP77Event.QUOTE_TAG_CODE;
 public class TradeMessageEntityService implements EventEntityServiceIF<TradeMessageEvent> {
 
     private final TradeMessageEntityRepository tradeMessageEntityRepository;
-    private final ConcreteTagEntitiesService<
+    private final TradeMessageConcreteTagEntitiesService<
             BaseTag,
             AbstractTagEntityRepository<AbstractTagEntity>,
             AbstractTagEntity,
-            EventEntityAbstractTagEntity,
-            EventEntityAbstractTagEntityRepository<EventEntityAbstractTagEntity>>
+            TradeMessageEntityAbstractTagEntity,
+            TradeMessageEntityAbstractTagEntityRepository<TradeMessageEntityAbstractTagEntity>>
             concreteTagEntitiesService;
     private final Set<String> eventFieldNames;
 
     @Autowired
     public TradeMessageEntityService(
-            ConcreteTagEntitiesService<
+            TradeMessageConcreteTagEntitiesService<
                     BaseTag,
                     AbstractTagEntityRepository<AbstractTagEntity>,
                     AbstractTagEntity,
-                    EventEntityAbstractTagEntity,
-                    EventEntityAbstractTagEntityRepository<EventEntityAbstractTagEntity>> concreteTagEntitiesService,
+                    TradeMessageEntityAbstractTagEntity,
+                    TradeMessageEntityAbstractTagEntityRepository<TradeMessageEntityAbstractTagEntity>> concreteTagEntitiesService,
             TradeMessageEntityRepository tradeMessageEntityRepository) {
         this.concreteTagEntitiesService = concreteTagEntitiesService;
         this.tradeMessageEntityRepository = tradeMessageEntityRepository;

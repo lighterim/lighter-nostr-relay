@@ -18,7 +18,7 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "payment_tag")
+@Table(name = "intent_payment_tag")
 public class PaymentTagEntity extends AbstractTagEntity {
 
     private String method;

@@ -1,10 +1,10 @@
 package com.prosilion.superconductor.plugin.tag;
 
 import com.prosilion.superconductor.dto.classified.PaymentTagDto;
+import com.prosilion.superconductor.entity.join.classified.IntentEntityPaymentTagEntity;
 import com.prosilion.superconductor.entity.standard.PaymentTagEntity;
-import com.prosilion.superconductor.entity.join.classified.TradeMessageEntityLedgerTagEntity;
 import com.prosilion.superconductor.repository.classified.PaymentTagEntityRepository;
-import com.prosilion.superconductor.repository.join.classified.EventEntityPaymentTagEntityRepository;
+import com.prosilion.superconductor.repository.join.classified.IntentEntityPaymentTagEntityRepository;
 import jakarta.annotation.Nonnull;
 import lombok.NonNull;
 import nostr.event.tag.PaymentTag;
@@ -18,15 +18,15 @@ public class PaymentTagPlugin<
     P extends PaymentTag,
     Q extends PaymentTagEntityRepository<R>,
     R extends PaymentTagEntity,
-    S extends TradeMessageEntityLedgerTagEntity,
-    T extends EventEntityPaymentTagEntityRepository<S>>
-    implements TagPlugin<P, Q, R, S, T> {
+    S extends IntentEntityPaymentTagEntity,
+    T extends IntentEntityPaymentTagEntityRepository<S>>
+    implements IntentTagPlugin<P, Q, R, S, T> {
 
   private final PaymentTagEntityRepository<R> paymentTagEntityRepository;
-  private final EventEntityPaymentTagEntityRepository<S> join;
+  private final IntentEntityPaymentTagEntityRepository<S> join;
 
   @Autowired
-  public PaymentTagPlugin(@Nonnull PaymentTagEntityRepository<R> paymentTagEntityRepository, @NonNull EventEntityPaymentTagEntityRepository<S> join) {
+  public PaymentTagPlugin(@Nonnull PaymentTagEntityRepository<R> paymentTagEntityRepository, @NonNull IntentEntityPaymentTagEntityRepository<S> join) {
     this.paymentTagEntityRepository = paymentTagEntityRepository;
     this.join = join;
   }
@@ -48,7 +48,7 @@ public class PaymentTagPlugin<
 
   @Override
   public S getEventEntityTagEntity(Long eventId, Long paymentTagId) {
-    return (S) new TradeMessageEntityLedgerTagEntity(eventId, paymentTagId);
+    return (S) new IntentEntityPaymentTagEntity(eventId, paymentTagId);
   }
 
   @Override

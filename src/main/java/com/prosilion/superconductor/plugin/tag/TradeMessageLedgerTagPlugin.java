@@ -14,19 +14,19 @@ import org.springframework.stereotype.Component;
 import static nostr.event.NIP77Event.LEDGER_TAG_CODE;
 
 @Component
-public class LedgerTagPlugin<
+public class TradeMessageLedgerTagPlugin<
     P extends LedgerTag,
     Q extends LedgerTagEntityRepository<R>,
     R extends LedgerTagEntity,
     S extends TradeMessageEntityLedgerTagEntity,
     T extends TradeMessageEntityLedgerTagEntityRepository<S>>
-    implements TagPlugin<P, Q, R, S, T> {
+    implements TradeMessageTagPlugin<P, Q, R, S, T> {
 
   private final LedgerTagEntityRepository<R> ledgerTagEntityRepository;
   private final TradeMessageEntityLedgerTagEntityRepository<S> join;
 
   @Autowired
-  public LedgerTagPlugin(@Nonnull LedgerTagEntityRepository<R> paymentTagEntityRepository, @NonNull TradeMessageEntityLedgerTagEntityRepository<S> join) {
+  public TradeMessageLedgerTagPlugin(@Nonnull LedgerTagEntityRepository<R> paymentTagEntityRepository, @NonNull TradeMessageEntityLedgerTagEntityRepository<S> join) {
     this.ledgerTagEntityRepository = paymentTagEntityRepository;
     this.join = join;
   }

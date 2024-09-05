@@ -11,7 +11,7 @@ import nostr.event.tag.GeohashTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("geohashTagPlugin")
 public class GeohashTagPlugin<
     P extends GeohashTag,
     Q extends GeohashTagEntityRepository<R>,

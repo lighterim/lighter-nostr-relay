@@ -25,10 +25,13 @@ function replaceHash(id_hash) {
         + "\"" + id_hash + "\","
         + JSON.stringify(
             {
-                'kinds': [30078],
-                'genericTagQueryList': [
-                    {'user_pub_key': $('#pubKey').val() ? [].concat($('#pubKey').val().split(",")) : []}
-                ]
+                'compositionQuery': {
+                    'kind': 30078,
+                    'anyMatchList': [
+                        {'pubkey': $('#pubKey').val() ? [].concat($('#pubKey').val().split(",")) : []},
+                        {'nip05': []}
+                    ]
+                }
             }
         )
         + "]";

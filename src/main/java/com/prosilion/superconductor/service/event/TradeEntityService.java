@@ -18,7 +18,9 @@ import nostr.event.impl.GenericTag;
 import nostr.event.impl.TakeIntentEvent;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,7 +30,7 @@ import static nostr.event.NIP77Event.*;
 
 @Slf4j
 @Service
-public class TakeEventEntityService implements EventEntityServiceIF<TakeIntentEvent> {
+public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent> {
 
     private final TakeEventEntityRepository takeEventEntityRepository;
 
@@ -43,8 +45,11 @@ public class TakeEventEntityService implements EventEntityServiceIF<TakeIntentEv
 
     private final Set<String> eventFieldNames;
 
+    @Value("${take.event.default.content:be leaved with empty.}")
+    private String defaultContent;
+
     @Autowired
-    public TakeEventEntityService(
+    public TradeEntityService(
             ConcreteTagEntitiesService<
                     BaseTag,
                     AbstractTagEntityRepository<AbstractTagEntity>,
@@ -65,6 +70,9 @@ public class TakeEventEntityService implements EventEntityServiceIF<TakeIntentEv
     }
 
     public Long saveEventEntity(@NonNull TakeIntentEvent event) {
+        if(!StringUtils.hasText(event.getContent()) && StringUtils.hasText(defaultContent)){
+            event.setContent(defaultContent);
+        }
         TakeIntentEventEntity savedEntity = Optional.of(takeEventEntityRepository.save(EventDto.convertToEntity(event))).orElseThrow(NoResultException::new);
         // remove key tag from INTENT event fields.
         List<BaseTag> tags = event.getTags().stream().filter(t -> !eventFieldNames.contains(t.getCode())).toList();

@@ -1,35 +1,29 @@
 package com.prosilion.superconductor.service.event;
 
 import com.prosilion.superconductor.dto.EventDto;
-import com.prosilion.superconductor.dto.generic.ElementAttributeDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import com.prosilion.superconductor.entity.IntentEventEntity;
-import com.prosilion.superconductor.entity.join.EventEntityAbstractTagEntity;
 import com.prosilion.superconductor.entity.join.IntentEntityAbstractTagEntity;
 import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
 import com.prosilion.superconductor.repository.PostEventEntityRepository;
-import com.prosilion.superconductor.repository.join.EventEntityAbstractTagEntityRepository;
 import com.prosilion.superconductor.repository.join.IntentEntityAbstractTagEntityRepository;
-import com.prosilion.superconductor.service.event.join.generic.GenericTagEntitiesService;
 import jakarta.persistence.NoResultException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
-import nostr.event.impl.GenericTag;
 import nostr.event.impl.PostIntentEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static nostr.event.NIP77Event.*;
 
 @Slf4j
 @Service
-public class PostEventEntityService implements EventEntityServiceIF<PostIntentEvent> {
+public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent> {
 
     private final IntentConcreteTagEntitiesService<
             BaseTag,
@@ -46,7 +40,7 @@ public class PostEventEntityService implements EventEntityServiceIF<PostIntentEv
     private final Set<String> eventFieldNames;
 
     @Autowired
-    public PostEventEntityService(
+    public IntentEntityService(
             IntentConcreteTagEntitiesService<
                     BaseTag,
                     AbstractTagEntityRepository<AbstractTagEntity>,

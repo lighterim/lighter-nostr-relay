@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -20,49 +19,46 @@ import static java.util.Objects.nonNull;
 
 @Component
 public class FilterMatcher {
-  private final List<FilterPlugin<AbstractFilterType>> filterPlugins;
+    private final List<FilterPlugin<AbstractFilterType>> filterPlugins;
 
-  @Autowired
-  public FilterMatcher(List<FilterPlugin<AbstractFilterType>> filterPlugins) {
-    this.filterPlugins = filterPlugins;
-  }
+    @Autowired
+    public FilterMatcher(List<FilterPlugin<AbstractFilterType>> filterPlugins) {
+        this.filterPlugins = filterPlugins;
+    }
 
-  public <U> List<AddNostrEvent<GenericEvent>> intersectFilterMatches(Filters filters, AddNostrEvent<GenericEvent> eventToCheck) {
-    List<FilterMatcher.Combo<U>> combos = new ArrayList<>();
+    public <U> List<AddNostrEvent<GenericEvent>> intersectFilterMatches(Filters filters, AddNostrEvent<GenericEvent> eventToCheck) {
+        List<FilterMatcher.Combo<U>> combos = new ArrayList<>();
 
-    filterPlugins.forEach(filterPlugin ->
-        combos.add(new Combo(Optional.ofNullable(
-                filterPlugin.getPluginFilters(filters)).orElseGet(ArrayList::new),
-                filterPlugin.getBiPredicate()
+        filterPlugins.forEach(filterPlugin -> combos.add(
+                        new Combo(
+                                Optional.ofNullable(filterPlugin.getPluginFilters(filters)).orElseGet(ArrayList::new),
+                                filterPlugin.getBiPredicate()
+                        )
                 )
-        )
-    );
+        );
 
-    Set<AddNostrEvent<GenericEvent>> nostrEvents = getFilterMatchingEvents(combos, eventToCheck);
+        Set<AddNostrEvent<GenericEvent>> nostrEvents = getFilterMatchingEvents(combos, eventToCheck);
+        if (withinRange(filters.getSince(), filters.getUntil(), eventToCheck.event().getCreatedAt())) {
+            nostrEvents.add(eventToCheck);
+        }
 
-    if (withinRange(filters.getSince(), filters.getUntil(), eventToCheck.event().getCreatedAt())) {
-      nostrEvents.add(eventToCheck);
+        return nostrEvents.stream().limit(Optional.ofNullable(filters.getLimit()).orElse(10)).toList();
     }
 
-    return nostrEvents.stream().limit(
-        Optional.ofNullable(
-            filters.getLimit()).orElse(10)).toList();
-  }
-
-  private boolean withinRange(Long since, Long until, Long createdAt) {
-    if (!nonNull(since) && !nonNull(until))
-      return false;
-    if ((nonNull(since) && !nonNull(until)) && (since < createdAt))
-      return true;
-    if ((!nonNull(since) && (until >= createdAt)))
-      return true;
-    if (nonNull(since) && nonNull(until)) {
-      return ((since < createdAt) && (until >= createdAt));
+    private boolean withinRange(Long since, Long until, Long createdAt) {
+        if (!nonNull(since) && !nonNull(until))
+            return false;
+        if ((nonNull(since) && !nonNull(until)) && (since < createdAt))
+            return true;
+        if ((!nonNull(since) && (until >= createdAt)))
+            return true;
+        if (nonNull(since) && nonNull(until)) {
+            return ((since < createdAt) && (until >= createdAt));
+        }
+        return false;
     }
-    return false;
-  }
 
-  private <U> Set<AddNostrEvent<GenericEvent>> getFilterMatchingEvents(List<Combo<U>> combos, AddNostrEvent<GenericEvent> eventToCheck) {
+    private <U> Set<AddNostrEvent<GenericEvent>> getFilterMatchingEvents(List<Combo<U>> combos, AddNostrEvent<GenericEvent> eventToCheck) {
 //    return combos
 //        .stream()
 //        .map(combo ->
@@ -77,29 +73,29 @@ public class FilterMatcher {
 //    boolean allMatch = combos.stream().allMatch(combo -> filterTypeMatchesEventAttribute(combo, eventToCheck));
 //    return allMatch ? Set.of(eventToCheck) : Set.of();
 
-    boolean anyMatch = combos.stream().anyMatch(combo -> filterTypeMatchesEventAttribute(combo, eventToCheck));
-    return anyMatch ? Set.of(eventToCheck) : Set.of();
-  }
-
-  private <U> boolean filterTypeMatchesEventAttribute(Combo<U> combo, AddNostrEvent<GenericEvent> eventToCheck) {
-    //TODO: convert to stream
-    for (U testable : combo.getSubscriberFilterType()) {
-      if (combo.getBiPredicate().test(testable, eventToCheck))
-        return true;
+        boolean anyMatch = combos.stream().anyMatch(combo -> filterTypeMatchesEventAttribute(combo, eventToCheck));
+        return anyMatch ? Set.of(eventToCheck) : Set.of();
     }
-    return false;
-  }
 
-  @Getter
-  public static class Combo<U> {
-    List<U> subscriberFilterType;
-    BiPredicate<U, AddNostrEvent<GenericEvent>> biPredicate;
-
-    public Combo(List<U> subscriberFilterType, BiPredicate<U, AddNostrEvent<GenericEvent>> biPredicate) {
-      this.subscriberFilterType = subscriberFilterType;
-      this.biPredicate = biPredicate;
+    private <U> boolean filterTypeMatchesEventAttribute(Combo<U> combo, AddNostrEvent<GenericEvent> eventToCheck) {
+        //TODO: convert to stream
+        for (U testable : combo.getSubscriberFilterType()) {
+            if (combo.getBiPredicate().test(testable, eventToCheck))
+                return true;
+        }
+        return false;
     }
-  }
+
+    @Getter
+    public static class Combo<U> {
+        List<U> subscriberFilterType;
+        BiPredicate<U, AddNostrEvent<GenericEvent>> biPredicate;
+
+        public Combo(List<U> subscriberFilterType, BiPredicate<U, AddNostrEvent<GenericEvent>> biPredicate) {
+            this.subscriberFilterType = subscriberFilterType;
+            this.biPredicate = biPredicate;
+        }
+    }
 
 }
 

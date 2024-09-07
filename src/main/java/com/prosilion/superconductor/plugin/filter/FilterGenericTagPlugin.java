@@ -55,49 +55,8 @@ public class FilterGenericTagPlugin<T extends GenericTagQuery> implements Filter
             List<String> value = t.getValue();
             if (tagName == null || value == null || value.isEmpty()) return true;
 
-            GenericEvent event = u.event();
-            Kind kind = event.getKind() == null ? TEXT_NOTE : Kind.valueOf(event.getKind());
-            switch (kind) {
-                case POST_INTENT:
-                    return getBiPredicate(tagName, value, (PostIntentEvent) event);
-                case TAKE_INTENT:
-                    return getBiPredicate(tagName, value, (TakeIntentEvent) event);
-                case TRADE_MESSAGE:
-                    return getBiPredicate(tagName, value, (TradeMessageEvent) event);
-                default:
-                    return defaultPredicate(tagName, value, event);
-            }
+            return defaultPredicate(tagName, value, u.event());
         };
-    }
-
-    private boolean getBiPredicate(String tagName, List<String> value, TradeMessageEvent event) {
-        return false;
-    }
-
-    private boolean getBiPredicate(String tagName, List<String> value, TakeIntentEvent event) {
-        return false;
-    }
-
-    private boolean getBiPredicate(String tagName, List<String> value, PostIntentEvent event) {
-        if (tagName.equals("side")) {
-            MakeTag makeTag = event.getSideTag();
-            return makeTag != null && value.contains(makeTag.getSide().getSide());
-        } else if (tagName.equals("symbol")) {
-            TokenTag token = event.getTokenTag();
-            return token != null && value.contains(token.getSymbol());
-        } else if (tagName.equals("currency")) {
-            QuoteTag quote = event.getQuoteTag();
-            return quote != null && value.contains(quote.getCurrency());
-        } else if (tagName.equals("payment_method")) {
-            List<PaymentTag> paymentMethods = event.getPaymentTags();
-            for (PaymentTag p : paymentMethods) {
-                if (value.contains(p.getMethod())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        return false;
     }
 
     @Override

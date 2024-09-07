@@ -25,12 +25,10 @@ public class ReqService<T extends ReqMessage, U extends GenericEvent> {
 
   public void processIncoming(@NotNull T reqMessage, @NonNull String sessionId) throws EmptyFiltersException {
     notifierService.subscriptionEventHandler(
-        abstractSubscriberService.save(
-            new Subscriber(
-                reqMessage.getSubscriptionId(),
-                sessionId,
-                true),
-            reqMessage.getFiltersList()
-        ));
+            abstractSubscriberService.save(
+                    new Subscriber(reqMessage.getSubscriptionId(), sessionId, true),
+                    reqMessage.getFiltersList()
+            )
+    );
   }
 }

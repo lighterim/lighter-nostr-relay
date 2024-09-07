@@ -25,10 +25,12 @@ function replaceHash(id_hash) {
         + "\"" + id_hash + "\","
         + JSON.stringify(
             {
-                'kinds': [30079],
-                'genericTagQueryList': [
-                    {'trade_event_id': $('#eventId').val() ? [].concat($('#eventId').val().split(",")) : []}
-                ]
+                'compositionQuery': {
+                    'kind': 30079,
+                    'anyMatchList': [
+                        {'eventIdString': $('#eventId').val() ? [].concat($('#eventId').val().split(",")) : []}
+                    ]
+                }
             }
         )
         + "]";

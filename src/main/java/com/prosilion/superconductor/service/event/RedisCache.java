@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
 public class RedisCache<T extends GenericEvent> {
     //  private final EventEntityService<T> eventEntityService;
     private final Map<Kind, EventEntityServiceIF<T>> eventEntityServiceMap;
-    private final PostEventEntityService postEventEntityService;
-    private final TakeEventEntityService takeEventEntityService;
+    private final IntentEntityService postEventEntityService;
+    private final TradeEntityService tradeEntityService;
     private final TradeMessageEntityService tradeMessageEntityService;
 
     private final EventEntityService<T> eventEntityService;
@@ -36,8 +36,8 @@ public class RedisCache<T extends GenericEvent> {
         eventEntityServiceMap = eventEntityServiceList.stream().collect(
                 Collectors.toMap(EventEntityServiceIF<T>::getKind, Function.identity())
         );
-        postEventEntityService = (PostEventEntityService) eventEntityServiceMap.get(Kind.POST_INTENT);
-        takeEventEntityService = (TakeEventEntityService) eventEntityServiceMap.get(Kind.TAKE_INTENT);
+        postEventEntityService = (IntentEntityService) eventEntityServiceMap.get(Kind.POST_INTENT);
+        tradeEntityService = (TradeEntityService) eventEntityServiceMap.get(Kind.TAKE_INTENT);
         tradeMessageEntityService = (TradeMessageEntityService) eventEntityServiceMap.get(Kind.TRADE_MESSAGE);
         eventEntityService = (EventEntityService<T>) eventEntityServiceMap.get(Kind.TEXT_NOTE);
     }
@@ -66,7 +66,7 @@ public class RedisCache<T extends GenericEvent> {
             }
         }
 
-        Map<Kind, Map<Long, TakeIntentEvent>> takeEventMap = takeEventEntityService.getAll();
+        Map<Kind, Map<Long, TakeIntentEvent>> takeEventMap = tradeEntityService.getAll();
         for (Map.Entry<Kind, Map<Long, TakeIntentEvent>> kindMapEntry : takeEventMap.entrySet()) {
             if (map.put(kindMapEntry.getKey(), convertToGenericEventMap(kindMapEntry.getValue())) != null) {
                 throw new IllegalStateException("Duplicate key");
@@ -95,7 +95,12 @@ public class RedisCache<T extends GenericEvent> {
         Kind kind = Kind.valueOf(event.getKind());
         Long id = switch (kind){
             case POST_INTENT -> postEventEntityService.saveEventEntity((PostIntentEvent) event);
-            case TAKE_INTENT -> takeEventEntityService.saveEventEntity((TakeIntentEvent) event);
+            case TAKE_INTENT -> {
+                TakeIntentEvent takeIntentEvent = (TakeIntentEvent) event;
+                Long tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
+                takeIntentEvent.setTradeId(tradeId);
+                yield tradeId;
+            }
             case TRADE_MESSAGE -> tradeMessageEntityService.saveEventEntity((TradeMessageEvent) event);
             default -> eventEntityService.saveEventEntity(event);
         };
@@ -105,7 +110,7 @@ public class RedisCache<T extends GenericEvent> {
     public T getEventEntityByEventId(Kind kind, String eventId) {
         GenericEvent event = switch (kind){
             case POST_INTENT -> postEventEntityService.getEventByEventIdString(eventId);
-            case TAKE_INTENT -> takeEventEntityService.getEventByEventIdString(eventId);
+            case TAKE_INTENT -> tradeEntityService.getEventByEventIdString(eventId);
             case TRADE_MESSAGE -> tradeMessageEntityService.getEventByEventIdString(eventId);
             default -> eventEntityService.getEventByEventIdString(eventId);
         };
@@ -115,7 +120,7 @@ public class RedisCache<T extends GenericEvent> {
     public T getEventEntityById(Kind kind, Long id){
         GenericEvent event = switch (kind){
             case POST_INTENT -> postEventEntityService.getEventById(id);
-            case TAKE_INTENT -> takeEventEntityService.getEventById(id);
+            case TAKE_INTENT -> tradeEntityService.getEventById(id);
             case TRADE_MESSAGE -> tradeMessageEntityService.getEventById(id);
             default -> eventEntityService.getEventById(id);
 

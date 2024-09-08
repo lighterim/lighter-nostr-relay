@@ -100,12 +100,14 @@ public class CachedSubscriberService extends AbstractSubscriberService {
         String existingKey = biMap.inverse().get(subscriber.getSessionId());
         // 由于biMap的特性value也不能重复，所以同一个sessionId只能保留一个订阅，这里做判断是否已经有订阅，如果有先移除之前的订阅在插入
         if (existingKey != null) {
-            removeSubscriberBySessionId(subscriber.getSessionId());
+//            removeSubscriberBySessionId(subscriber.getSessionId());
             biMap.remove(existingKey);
         }
-        biMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
-        subscriptionIdMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
-//    biMap.forcePut(subscriber.getSubscriberId(), subscriber.getSessionId());
+//        biMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
+        biMap.forcePut(subscriber.getSubscriberId(), subscriber.getSessionId());
+//        subscriptionIdMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
+        subscriptionIdMap.forcePut(subscriber.getSubscriberId(), subscriber.getSessionId());
+
 
         long subscriberSessionHash = getHash(subscriber);
 
@@ -119,7 +121,7 @@ public class CachedSubscriberService extends AbstractSubscriberService {
                 filters);
 
         if (!subscriberSessionHashComboMap.containsKey(subscriberSessionHash)) {
-            subscriberSessionHashComboMap.put(subscriberSessionHash, List.of(combo));
+            subscriberSessionHashComboMap.put(subscriberSessionHash, new ArrayList<>(List.of(combo)));
             return;
         }
         subscriberSessionHashComboMap.get(subscriberSessionHash).add(combo);

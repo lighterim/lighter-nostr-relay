@@ -106,7 +106,7 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
             T message = (T) new BaseMessageDecoder<>().decode(baseMessage.getPayload());
             messageServiceMap.get(message.getCommand()).processIncoming(message, session.getId());
         } catch (Throwable ex) {
-            log.error("handleTextMessage: {}", baseMessage, ex);
+            log.error("handleTextMessage: {}, {}", baseMessage, baseMessage.getPayload(), ex);
         }
     }
 

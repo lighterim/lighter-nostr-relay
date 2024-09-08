@@ -25,57 +25,71 @@ public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements
         return false;
       }
 
-      for (GenericTagQuery tag : t.getAnyMatchList()) {
-        String tagName = tag.getTagName();
-        List<String> values = tag.getValue();
-          return switch (kind) {
-              case POST_INTENT -> getBiPredicate(tagName, values, (PostIntentEvent) event);
-              case TAKE_INTENT -> getBiPredicate(tagName, values, (TakeIntentEvent) event);
-              case TRADE_MESSAGE -> getBiPredicate(tagName, values, (TradeMessageEvent) event);
-              default -> false;
-          };
-      }
+      final List<GenericTagQuery> anyMatchList = t.getAnyMatchList();
+      return switch (kind) {
+          case POST_INTENT -> getBiPredicate(anyMatchList, (PostIntentEvent) event);
+          case TAKE_INTENT -> getBiPredicate(anyMatchList, (TakeIntentEvent) event);
+          case TRADE_MESSAGE -> getBiPredicate(anyMatchList, (TradeMessageEvent) event);
+          default -> false;
+      };
 
-      return false;
     };
   }
 
-  private boolean getBiPredicate(String tagName, List<String> value, TradeMessageEvent event) {
-    if("eventIdString".equals(tagName)){
-      return value.contains(event.getCreatedByTag().getTakeIntentEventId());
-    }
-    return false;
-  }
-
-  private boolean getBiPredicate(String tagName, List<String> value, TakeIntentEvent event) {
-    TakeTag takeTag = event.getTakeTag();
-    if("pubkey".equals(tagName)){
-      return value.contains(takeTag.getMakerPubkey()) || value.contains(takeTag.getTakerPubkey());
-    }
-    else if("nip05".equals(tagName)){
-      return value.contains(takeTag.getMakerNip05()) || value.contains(takeTag.getTakerNip05());
-    }
-    return false;
-  }
-
-  private boolean getBiPredicate(String tagName, List<String> value, PostIntentEvent event) {
-    if (tagName.equals("side")) {
-      MakeTag makeTag = event.getSideTag();
-      return makeTag != null && value.contains(makeTag.getSide().getSide());
-    } else if (tagName.equals("symbol")) {
-      TokenTag token = event.getTokenTag();
-      return token != null && value.contains(token.getSymbol());
-    } else if (tagName.equals("currency")) {
-      QuoteTag quote = event.getQuoteTag();
-      return quote != null && value.contains(quote.getCurrency());
-    } else if (tagName.equals("paymentMethod")) {
-      List<PaymentTag> paymentMethods = event.getPaymentTags();
-      for (PaymentTag p : paymentMethods) {
-        if (value.contains(p.getMethod())) {
-          return true;
-        }
+  private boolean getBiPredicate(List<GenericTagQuery> anyMatchList, TradeMessageEvent event) {
+    for(GenericTagQuery t: anyMatchList) {
+      String tagName = t.getTagName();
+      List<String> values = t.getValue();
+      if ("eventIdString".equals(tagName)) {
+        return values.contains(event.getCreatedByTag().getTakeIntentEventId());
       }
-      return false;
+    }
+    return false;
+  }
+
+  private boolean getBiPredicate(List<GenericTagQuery> anyMatchList, TakeIntentEvent event) {
+    TakeTag takeTag = event.getTakeTag();
+    for(GenericTagQuery t : anyMatchList) {
+      String tagName = t.getTagName();
+      List<String> values = t.getValue();
+      if ("pubkey".equals(tagName)) {
+        return values.contains(takeTag.getMakerPubkey()) || values.contains(takeTag.getTakerPubkey());
+      } else if ("nip05".equals(tagName)) {
+        return values.contains(takeTag.getMakerNip05()) || values.contains(takeTag.getTakerNip05());
+      }
+    }
+    return false;
+  }
+
+  private boolean getBiPredicate(List<GenericTagQuery> anyMatchList,  PostIntentEvent event) {
+    if(anyMatchList == null || anyMatchList.isEmpty()){
+      return true;
+    }
+    for(GenericTagQuery t : anyMatchList) {
+      String tagName = t.getTagName();
+      List<String> values = t.getValue();
+        switch (tagName) {
+            case "side" -> {
+                MakeTag makeTag = event.getSideTag();
+                return makeTag != null && values.contains(makeTag.getSide().getSide());
+            }
+            case "symbol" -> {
+                TokenTag token = event.getTokenTag();
+                return token != null && values.contains(token.getSymbol());
+            }
+            case "currency" -> {
+                QuoteTag quote = event.getQuoteTag();
+                return quote != null && values.contains(quote.getCurrency());
+            }
+            case "paymentMethod" -> {
+                List<PaymentTag> paymentMethods = event.getPaymentTags();
+                for (PaymentTag p : paymentMethods) {
+                    if (values.contains(p.getMethod())) {
+                        return true;
+                    }
+                }
+            }
+        }
     }
     return false;
   }

@@ -27,7 +27,7 @@ function replaceHash(id_hash) {
             {
                 'compositionQuery': {
                     'kind': 30077,
-                    'anyMatchList':[
+                    'allMatchList':[
                         {'side': $('#side').val() ? [].concat($('#side').val().split(",")) : []},
                         {'currency': $('#currency').val() ? [].concat($('#currency').val().split(",")) : []},
                         {'symbol': $('#symbol').val() ? [].concat($('#symbol').val().split(",")) : []},

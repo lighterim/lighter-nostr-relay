@@ -1,5 +1,6 @@
 package com.prosilion.superconductor.service.event;
 
+import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.Kind;
@@ -8,6 +9,7 @@ import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.impl.TradeMessageEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 
@@ -21,7 +23,9 @@ import java.util.stream.Collectors;
 @Service
 // TODO: caching currently non-critical although ready for implementation anytime
 public class RedisCache<T extends GenericEvent> {
-    //  private final EventEntityService<T> eventEntityService;
+
+    @Value("${notice.lighter.im.pubkey:aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984}")
+    private String noticePusherPubkey;
     private final Map<Kind, EventEntityServiceIF<T>> eventEntityServiceMap;
     private final IntentEntityService postEventEntityService;
     private final TradeEntityService tradeEntityService;
@@ -91,7 +95,8 @@ public class RedisCache<T extends GenericEvent> {
                 ));
     }
 
-    protected Long saveEventEntity(@NonNull GenericEvent event) {
+    @Transactional
+    public Long saveEventEntity(@NonNull GenericEvent event) {
         Kind kind = Kind.valueOf(event.getKind());
         Long id = switch (kind){
             case POST_INTENT -> postEventEntityService.saveEventEntity((PostIntentEvent) event);
@@ -101,9 +106,17 @@ public class RedisCache<T extends GenericEvent> {
                 takeIntentEvent.setTradeId(tradeId);
                 yield tradeId;
             }
-            case TRADE_MESSAGE -> tradeMessageEntityService.saveEventEntity((TradeMessageEvent) event);
+            case TRADE_MESSAGE -> saveTradeMessageEntity((TradeMessageEvent) event);
             default -> eventEntityService.saveEventEntity(event);
         };
+        return id;
+    }
+
+    private Long saveTradeMessageEntity(TradeMessageEvent event) {
+        Long id = tradeMessageEntityService.saveEventEntity(event);
+        if(noticePusherPubkey.equals(event.getCreatedByTag().getPubkey()) && event.getLedgerTag()!=null && event.getLedgerTag().getTradeStatus() != null){
+            tradeEntityService.updateTradeStatus(event.getCreatedByTag().getTradeId(), event.getLedgerTag().getTradeStatus());
+        }
         return id;
     }
 

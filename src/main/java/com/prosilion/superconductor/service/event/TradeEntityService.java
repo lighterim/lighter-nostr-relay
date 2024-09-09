@@ -4,16 +4,20 @@ import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.dto.generic.ElementAttributeDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import com.prosilion.superconductor.entity.TakeIntentEventEntity;
+import com.prosilion.superconductor.entity.TradeMessageEntity;
 import com.prosilion.superconductor.entity.join.EventEntityAbstractTagEntity;
 import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
 import com.prosilion.superconductor.repository.TakeEventEntityRepository;
 import com.prosilion.superconductor.repository.join.EventEntityAbstractTagEntityRepository;
 import com.prosilion.superconductor.service.event.join.generic.GenericTagEntitiesService;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
+import nostr.event.TradeStatus;
 import nostr.event.impl.GenericTag;
 import nostr.event.impl.TakeIntentEvent;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +36,8 @@ import static nostr.event.NIP77Event.*;
 @Service
 public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent> {
 
+    @PersistenceContext
+    private EntityManager entityManager;
     private final TakeEventEntityRepository takeEventEntityRepository;
 
     private final ConcreteTagEntitiesService<
@@ -110,5 +116,16 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
     @Override
     public TakeIntentEvent getEventByEventIdString(@NonNull String eventIdString) {
         return populateEventEntity(takeEventEntityRepository.findByEventIdString(eventIdString).orElseThrow(NoResultException::new)).convertEntityToDto();
+    }
+
+    public void updateTradeStatus(long tradeId, TradeStatus tradeStatus) {
+        Optional<TakeIntentEventEntity> opt  = takeEventEntityRepository.findById(tradeId);
+        if(opt.isEmpty()){
+            log.warn("tradeId: {}, entity not exists!: tradeStatus:{}", tradeId, tradeStatus);
+            return;
+        }
+        TakeIntentEventEntity entity = opt.get();
+        entity.setStatus(tradeStatus.getValue());
+        entityManager.merge(entity);
     }
 }

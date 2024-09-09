@@ -8,6 +8,7 @@ import nostr.base.PublicKey;
 import nostr.base.Signature;
 import nostr.event.BaseTag;
 import nostr.event.Side;
+import nostr.event.TradeStatus;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.PaymentTag;
@@ -15,6 +16,7 @@ import nostr.event.tag.QuoteTag;
 import nostr.event.tag.TakeTag;
 import nostr.event.tag.TokenTag;
 import nostr.util.NostrUtil;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -57,6 +59,9 @@ public class TakeIntentEventEntity {
     private String paymentQrCode;
     private String paymentMemo;
 
+    @Column(nullable = false)
+    private String status = TradeStatus.TakeEvent.getValue();
+
     private String content;
     private String signature;
     private Long createAt;
@@ -87,6 +92,7 @@ public class TakeIntentEventEntity {
              String paymentAccount,
              String paymentQrCode,
              String paymentMemo,
+             String tradeStatus,
              String content,
              String signature,
              Long createAt){
@@ -111,6 +117,9 @@ public class TakeIntentEventEntity {
         this.paymentAccount = paymentAccount;
         this.paymentQrCode = paymentQrCode;
         this.paymentMemo = paymentMemo;
+        if(StringUtils.hasText(tradeStatus)) {
+            this.status = tradeStatus;
+        }
         this.content = content;
         this.signature = signature;
         this.createAt = createAt;
@@ -136,6 +145,7 @@ public class TakeIntentEventEntity {
                     ),
                     eventIdString,
                     content,
+                    TradeStatus.forValue(status),
                     createAt
             );
             case SELL -> takeEvent = new TakeIntentEvent(
@@ -150,6 +160,7 @@ public class TakeIntentEventEntity {
                     ),
                     eventIdString,
                     content,
+                    TradeStatus.forValue(status),
                     createAt
             );
         }

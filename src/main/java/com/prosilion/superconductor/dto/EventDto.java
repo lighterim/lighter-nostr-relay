@@ -104,6 +104,7 @@ public class EventDto extends NIP01Event {
             tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChain(), tokenTag.getNetwork(),
             quoteTag.getNumber(),  quoteTag.getCurrency(), quoteTag.getUsdRate(),
             paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
+            event.getTradeStatus(),
             event.getContent(),
             event.getSignature().toString(),
             event.getCreatedAt()

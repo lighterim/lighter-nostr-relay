@@ -71,18 +71,22 @@ public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements
                 }
                 case "paymentMethod" -> {
                     List<PaymentTag> paymentMethods = event.getPaymentTags();
-                    if (paymentMethods == null || paymentMethods.isEmpty()) {
+                    if (paymentMethods == null || paymentMethods.isEmpty() || !contains(values, paymentMethods)) {
                         return false;
-                    }
-                    for (PaymentTag p : paymentMethods) {
-                        if (!values.contains(p.getMethod())) {
-                            return false;
-                        }
                     }
                 }
             }
         }
         return true;
+    }
+
+    private static boolean contains(List<String> values, List<PaymentTag> paymentMethods){
+        for (PaymentTag p : paymentMethods) {
+            if (values.contains(p.getMethod())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

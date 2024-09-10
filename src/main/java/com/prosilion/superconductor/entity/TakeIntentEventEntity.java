@@ -62,6 +62,10 @@ public class TakeIntentEventEntity {
     @Column(nullable = false)
     private String status = TradeStatus.TakeEvent.getValue();
 
+    private String groupPubKey;
+    private String encGroupPrivKeyForSeller;
+    private String encGroupPrivKeyForBuyer;
+
     private String content;
     private String signature;
     private Long createAt;
@@ -93,6 +97,9 @@ public class TakeIntentEventEntity {
              String paymentQrCode,
              String paymentMemo,
              String tradeStatus,
+             String groupPubKey,
+             String encGroupPrivKeyForSeller,
+             String encGroupPrivKeyForBuyer,
              String content,
              String signature,
              Long createAt){
@@ -120,6 +127,9 @@ public class TakeIntentEventEntity {
         if(StringUtils.hasText(tradeStatus)) {
             this.status = tradeStatus;
         }
+        this.groupPubKey = groupPubKey;
+        this.encGroupPrivKeyForSeller = encGroupPrivKeyForSeller;
+        this.encGroupPrivKeyForBuyer = encGroupPrivKeyForBuyer;
         this.content = content;
         this.signature = signature;
         this.createAt = createAt;

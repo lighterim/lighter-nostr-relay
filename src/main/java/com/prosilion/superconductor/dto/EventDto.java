@@ -11,6 +11,7 @@ import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.impl.TradeMessageEvent;
 import nostr.event.tag.*;
+import nostr.id.Identity;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -65,7 +66,7 @@ public class EventDto extends NIP01Event {
     );
   }
 
-  public static TakeIntentEventEntity convertToEntity(TakeIntentEvent event){
+  public static TakeIntentEventEntity convertToEntity(TakeIntentEvent event) {
     TakeTag takeTag = event.getTakeTag();
     TokenTag tokenTag = event.getTokenTag();
     PaymentTag paymentTag = event.getPaymentTag();
@@ -89,6 +90,18 @@ public class EventDto extends NIP01Event {
       sellerPubKey = takeTag.getTakerPubkey();
     }
 
+    // 生成群组密钥对
+    Identity identity = Identity.generateRandomIdentity();
+    String groupPubKey = identity.getPublicKey().toString();
+    String groupPrivateKey = identity.getPrivateKey().toString();
+    String encGroupPrivKeyForSeller = "";
+    String encGroupPrivKeyForBuyer = "";
+    try {
+      encGroupPrivKeyForSeller = Identity.encryptWithPublicKey(groupPrivateKey, new PublicKey(sellerPubKey));
+      encGroupPrivKeyForBuyer = Identity.encryptWithPublicKey(groupPrivateKey, new PublicKey(buyerPubKey));
+    } catch (Exception ex){
+      ex.printStackTrace();
+    }
 
     return  new TakeIntentEventEntity(
             event.getNip(),
@@ -105,6 +118,9 @@ public class EventDto extends NIP01Event {
             quoteTag.getNumber(),  quoteTag.getCurrency(), quoteTag.getUsdRate(),
             paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
             event.getTradeStatus(),
+            groupPubKey,
+            encGroupPrivKeyForSeller,
+            encGroupPrivKeyForBuyer,
             event.getContent(),
             event.getSignature().toString(),
             event.getCreatedAt()

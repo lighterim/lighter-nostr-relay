@@ -13,7 +13,7 @@ public interface EventEntityServiceIF<T> {
     Kind getKind();
 
 //    public void saveEventEntity(@NonNull GenericEvent event);
-    Long saveEventEntity(@NonNull T event);
+    Long saveEventEntity(@NonNull T event) throws Exception;
 
     public Map<Kind, Map<Long, T>> getAll();
 

@@ -38,6 +38,7 @@ public class TakeIntentEventEntity {
     private String takeSide;
     private String makeIntentEventId;
     /** The volume means volume of trade symbol **/
+    @Column(precision = 36, scale = 18)
     private BigDecimal volume;
     private String buyerId;
     private String buyerPubKey;
@@ -50,8 +51,10 @@ public class TakeIntentEventEntity {
     private String symbol;
 
     /** The price for trade symbol based currency */
+    @Column(precision = 18, scale = 9)
     private BigDecimal price;
     private String currency;
+    @Column(precision = 18, scale = 9)
     private BigDecimal usdRate;
 
     private String paymentMethod;
@@ -66,7 +69,7 @@ public class TakeIntentEventEntity {
     private String signature;
     private Long createAt;
 
-    /**  **/
+    /** other tag list. I.E. relays **/
     @Transient
     private List<BaseTag> tags;
 

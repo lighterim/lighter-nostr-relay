@@ -10,6 +10,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
 import nostr.event.Kind;
+import nostr.event.Side;
 import nostr.event.impl.*;
 import nostr.event.message.EventMessage;
 import nostr.event.tag.*;
@@ -21,6 +22,7 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
@@ -108,7 +110,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             TakeIntentEvent takeIntent = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, createdBy.getTradeId());
             tradeMessageEvent.setCreatedByTag(
                     CreatedByTag.builder().takeIntentEventId(takeIntent.getId()).nip05(createdBy.getNip05()).pubkey(createdBy.getPubkey())
-                    .tradeId(createdBy.getTradeId()).build()
+                            .tradeId(createdBy.getTradeId()).build()
             );
         }
     }
@@ -133,11 +135,17 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             // 3. make.intent & take.make
             String makeEventId = take.getIntentEventId();
             GenericEvent event = redisCache.getEventEntityByEventId(Kind.POST_INTENT, makeEventId);
-            if(isSkipCheckTake){
+            if (isSkipCheckTake) {
                 return;
             }
             if (event instanceof PostIntentEvent postIntentEvent) {
                 MakeTag make = postIntentEvent.getSideTag();
+                // 3.0 take.side & make.side
+                if (take.getSide() == make.getSide()) {
+                    String msg = String.format("invalid intent.side: %s, and take.side:%s.", make.getSide(), take.getSide());
+                    log.warn(msg);
+                    throw new RuntimeException(msg);
+                }
                 // 3.1 nip05, pubkey
                 if (!take.getMakerNip05().equals(make.getMakerNip05()) || !take.getMakerPubkey().equals(make.getMakerPubkey())) {
                     String msg = String.format("invalid intent.make nip05:%s, pubkey:%s, event id:%s", take.getMakerNip05(), take.getMakerPubkey(), makeEventId);
@@ -166,13 +174,32 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                     throw new RuntimeException(msg);
                 }
 
-                //3.4 TODO: payment
-//                PaymentTag payment = postIntentEvent.
+                //3.4 payment
+                PaymentTag takePayment = takeIntentEvent.getPaymentTag();
+                List<PaymentTag> paymentTags = postIntentEvent.getPaymentTags();
+                List<String> methods = paymentTags.stream().map(PaymentTag::getMethod).toList();
+                if (!methods.contains(takePayment.getMethod())) {
+                    String msg = String.format("take payment{%s} does not matches: %s", takePayment.getMethod(), methods);
+                    log.warn(msg);
+                    throw new RuntimeException(msg);
+                }
+                if (take.getSide() == Side.BUY) {
+                    List<String> accounts = paymentTags.stream().map(PaymentTag::getAccount).toList();
+                    List<String> qrCodes = paymentTags.stream().map(PaymentTag::getQrCode).toList();
+                    if (!accounts.contains(takePayment.getAccount()) && !qrCodes.contains(takePayment.getQrCode())) {
+                        String msg = String.format("take payment:%s, %s does not matches: %s, %s",
+                                takePayment.getAccount(), takePayment.getQrCode(), accounts, qrCodes
+                        );
+                        log.warn(msg);
+                        throw new RuntimeException(msg);
+                    }
+                }
+                //well done
             }
             log.warn("unknown event id: {}", makeEventId);
             throw new RuntimeException(String.format("unknown event id: %s", makeEventId));
         } catch (Throwable e) {
-            log.warn("exception on validate:"+e.getMessage(), e);
+            log.warn("exception on validate:" + e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
         }
 
@@ -191,12 +218,21 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
 
     private void validatePostIntentEvent(PostIntentEvent postIntentEvent) {
         try {
+            postIntentEvent.validate();
             MakeTag make = postIntentEvent.getSideTag();
             if (!isValidNip05(make.getMakerNip05(), make.getMakerPubkey())) {
                 log.warn("invalid nip05: {}, {}", make.getMakerNip05(), make.getMakerPubkey());
                 throw new RuntimeException(String.format("invalid nip05: %s, %s", make.getMakerNip05(), make.getMakerPubkey()));
             }
-            postIntentEvent.validate();
+
+            List<PaymentTag> paymentTags = postIntentEvent.getPaymentTags();
+            if (!paymentTags.stream().allMatch(p -> StringUtils.hasText(p.getAccount()) && StringUtils.hasText(p.getQrCode()))) {
+                String msg = String.format("invalid paymentTags: %s", paymentTags);
+                log.warn(msg);
+                throw new RuntimeException(msg);
+            }
+
+            //well done
         } catch (Throwable ex) {
             log.warn("unknown validate post intent error: {}", ex.getMessage(), ex);
             throw new RuntimeException(String.format("validate intent event error:%s", ex.getMessage()));

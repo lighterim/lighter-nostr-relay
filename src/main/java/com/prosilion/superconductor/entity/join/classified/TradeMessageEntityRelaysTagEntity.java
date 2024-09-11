@@ -17,7 +17,7 @@ import lombok.Setter;
 public class TradeMessageEntityRelaysTagEntity extends TradeMessageEntityAbstractTagEntity {
   private Long relaysId;
 
-  public <T extends EventEntityAbstractTagEntity> TradeMessageEntityRelaysTagEntity(Long tradeMessageId, Long relaysId) {
+  public <T extends TradeMessageEntityAbstractTagEntity> TradeMessageEntityRelaysTagEntity(Long tradeMessageId, Long relaysId) {
     super.setTradeMessageId(tradeMessageId);
     this.relaysId = relaysId;
   }

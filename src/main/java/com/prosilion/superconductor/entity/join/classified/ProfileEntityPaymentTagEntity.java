@@ -1,7 +1,7 @@
 package com.prosilion.superconductor.entity.join.classified;
 
-import com.prosilion.superconductor.entity.join.EventEntityAbstractTagEntity;
 import com.prosilion.superconductor.entity.join.IntentEntityAbstractTagEntity;
+import com.prosilion.superconductor.entity.join.ProfileEntityAbstractTagEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -12,13 +12,13 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "intent_payment_tag_join")
-public class IntentEntityPaymentTagEntity extends IntentEntityAbstractTagEntity {
+@Table(name = "profile_payment_tag_join")
+public class ProfileEntityPaymentTagEntity extends ProfileEntityAbstractTagEntity {
 
     private Long paymentTagId;
 
-    public <T extends IntentEntityAbstractTagEntity> IntentEntityPaymentTagEntity(Long intentId, Long paymentTagId) {
-        super.setIntentId(intentId);
+    public <T extends IntentEntityAbstractTagEntity> ProfileEntityPaymentTagEntity(Long profileId, Long paymentTagId) {
+        super.setProfileId(profileId);
         this.paymentTagId = paymentTagId;
     }
 

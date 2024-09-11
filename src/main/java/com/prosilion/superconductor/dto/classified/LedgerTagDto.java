@@ -3,11 +3,9 @@ package com.prosilion.superconductor.dto.classified;
 import com.prosilion.superconductor.dto.AbstractTagDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import com.prosilion.superconductor.entity.standard.LedgerTagEntity;
-import com.prosilion.superconductor.entity.standard.PaymentTagEntity;
 import lombok.Getter;
 import lombok.NonNull;
 import nostr.event.tag.LedgerTag;
-import nostr.event.tag.PaymentTag;
 
 @Getter
 public class LedgerTagDto implements AbstractTagDto {

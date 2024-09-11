@@ -1,8 +1,8 @@
 package com.prosilion.superconductor.plugin.tag;
 
-import com.prosilion.superconductor.dto.classified.PaymentTagDto;
+import com.prosilion.superconductor.dto.classified.IntentPaymentTagDto;
 import com.prosilion.superconductor.entity.join.classified.IntentEntityPaymentTagEntity;
-import com.prosilion.superconductor.entity.standard.PaymentTagEntity;
+import com.prosilion.superconductor.entity.standard.IntentPaymentTagEntity;
 import com.prosilion.superconductor.repository.classified.PaymentTagEntityRepository;
 import com.prosilion.superconductor.repository.join.classified.IntentEntityPaymentTagEntityRepository;
 import jakarta.annotation.Nonnull;
@@ -17,7 +17,7 @@ import static nostr.event.NIP77Event.PAYMENT_TAG_CODE;
 public class PaymentTagPlugin<
     P extends PaymentTag,
     Q extends PaymentTagEntityRepository<R>,
-    R extends PaymentTagEntity,
+    R extends IntentPaymentTagEntity,
     S extends IntentEntityPaymentTagEntity,
     T extends IntentEntityPaymentTagEntityRepository<S>>
     implements IntentTagPlugin<P, Q, R, S, T> {
@@ -42,8 +42,8 @@ public class PaymentTagPlugin<
   }
 
   @Override
-  public PaymentTagDto getTagDto(P paymentTag) {
-    return new PaymentTagDto(paymentTag);
+  public IntentPaymentTagDto getTagDto(P paymentTag) {
+    return new IntentPaymentTagDto(paymentTag);
   }
 
   @Override

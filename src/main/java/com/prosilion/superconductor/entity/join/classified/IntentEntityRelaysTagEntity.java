@@ -16,7 +16,7 @@ import lombok.Setter;
 public class IntentEntityRelaysTagEntity extends IntentEntityAbstractTagEntity {
   private Long relaysId;
 
-  public <T extends EventEntityAbstractTagEntity> IntentEntityRelaysTagEntity(Long eventId, Long relaysId) {
+  public <T extends IntentEntityAbstractTagEntity> IntentEntityRelaysTagEntity(Long eventId, Long relaysId) {
     super.setIntentId(eventId);
     this.relaysId = relaysId;
   }

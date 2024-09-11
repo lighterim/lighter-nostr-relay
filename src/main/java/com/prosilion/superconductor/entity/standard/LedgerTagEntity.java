@@ -2,7 +2,6 @@ package com.prosilion.superconductor.entity.standard;
 
 import com.prosilion.superconductor.dto.AbstractTagDto;
 import com.prosilion.superconductor.dto.classified.LedgerTagDto;
-import com.prosilion.superconductor.dto.classified.PaymentTagDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -11,10 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 import nostr.event.BaseTag;
-import nostr.event.NIP77Event;
 import nostr.event.TradeStatus;
 import nostr.event.tag.LedgerTag;
-import nostr.event.tag.PaymentTag;
 
 import java.util.Objects;
 

@@ -4,10 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.Kind;
-import nostr.event.impl.GenericEvent;
-import nostr.event.impl.PostIntentEvent;
-import nostr.event.impl.TakeIntentEvent;
-import nostr.event.impl.TradeMessageEvent;
+import nostr.event.impl.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -31,6 +28,8 @@ public class RedisCache<T extends GenericEvent> {
     private final TradeEntityService tradeEntityService;
     private final TradeMessageEntityService tradeMessageEntityService;
 
+    private final ProfileEntityService profileEntityService;
+
     private final EventEntityService<T> eventEntityService;
 
 
@@ -43,7 +42,9 @@ public class RedisCache<T extends GenericEvent> {
         postEventEntityService = (IntentEntityService) eventEntityServiceMap.get(Kind.POST_INTENT);
         tradeEntityService = (TradeEntityService) eventEntityServiceMap.get(Kind.TAKE_INTENT);
         tradeMessageEntityService = (TradeMessageEntityService) eventEntityServiceMap.get(Kind.TRADE_MESSAGE);
+        profileEntityService = (ProfileEntityService) eventEntityServiceMap.get(Kind.SET_METADATA);
         eventEntityService = (EventEntityService<T>) eventEntityServiceMap.get(Kind.TEXT_NOTE);
+
     }
 
 //  public Map<Kind, Map<Long, T>> getAll() {
@@ -99,6 +100,7 @@ public class RedisCache<T extends GenericEvent> {
     public Long saveEventEntity(@NonNull GenericEvent event) {
         Kind kind = Kind.valueOf(event.getKind());
         Long id = switch (kind){
+            case SET_METADATA -> profileEntityService.saveEventEntity((MetadataEvent) event);
             case POST_INTENT -> postEventEntityService.saveEventEntity((PostIntentEvent) event);
             case TAKE_INTENT -> {
                 TakeIntentEvent takeIntentEvent = (TakeIntentEvent) event;
@@ -122,6 +124,7 @@ public class RedisCache<T extends GenericEvent> {
 
     public T getEventEntityByEventId(Kind kind, String eventId) {
         GenericEvent event = switch (kind){
+            case SET_METADATA -> profileEntityService.getEventByEventIdString(eventId);
             case POST_INTENT -> postEventEntityService.getEventByEventIdString(eventId);
             case TAKE_INTENT -> tradeEntityService.getEventByEventIdString(eventId);
             case TRADE_MESSAGE -> tradeMessageEntityService.getEventByEventIdString(eventId);
@@ -132,6 +135,7 @@ public class RedisCache<T extends GenericEvent> {
 
     public T getEventEntityById(Kind kind, Long id){
         GenericEvent event = switch (kind){
+            case SET_METADATA -> profileEntityService.getEventById(id);
             case POST_INTENT -> postEventEntityService.getEventById(id);
             case TAKE_INTENT -> tradeEntityService.getEventById(id);
             case TRADE_MESSAGE -> tradeMessageEntityService.getEventById(id);

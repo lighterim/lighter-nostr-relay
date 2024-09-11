@@ -1,7 +1,8 @@
 package com.prosilion.superconductor.entity.standard;
 
 import com.prosilion.superconductor.dto.AbstractTagDto;
-import com.prosilion.superconductor.dto.classified.PaymentTagDto;
+import com.prosilion.superconductor.dto.classified.IntentPaymentTagDto;
+import com.prosilion.superconductor.dto.classified.ProfilePaymentTagDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -18,15 +19,15 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "intent_payment_tag")
-public class PaymentTagEntity extends AbstractTagEntity {
+@Table(name = "profile_payment_tag")
+public class ProfilePaymentTagEntity extends AbstractTagEntity {
 
     private String method;
     private String account;
     private String qrCode;
     private String memo;
 
-    public PaymentTagEntity(@NonNull PaymentTag paymentTag){
+    public ProfilePaymentTagEntity(@NonNull PaymentTag paymentTag){
         this.method = paymentTag.getMethod();
         this.account = paymentTag.getAccount();
         this.qrCode = paymentTag.getQrCode();
@@ -40,7 +41,7 @@ public class PaymentTagEntity extends AbstractTagEntity {
 
     @Override
     public AbstractTagDto convertEntityToDto() {
-        return new PaymentTagDto(new PaymentTag(method, account, qrCode, memo));
+        return new ProfilePaymentTagDto(new PaymentTag(method, account, qrCode, memo));
     }
 
     @Override
@@ -52,7 +53,7 @@ public class PaymentTagEntity extends AbstractTagEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PaymentTagEntity that = (PaymentTagEntity) o;
+        ProfilePaymentTagEntity that = (ProfilePaymentTagEntity) o;
         return Objects.equals(method, that.method) && Objects.equals(account, that.account) && Objects.equals(qrCode, that.qrCode) && Objects.equals(memo, that.memo);
     }
 

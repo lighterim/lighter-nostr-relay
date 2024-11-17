@@ -115,10 +115,14 @@ public class IntentEventEntity {
 
         List<BaseTag> tagList = new ArrayList<>(tags);
         MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey);
-        TokenTag token = new TokenTag(symbol, chain, network, address, amount);
+        TokenTag token = new TokenTag(symbol, chain, network, address, amount.stripTrailingZeros());
         QuoteTag quote = new QuoteTag(price, quoteCurrency, BigDecimal.ZERO);
         if(StringUtils.hasLength(currency)) {
-            LimitTag limit = new LimitTag(currency, lowLimit, upLimit);
+            LimitTag limit = new LimitTag(
+                    currency,
+                    lowLimit==null?null:lowLimit.stripTrailingZeros(),
+                    upLimit==null?null:upLimit.stripTrailingZeros()
+            );
             tagList.add(limit);
         }
         tagList.add(make);

@@ -75,6 +75,7 @@ public class EventDto extends NIP01Event {
         TokenTag tokenTag = event.getTokenTag();
         PaymentTag paymentTag = event.getPaymentTag();
         QuoteTag quoteTag = event.getQuoteTag();
+        TradeKeyTag keyTag = event.getTradeKeyTag();
         BigDecimal volume = takeTag.getVolume();
 
         String buyerId;
@@ -109,6 +110,7 @@ public class EventDto extends NIP01Event {
                 tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChain(), tokenTag.getNetwork(),
                 quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(),
                 paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
+                keyTag.getKeyForBuyer(), keyTag.getKeyForSeller(), keyTag.getKeyForWitness(), keyTag.getKeyForSomeone(), keyTag.getPubkey(),
                 event.getTradeStatus(),
                 event.getContent(),
                 event.getSignature().toString(),

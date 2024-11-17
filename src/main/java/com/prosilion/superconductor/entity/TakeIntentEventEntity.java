@@ -11,10 +11,7 @@ import nostr.event.Side;
 import nostr.event.TradeStatus;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.TakeIntentEvent;
-import nostr.event.tag.PaymentTag;
-import nostr.event.tag.QuoteTag;
-import nostr.event.tag.TakeTag;
-import nostr.event.tag.TokenTag;
+import nostr.event.tag.*;
 import nostr.util.NostrUtil;
 import org.springframework.util.StringUtils;
 
@@ -62,6 +59,13 @@ public class TakeIntentEventEntity {
     private String paymentQrCode;
     private String paymentMemo;
 
+    /** trade key for participant and public key of current trade **/
+    private String keyForBuyer;
+    private String keyForSeller;
+    private String keyForWitness;
+    private String keyForSomeone;
+    private String tradePubKey;
+
     @Column(nullable = false)
     private String status = TradeStatus.TakeEvent.getValue();
 
@@ -95,6 +99,11 @@ public class TakeIntentEventEntity {
              String paymentAccount,
              String paymentQrCode,
              String paymentMemo,
+             String keyForBuyer,
+             String keyForSeller,
+             String keyForWitness,
+             String keyForSomeone,
+             String tradePubKey,
              String tradeStatus,
              String content,
              String signature,
@@ -120,6 +129,11 @@ public class TakeIntentEventEntity {
         this.paymentAccount = paymentAccount;
         this.paymentQrCode = paymentQrCode;
         this.paymentMemo = paymentMemo;
+        this.keyForBuyer = keyForBuyer;
+        this.keyForSeller = keyForSeller;
+        this.keyForWitness = keyForWitness;
+        this.keyForSomeone = keyForSomeone;
+        this.tradePubKey = tradePubKey;
         if(StringUtils.hasText(tradeStatus)) {
             this.status = tradeStatus;
         }
@@ -141,10 +155,11 @@ public class TakeIntentEventEntity {
                     new PublicKey(buyerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, sellerId, sellerPubKey, volume, buyerId, buyerPubKey),
-                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO),
-                            new QuoteTag(price, currency, usdRate),
-                            new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo)
+                            new TakeTag(side, makeIntentEventId, sellerId, sellerPubKey, volume.stripTrailingZeros(), buyerId, buyerPubKey),
+                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros()),
+                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros()),
+                            new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
+                            new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey)
                     ),
                     eventIdString,
                     content,
@@ -156,10 +171,11 @@ public class TakeIntentEventEntity {
                     new PublicKey(sellerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, buyerId, buyerPubKey, volume, sellerId, sellerPubKey),
-                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO),
-                            new QuoteTag(price, currency, usdRate),
-                            new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo)
+                            new TakeTag(side, makeIntentEventId, buyerId, buyerPubKey, volume.stripTrailingZeros(), sellerId, sellerPubKey),
+                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros()),
+                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros()),
+                            new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
+                            new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey)
                     ),
                     eventIdString,
                     content,

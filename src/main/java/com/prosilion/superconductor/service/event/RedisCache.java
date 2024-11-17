@@ -3,17 +3,22 @@ package com.prosilion.superconductor.service.event;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import nostr.base.PublicKey;
 import nostr.event.Kind;
+import nostr.event.Side;
 import nostr.event.impl.*;
+import nostr.event.tag.TakeTag;
+import nostr.event.tag.TradeKeyTag;
+import nostr.id.Identity;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-
-import java.util.*;
-import java.util.function.Function;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -21,16 +26,14 @@ import java.util.stream.Collectors;
 // TODO: caching currently non-critical although ready for implementation anytime
 public class RedisCache<T extends GenericEvent> {
 
-    @Value("${notice.lighter.im.pubkey:aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984}")
-    private String noticePusherPubkey;
     private final Map<Kind, EventEntityServiceIF<T>> eventEntityServiceMap;
     private final IntentEntityService postEventEntityService;
     private final TradeEntityService tradeEntityService;
     private final TradeMessageEntityService tradeMessageEntityService;
-
     private final ProfileEntityService profileEntityService;
-
     private final EventEntityService<T> eventEntityService;
+    @Value("${notice.lighter.im.pubkey:aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984}")
+    private String noticePusherPubkey;
 
 
     @Autowired
@@ -53,6 +56,35 @@ public class RedisCache<T extends GenericEvent> {
 //        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 //  }
 
+    @NotNull
+    private static TradeKeyTag buildTradeKey(TakeIntentEvent event) {
+        TakeTag takeTag = event.getTakeTag();
+        Side side = takeTag.getSide();
+
+        Identity identity = Identity.generateRandomIdentity();
+        String hexPrivateKey = identity.getPrivateKey().toHexString();
+
+        String encPrivKeyForBuyer, encPrivKeyForSeller;
+        if (side == Side.BUY) {
+            // taker.side = buyer
+            encPrivKeyForBuyer = encryptWithPublicKey(hexPrivateKey, takeTag.getTakerPubkey());
+            encPrivKeyForSeller = encryptWithPublicKey(hexPrivateKey, takeTag.getMakerPubkey());
+        } else {
+            // taker.side = seller
+            encPrivKeyForBuyer = encryptWithPublicKey(hexPrivateKey, takeTag.getMakerPubkey());
+            encPrivKeyForSeller = encryptWithPublicKey(hexPrivateKey, takeTag.getTakerPubkey());
+        }
+        return new TradeKeyTag(encPrivKeyForBuyer, encPrivKeyForSeller, "", "", identity.getPublicKey().toHexString());
+    }
+
+    private static String encryptWithPublicKey(String plainText, String tradePubKey) {
+        try {
+            return Identity.encryptWithPublicKey(plainText, new PublicKey(tradePubKey));
+        } catch (Exception e) {
+            log.error("encPrivateKeyWithPubKey:" + e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
 
     public Map<Kind, Map<Long, GenericEvent>> getAll() {
         Map<Kind, Map<Long, GenericEvent>> map = new HashMap<>();
@@ -99,11 +131,12 @@ public class RedisCache<T extends GenericEvent> {
     @Transactional
     public Long saveEventEntity(@NonNull GenericEvent event) {
         Kind kind = Kind.valueOf(event.getKind());
-        Long id = switch (kind){
+        Long id = switch (kind) {
             case SET_METADATA -> profileEntityService.saveEventEntity((MetadataEvent) event);
             case POST_INTENT -> postEventEntityService.saveEventEntity((PostIntentEvent) event);
             case TAKE_INTENT -> {
                 TakeIntentEvent takeIntentEvent = (TakeIntentEvent) event;
+                takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
                 Long tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
                 takeIntentEvent.setTradeId(tradeId);
                 yield tradeId;
@@ -115,26 +148,42 @@ public class RedisCache<T extends GenericEvent> {
     }
 
     private Long saveTradeMessageEntity(TradeMessageEvent event) {
+        boolean isNoticePusher = noticePusherPubkey.equals(event.getCreatedByTag().getPubkey());
+        if (isNoticePusher && event.getLedgerTag() != null) {
+            setEncryptContentForNoticePusher(event);
+        }
         Long id = tradeMessageEntityService.saveEventEntity(event);
-        if(noticePusherPubkey.equals(event.getCreatedByTag().getPubkey()) && event.getLedgerTag()!=null && event.getLedgerTag().getTradeStatus() != null){
-            tradeEntityService.updateTradeStatus(event.getCreatedByTag().getTradeId(), event.getLedgerTag().getTradeStatus());
+        if (isNoticePusher && event.getLedgerTag() != null && event.getLedgerTag().getTradeStatus() != null) {
+            long tradeId = event.getCreatedByTag().getTradeId();
+            tradeEntityService.updateTradeStatus(tradeId, event.getLedgerTag().getTradeStatus());
         }
         return id;
     }
 
+    private void setEncryptContentForNoticePusher(TradeMessageEvent event) {
+        long tradeId = event.getCreatedByTag().getTradeId();
+        TakeIntentEvent trade = (TakeIntentEvent) getEventEntityById(Kind.TAKE_INTENT, tradeId);
+        if (trade != null) {
+            String tradePubKey = trade.getTradeKeyTag().getPubkey();
+            event.setContent(encryptWithPublicKey(event.getContent(), tradePubKey));
+        } else {
+            log.warn("The trade id: {} not found when encrypt content", tradeId);
+        }
+    }
+
     public T getEventEntityByEventId(Kind kind, String eventId) {
-        GenericEvent event = switch (kind){
+        GenericEvent event = switch (kind) {
             case SET_METADATA -> profileEntityService.getEventByEventIdString(eventId);
             case POST_INTENT -> postEventEntityService.getEventByEventIdString(eventId);
             case TAKE_INTENT -> tradeEntityService.getEventByEventIdString(eventId);
             case TRADE_MESSAGE -> tradeMessageEntityService.getEventByEventIdString(eventId);
             default -> eventEntityService.getEventByEventIdString(eventId);
         };
-        return (T)event;
+        return (T) event;
     }
 
-    public T getEventEntityById(Kind kind, Long id){
-        GenericEvent event = switch (kind){
+    public T getEventEntityById(Kind kind, Long id) {
+        GenericEvent event = switch (kind) {
             case SET_METADATA -> profileEntityService.getEventById(id);
             case POST_INTENT -> postEventEntityService.getEventById(id);
             case TAKE_INTENT -> tradeEntityService.getEventById(id);
@@ -142,6 +191,6 @@ public class RedisCache<T extends GenericEvent> {
             default -> eventEntityService.getEventById(id);
 
         };
-        return (T)event;
+        return (T) event;
     }
 }

@@ -18,7 +18,8 @@ public class SecurityConfig {
                         .requestMatchers("/**").permitAll()  // 允许WebSocket路径无认证访问
                         .anyRequest().authenticated()           // 其他路径需要认证
                 )
-                .csrf().disable();  // 禁用CSRF
+                .csrf().disable()  // 禁用CSRF
+                .headers().frameOptions().disable(); // 允许内嵌框架
 
         return http.build();
     }

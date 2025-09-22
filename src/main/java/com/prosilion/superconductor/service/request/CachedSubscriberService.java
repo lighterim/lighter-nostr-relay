@@ -5,117 +5,200 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.hash.Hashing;
 import com.prosilion.superconductor.entity.Subscriber;
 import com.prosilion.superconductor.entity.join.subscriber.SubscriberFilter;
-import com.prosilion.superconductor.service.AbstractSubscriberService;
+import com.prosilion.superconductor.service.request.pubsub.TerminatedSocket;
+import com.prosilion.superconductor.util.EmptyFiltersException;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import nostr.base.GenericTagQuery;
+import nostr.base.PublicKey;
+import nostr.event.Kind;
 import nostr.event.impl.Filters;
+import nostr.event.impl.GenericEvent;
+import nostr.event.query.CompositionQuery;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Predicate;
+
 
 @Slf4j
 @Service
 public class CachedSubscriberService extends AbstractSubscriberService {
-  private final Map<Long, List<Combo>> subscriberComboMap = Collections.synchronizedMap(new HashMap<>());
 
-  private final BiMap<String, String> biMap = HashBiMap.create();
+    private final Map<Long, List<Combo>> subscriberSessionHashComboMap = Collections.synchronizedMap(new HashMap<>());
 
-  private final BiMap<String, String> subscriptionIdMap = HashBiMap.create();
+    private final BiMap<String, String> biMap = HashBiMap.create();
 
-  @Autowired
-  public CachedSubscriberService(ApplicationEventPublisher publisher) {
-    super(publisher);
-  }
+    private final BiMap<String, String> subscriptionIdMap = HashBiMap.create();
 
-  @Override
-  public Long save(@NonNull Subscriber subscriber, @NonNull List<Filters> filtersList) {
-    long subscriberSessionHash = getHash(subscriber);
-    subscriber.setId(subscriberSessionHash);
-    filtersList.forEach(filters -> put(subscriber, filters));
-    return subscriberSessionHash;
-  }
-
-  //  TODO: list of long???  why not just long
-  @Override
-  public Map<Long, List<Filters>> getAllFiltersOfAllSubscribers() {
-    Map<Long, List<Filters>> map = new HashMap<>();
-    subscriberComboMap.forEach((key, value) -> map.put(key, value.stream().map(Combo::filters).toList()));
-    return map;
-  }
-
-//  @Cacheable("subscriber")
-  @Override
-  public Subscriber get(@NonNull Long subscriberId) {
-    return subscriberComboMap.get(subscriberId).stream().findFirst().get().subscriber();
-  }
-
-  @Override
-  public List<Filters> getFiltersList(@NonNull Long subscriberId) {
-    return subscriberComboMap.get(subscriberId).stream().map(Combo::filters).toList();
-  }
-
-  @Override
-  public List<Long> removeSubscriberBySessionId(@NonNull String sessionId) {
-    String subscriberId = biMap.inverse().get(sessionId);
-    long hash = getHash(
-        new Subscriber(
-            biMap.inverse().get(sessionId),
-            subscriptionIdMap.get(subscriberId),
-            sessionId,
-            true));
-    subscriberComboMap.remove(hash);
-    return List.of(hash);
-  }
-
-  @Override
-  public Long removeSubscriberBySubscriberId(@NonNull String subscriberId) throws NoExistingUserException {
-    long hash = getHash(
-        new Subscriber(
-            subscriberId,
-            subscriptionIdMap.remove(subscriberId),
-            biMap.remove(subscriberId),
-            true));
-    subscriberComboMap.remove(hash);
-    return hash;
-  }
-
-  private void put(Subscriber subscriber, Filters filters) {
-    biMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
-    subscriptionIdMap.put(subscriber.getSubscriberId(), subscriber.getSubscriptionId());
-    long subscriberSessionHash = getHash(subscriber);
-
-    Combo combo = new Combo(
-        subscriber,
-        new SubscriberFilter(
-            subscriberSessionHash,
-            filters.getSince(),
-            filters.getUntil(),
-            filters.getLimit()),
-        filters);
-
-    if (!subscriberComboMap.containsKey(subscriberSessionHash)) {
-      subscriberComboMap.put(subscriberSessionHash, new ArrayList<>(Collections.singleton(combo)));
-      return;
+    @Autowired
+    public CachedSubscriberService(ApplicationEventPublisher publisher) {
+        super(publisher);
     }
-    subscriberComboMap.get(subscriberSessionHash).add(combo);
-  }
 
-  private long getHash(Subscriber subscriber) {
-    return getHash(subscriber.getSubscriberId(), subscriber.getSessionId());
-  }
+    @Override
+    public Long save(@NonNull Subscriber subscriber, @NonNull List<Filters> filtersList) throws EmptyFiltersException {
+        removeSubscriberBySessionId(subscriber.getSessionId());
+        long subscriberSessionHash = getHash(subscriber);
+        subscriber.setSubscriberSessionHash(subscriberSessionHash);
+        for (Filters filters : filtersList) {
+            put(subscriber, filters);
+        }
+        return subscriberSessionHash;
+    }
 
-  private long getHash(String subscriberId, String sessionId) {
-    return getHash(subscriberId.concat(sessionId));
-  }
+    //  TODO: list of long???  why not just long
+    @Override
+    public Map<Long, List<Filters>> getAllFiltersOfAllSubscribers() {
+        Map<Long, List<Filters>> map = new HashMap<>();
+        subscriberSessionHashComboMap.forEach((key, value) -> map.put(key, value.stream().map(Combo::getFilters).toList()));
+        return map;
+    }
 
-  private long getHash(String string) {
-    return Hashing.murmur3_128().hashString(string, StandardCharsets.UTF_8).asLong();
-  }
+    //  @Cacheable("subscriber")
+    @Override
+    public Subscriber get(@NonNull Long subscriberSessionHash) {
+        return subscriberSessionHashComboMap.get(subscriberSessionHash).stream().findFirst().get().getSubscriber();
+    }
 
-  private record Combo(Subscriber subscriber, SubscriberFilter subscriberFilter, Filters filters) {
-  }
+    @Override
+    public List<Filters> getFiltersList(@NonNull Long subscriberSessionHash) {
+        return subscriberSessionHashComboMap.get(subscriberSessionHash).stream().map(Combo::getFilters).toList();
+    }
+
+    @EventListener
+    public void terminateSocket(@NonNull TerminatedSocket terminatedSocket) {
+        removeSubscriberBySessionId(terminatedSocket.sessionId());
+    }
+
+    @Override
+    public List<Long> removeSubscriberBySessionId(@NonNull String sessionId) {
+        String subscriberId = biMap.inverse().getOrDefault(sessionId, "");
+        long hash = getHash(new Subscriber(subscriberId, sessionId, true));
+        biMap.inverse().remove(sessionId);
+        subscriberSessionHashComboMap.remove(hash);
+        return List.of(hash);
+    }
+
+    @Override
+    public Long removeSubscriberBySubscriberId(@NonNull String subscriberId) {
+        long hash = getHash(
+                new Subscriber(
+                        subscriberId,
+                        biMap.remove(subscriberId),
+                        true));
+        subscriberSessionHashComboMap.remove(hash);
+        return hash;
+    }
+
+    private void put(Subscriber subscriber, Filters filters) throws EmptyFiltersException {
+        String existingKey = biMap.inverse().get(subscriber.getSessionId());
+        // 由于biMap的特性value也不能重复，所以同一个sessionId只能保留一个订阅，这里做判断是否已经有订阅，如果有先移除之前的订阅在插入
+        if (existingKey != null) {
+//            removeSubscriberBySessionId(subscriber.getSessionId());
+            biMap.remove(existingKey);
+        }
+//        biMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
+        biMap.forcePut(subscriber.getSubscriberId(), subscriber.getSessionId());
+//        subscriptionIdMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
+        subscriptionIdMap.forcePut(subscriber.getSubscriberId(), subscriber.getSessionId());
+
+
+        long subscriberSessionHash = getHash(subscriber);
+
+        Combo combo = new Combo(
+                subscriber,
+                new SubscriberFilter(
+                        subscriberSessionHash,
+                        filters.getSince(),
+                        filters.getUntil(),
+                        filters.getLimit()),
+                filters);
+
+        if (!subscriberSessionHashComboMap.containsKey(subscriberSessionHash)) {
+            subscriberSessionHashComboMap.put(subscriberSessionHash, new ArrayList<>(List.of(combo)));
+            return;
+        }
+        subscriberSessionHashComboMap.get(subscriberSessionHash).add(combo);
+    }
+
+    private long getHash(Subscriber subscriber) {
+        return getHash(subscriber.getSubscriberId(), subscriber.getSessionId());
+    }
+
+    private long getHash(String subscriberId, String sessionId) {
+        return getHash(subscriberId.concat(sessionId));
+    }
+
+    private long getHash(String string) {
+        return Hashing.murmur3_128().hashString(string, StandardCharsets.UTF_8).asLong();
+    }
+
+    @Getter
+    private static class Combo {
+        private final Subscriber subscriber;
+        private final SubscriberFilter subscriberFilter;
+        private final Filters filters;
+
+        public Combo(Subscriber subscriber, SubscriberFilter subscriberFilter, Filters filters) throws EmptyFiltersException {
+            this.subscriber = subscriber;
+            if (!checkMinimallyPopulatedFilters(subscriberFilter, filters))
+                throw new EmptyFiltersException(String.format("invalid: empty filters encountered for subscriber [%s]", subscriber.getSubscriberId()));
+            this.subscriberFilter = subscriberFilter;
+            this.filters = filters;
+        }
+
+        private static boolean checkMinimallyPopulatedFilters(SubscriberFilter subscriberFilter, Filters filters) {
+            return Objects.nonNull(subscriberFilter.getSince())
+                    || Objects.nonNull(subscriberFilter.getUntil())
+                    || Objects.nonNull(subscriberFilter.getLimit())
+                    || hasValidField(filters.getEvents(), getEventPredicate())
+                    || hasValidField(filters.getAuthors(), getPubKeyPredicate())
+                    || hasValidField(filters.getKinds(), getKindPredicate())
+                    || hasValidField(filters.getReferencedEvents(), getEventPredicate())
+                    || hasValidField(filters.getReferencePubKeys(), getPubKeyPredicate())
+                    || hasValidGenericTagQuery(filters.getGenericTagQuery())
+                    || hasValidGenericTagQueryList(filters.getGenericTagQueryList())
+                    || hasValidCompositionQuery(filters.getCompositionQuery());
+        }
+
+        private static boolean hasValidCompositionQuery(CompositionQuery compositionQuery) {
+            return Objects.nonNull(compositionQuery) && compositionQuery.getKind() != null
+                    && (compositionQuery.getKind() == Kind.POST_INTENT
+                    || (!compositionQuery.getAnyMatchList().isEmpty() && compositionQuery.getAnyMatchList().stream().anyMatch(Combo::hasValidGenericTagQuery)));
+        }
+
+        private static <T> boolean hasValidField(List<T> filtersField, Predicate<T> fieldPredicate) {
+            return Objects.nonNull(filtersField)
+                    && !filtersField.isEmpty()
+                    && filtersField.stream().anyMatch(fieldPredicate);
+        }
+
+        private static Predicate<PublicKey> getPubKeyPredicate() {
+            return pubKey -> !pubKey.toString().isBlank();
+        }
+
+        private static Predicate<GenericEvent> getEventPredicate() {
+            return event -> !event.getId().isBlank();
+        }
+
+        private static Predicate<Kind> getKindPredicate() {
+            return kind -> !kind.toString().isBlank();
+        }
+
+        private static boolean hasValidGenericTagQuery(GenericTagQuery genericTagQuery) {
+            return Objects.nonNull(genericTagQuery)
+                    && Objects.nonNull(genericTagQuery.getTagName())
+                    && !genericTagQuery.getTagName().isBlank();
+        }
+
+        private static boolean hasValidGenericTagQueryList(List<GenericTagQuery> list) {
+            return Objects.nonNull(list) && !list.isEmpty() && list.stream().anyMatch(Combo::hasValidGenericTagQuery);
+        }
+    }
 }

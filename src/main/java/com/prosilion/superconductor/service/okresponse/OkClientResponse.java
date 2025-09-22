@@ -11,12 +11,13 @@ import org.springframework.web.socket.TextMessage;
 @Setter
 @Getter
 public class OkClientResponse {
-  private final TextMessage okResponseMessage;
-  private final String sessionId;
+    private final TextMessage okResponseMessage;
+    private final String sessionId;
 
-  public OkClientResponse(@NonNull String sessionId, @NonNull GenericEvent event) throws JsonProcessingException {
-    this.sessionId = sessionId;
-    this.okResponseMessage = new TextMessage(
-        new NIP20Impl.OkMessageFactory(event, true, "").create().encode());
-  }
+    public OkClientResponse(@NonNull String sessionId, @NonNull GenericEvent event) throws JsonProcessingException {
+        this.sessionId = sessionId;
+        this.okResponseMessage = new TextMessage(
+                new NIP20Impl.OkMessageFactory(event, true, "").create().encode()
+        );
+    }
 }

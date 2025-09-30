@@ -93,6 +93,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             //TODO: dapp(buyer/seller signature intent: IntentParams + signature: 意向发起人的私钥签名)， 发起人的公钥(钱包地地）验证。
             validatePostIntentEvent(postIntentEvent);
         } else if (event instanceof TakeIntentEvent takeIntentEvent) {
+            //TODO: quote.lighter.im, price. signature
             validateTakeIntentEvent(takeIntentEvent);
         } else if (event instanceof TradeMessageEvent tradeMessageEvent) {
             validateTradeMessageEvent(tradeMessageEvent);

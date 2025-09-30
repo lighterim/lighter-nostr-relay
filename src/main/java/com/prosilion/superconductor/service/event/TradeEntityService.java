@@ -76,6 +76,8 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
     }
 
     public Long saveEventEntity(@NonNull TakeIntentEvent event) {
+        //TODO: // takeIntent(挂单，吃单), sellerIntentParams, buyer:volume, price, payment
+        //            // 返回：escrow:(buyer,seller,volume,price,payment...) signature (由relay 私钥产生)
         if(!StringUtils.hasText(event.getContent()) && StringUtils.hasText(defaultContent)){
             event.setContent(defaultContent);
         }

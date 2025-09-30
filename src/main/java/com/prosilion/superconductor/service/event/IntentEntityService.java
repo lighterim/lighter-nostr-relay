@@ -62,6 +62,7 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
 
     @Override
     public Long saveEventEntity(@NonNull PostIntentEvent event) {
+
         IntentEventEntity savedEntity = Optional.of(postEventEntityRepository.save(EventDto.convertToEntity(event))).orElseThrow(NoResultException::new);
         // remove key tag from INTENT event fields.
         List<BaseTag> tags = event.getTags().stream().filter(t -> !eventFieldNames.contains(t.getCode())).toList();

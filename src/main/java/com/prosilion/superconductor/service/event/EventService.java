@@ -90,6 +90,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
 
     private void validateEventForwarding(GenericEvent event) {
         if (event instanceof PostIntentEvent postIntentEvent) {
+            //TODO: dapp(buyer/seller signature intent: IntentParams + signature: 意向发起人的私钥签名)， 发起人的公钥(钱包地地）验证。
             validatePostIntentEvent(postIntentEvent);
         } else if (event instanceof TakeIntentEvent takeIntentEvent) {
             validateTakeIntentEvent(takeIntentEvent);

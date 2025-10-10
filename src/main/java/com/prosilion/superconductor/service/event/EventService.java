@@ -7,6 +7,7 @@ import com.google.common.cache.LoadingCache;
 import com.prosilion.superconductor.service.request.NotifierService;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
 import com.prosilion.superconductor.util.EIP712Signer;
+import com.prosilion.superconductor.util.SignerType;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
@@ -92,7 +93,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     private void validateEventForwarding(GenericEvent event) {
         if (event instanceof PostIntentEvent postIntentEvent) {
             validatePostIntentEvent(postIntentEvent);
-            validateEIP712(postIntentEvent);
+            validateEIP712(postIntentEvent, SignerType.POST_EVENT);
         } else if (event instanceof TakeIntentEvent takeIntentEvent) {
             validateTakeIntentEvent(takeIntentEvent);
         } else if (event instanceof TradeMessageEvent tradeMessageEvent) {
@@ -141,6 +142,8 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 return;
             }
             if (event instanceof PostIntentEvent postIntentEvent) {
+                // 验证价格合法性
+                validateEIP712(postIntentEvent, SignerType.PRICE);
                 MakeTag make = postIntentEvent.getSideTag();
                 // 3.0 take.side & make.side
                 if (take.getSide() == make.getSide()) {
@@ -218,8 +221,8 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         }
     }
 
-    private void validateEIP712(PostIntentEvent postIntentEvent) {
-        boolean isValid = EIP712Signer.verifySignature(postIntentEvent);
+    private void validateEIP712(PostIntentEvent postIntentEvent, SignerType signerType) {
+        boolean isValid = EIP712Signer.verifySignature(postIntentEvent, signerType);
         if(!isValid) {
             EIP712Tag eip712Tag = postIntentEvent.getEip712Tag();
             log.warn("verify sign fail:" + eip712Tag.getSign());

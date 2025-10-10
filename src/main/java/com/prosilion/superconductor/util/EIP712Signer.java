@@ -16,51 +16,47 @@ public class EIP712Signer {
     private static final Gson gson = new GsonBuilder().create();
 
     /**
-     * 使用私钥进行 EIP-712 签名
-     */
-    public static Sign.SignatureData signIntentMessage(
-            String privateKeyHex,
-            PostIntentEvent event
-    ) throws Exception {
-        String structuredDataJson = createStructuredDataJson(event);
-        StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
-        byte[] messageHash = encoder.hashStructuredData();
-        ECKeyPair keyPair = ECKeyPair.create(Numeric.toBigInt(privateKeyHex));
-        return Sign.signMessage(messageHash, keyPair, false);
-    }
-
-    /**
      * 验证签名
      */
-    public static boolean verifySignature(PostIntentEvent event) {
-        String structuredDataJson = createStructuredDataJson(event);
+    public static boolean verifySignature(PostIntentEvent event, SignerType signerType) {
+        String structuredDataJson;
+        if(signerType.equals(SignerType.POST_EVENT)) {
+            structuredDataJson = createPostStructuredDataJson(event);
+        } else if(signerType.equals(SignerType.PRICE)) {
+            structuredDataJson = createPriceStructuredDataJson(event);
+        } else {
+            return false;
+        }
         try {
             String signature = event.getQuoteTag().getSignature();
             String expectedAddress = event.getEip712Tag().getWalletAddress();
             StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
             byte[] messageHash = encoder.hashStructuredData();
-            Sign.SignatureData signatureData = parseHexSignature(signature);
-
-            for (int recoveryId = 0; recoveryId < 4; recoveryId++) {
-                try {
-                    BigInteger publicKey = Sign.recoverFromSignature(
-                            (byte) recoveryId,
-                            new ECDSASignature(
-                                    new BigInteger(1, signatureData.getR()),
-                                    new BigInteger(1, signatureData.getS())
-                            ),
-                            messageHash
-                    );
-
-                    if (publicKey != null && expectedAddress.equalsIgnoreCase("0x" + Keys.getAddress(publicKey))) {
-                        return true;
-                    }
-                } catch (Exception e) {
-                    return false;
-                }
-            }
+            return verifySignature(messageHash, signature, expectedAddress);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static boolean verifySignature(byte[] messageHash, String signature, String expectedAddress) {
+        Sign.SignatureData signatureData = parseHexSignature(signature);
+        for (int recoveryId = 0; recoveryId < 4; recoveryId++) {
+            try {
+                BigInteger publicKey = Sign.recoverFromSignature(
+                        (byte) recoveryId,
+                        new ECDSASignature(
+                                new BigInteger(1, signatureData.getR()),
+                                new BigInteger(1, signatureData.getS())
+                        ),
+                        messageHash
+                );
+
+                if (publicKey != null && expectedAddress.equalsIgnoreCase("0x" + Keys.getAddress(publicKey))) {
+                    return true;
+                }
+            } catch (Exception e) {
+                return false;
+            }
         }
         return false;
     }
@@ -95,18 +91,49 @@ public class EIP712Signer {
         return typeMap;
     }
 
-    private static String createStructuredDataJson(PostIntentEvent event) {
+    private static String createPriceStructuredDataJson(PostIntentEvent event) {
+        Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
+        Map<String, Object> structuredData = new LinkedHashMap<>();
+
+        List<Map<String, String>> domainType = createDomainTypes();
+        types.put("EIP712Domain", domainType);
+
+        List<Map<String, String>> paramsType = new ArrayList<>();
+        paramsType.add(createType("timestamp", "bytes32"));
+        paramsType.add(createType("price", "uint256"));
+        types.put("PriceParams", paramsType);
+
+        // 域数据
+        EIP712Tag eip712Tag = event.getEip712Tag();
+        TokenTag tokenTag = event.getTokenTag();
+        QuoteTag quoteTag = event.getQuoteTag();
+        Map<String, Object> domainMap = new LinkedHashMap<>();
+        domainMap.put("name", eip712Tag.getDomainAppName());
+        domainMap.put("version", eip712Tag.getDomainVersion());
+        domainMap.put("chainId", tokenTag.getChainId());
+        domainMap.put("verifyingContract", eip712Tag.getContractAddress());
+        structuredData.put("domain", domainMap);
+
+        //消息数据
+        Map<String, Object> messageMap = new LinkedHashMap<>();
+        messageMap.put("timestamp", quoteTag.getTimestamp());
+        messageMap.put("price", quoteTag.getNumber());
+
+        structuredData.put("message", messageMap);
+        structuredData.put("primaryType", "PriceParams");
+        structuredData.put("types", types);
+
+        return gson.toJson(structuredData);
+    }
+
+    private static String createPostStructuredDataJson(PostIntentEvent event) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
 
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
 
         // EIP712Domain 类型定义
-        List<Map<String, String>> domainType = new ArrayList<>();
-        domainType.add(createType("name", "string"));
-        domainType.add(createType("version", "string"));
-        domainType.add(createType("chainId", "uint256"));
-        domainType.add(createType("verifyingContract", "address"));
+        List<Map<String, String>> domainType = createDomainTypes();
         types.put("EIP712Domain", domainType);
 
         // IntentRange 类型定义
@@ -159,5 +186,14 @@ public class EIP712Signer {
         structuredData.put("types", types);
 
         return gson.toJson(structuredData);
+    }
+
+    private static List<Map<String, String>> createDomainTypes() {
+        List<Map<String, String>> domainType = new ArrayList<>();
+        domainType.add(createType("name", "string"));
+        domainType.add(createType("version", "string"));
+        domainType.add(createType("chainId", "uint256"));
+        domainType.add(createType("verifyingContract", "address"));
+        return domainType;
     }
 }

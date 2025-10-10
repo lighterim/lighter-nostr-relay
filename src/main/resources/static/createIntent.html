@@ -47,8 +47,32 @@
 <!--                    <input type="text" value="classified summary" id="summary" class="form-control" placeholder="summary...">-->
 <!--                </div>-->
                 <div class="form-group">
-                    <label for="userId">UserId: </label>
-                    <input type="text" value="test.lighter.im" id="userId" class="form-control" placeholder="userId" readonly>
+                    <label for="walletAddress">walletAddress: </label>
+                    <input type="text" value="0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B" id="walletAddress" class="form-control" placeholder="userId" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="domainAppName">domainAppName: </label>
+                    <input type="text" value="MainnetUserTxn" id="domainAppName" class="form-control" placeholder="userId" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="domainVersion">domainVersion: </label>
+                    <input type="text" value="1" id="domainVersion" class="form-control" placeholder="userId" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="contractAddress">contractAddress: </label>
+                    <input type="text" value="0xecd4fff6ea02f004143f9cf0b9546964800b16aa" id="contractAddress" class="form-control" placeholder="userId" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="sign">sign: </label>
+                    <input type="text" value="0xc76a91d8f059b4fb78a6b6ca48461c391721e2f5f0fa366bdb48b0eab59b13cf49cadc3de2572ed3323b96a05c56cdaad29ab411a9d1c38668af763e55f9534a1c" id="sign" class="form-control" placeholder="userId" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="chainId">chainId: </label>
+                    <input type="text" value="11155111" id="chainId" class="form-control" placeholder="userId" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="expiryTime">chainId: </label>
+                    <input type="text" value="1760355495" id="expiryTime" class="form-control" placeholder="userId" readonly>
                 </div>
                 <div class="form-group">
                     <label for="pubkey">Pubkey: </label>
@@ -87,15 +111,15 @@
 
                 <div class="form-group">
                     <label for="number">Price</label>
-                    <input type="text" id="number" name="number" value=271 class="form-control">
+                    <input type="text" id="number" name="number" value=1000000000000000000 class="form-control">
                 </div>
                 <div class="form-group">
                     <label>PaymentMethod</label>
                     <div class="btn-group" role="group" aria-label="...">
-                        <button type="button" class="btn btn-default active" data-group="paymentMethod" data-value="cash,1,2,3,4" >CASH</button>
-                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="alipay,dust_lee@189.cn,qrcode,111">ALIPAY</button>
-                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="wechat,dustplus,qrcode,111">WECHAT</button>
-                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="bank,123456789,qrcode,111">BANK</button>
+                        <button type="button" class="btn btn-default active" data-group="paymentMethod" data-value="cash,cash11,c2,c3,c4" >CASH</button>
+                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="alipay,dust_lee@189.cn,qrcode,c111">ALIPAY</button>
+                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="wechat,dustplus,qrcode,c111">WECHAT</button>
+                        <button type="button" class="btn btn-default" data-group="paymentMethod" data-value="bank,q123456789,qrcode,c111">BANK</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -105,11 +129,11 @@
                 <input type="hidden" id="account" name="account" value="dust_lee@189.cn">
                 <input type="hidden" id="kind" name="kind" value=30077>
                 <input type="hidden" id="side" name="side" value="sell">
-                <input type="hidden" id="currency" name="currency" value="CNY">
+                <input type="hidden" id="currency" name="currency" value="USD">
                 <input type="hidden" id="symbol" name="symbol" value="xrd">
                 <input type="hidden" id="chain" name="chain" value="radixDLT">
-                <input type="hidden" id="token_addr" name="token_addr" value="resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc">
-                <input type="hidden" id="paymentMethod" name="paymentMethod" value="cash">
+                <input type="hidden" id="token_addr" name="token_addr" value="0x1c7d4b196cb0c7b01d743fbc6116a902379c7238">
+                <input type="hidden" id="paymentMethod" name="paymentMethod" value="alipay,aa@bb.com">
                 <!--                    below refers to another event-->
 <!--                <input type="hidden" id="e_tag" name="e_tag"-->
 <!--                       value="494001ac0c8af2a10f60f23538e5b35d3cdacb8e1cc956fe7a16dfa5cbfc4346">-->

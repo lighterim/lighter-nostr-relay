@@ -64,7 +64,6 @@ public class EventDto extends NIP01Event {
                 quote.getNumber(),
                 quote.getCurrency(),
 
-                null,
                 limit == null || limit.getLowLimit() == null ? null : limit.getLowLimit(),
                 limit == null || limit.getUpLimit() == null ? null : limit.getUpLimit(),
 

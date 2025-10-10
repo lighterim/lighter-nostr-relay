@@ -12,6 +12,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
 import nostr.event.Kind;
+import nostr.event.NIP77Event;
 import nostr.event.Side;
 import nostr.event.impl.*;
 import nostr.event.message.EventMessage;
@@ -96,6 +97,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             validateEIP712(postIntentEvent, SignerType.POST_EVENT);
         } else if (event instanceof TakeIntentEvent takeIntentEvent) {
             validateTakeIntentEvent(takeIntentEvent);
+            validateEIP712(takeIntentEvent, SignerType.PRICE);
         } else if (event instanceof TradeMessageEvent tradeMessageEvent) {
             validateTradeMessageEvent(tradeMessageEvent);
         }
@@ -142,8 +144,6 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 return;
             }
             if (event instanceof PostIntentEvent postIntentEvent) {
-                // 验证价格合法性
-                validateEIP712(postIntentEvent, SignerType.PRICE);
                 MakeTag make = postIntentEvent.getSideTag();
                 // 3.0 take.side & make.side
                 if (take.getSide() == make.getSide()) {
@@ -221,12 +221,11 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         }
     }
 
-    private void validateEIP712(PostIntentEvent postIntentEvent, SignerType signerType) {
-        boolean isValid = EIP712Signer.verifySignature(postIntentEvent, signerType);
+    private void validateEIP712(NIP77Event event, SignerType signerType) {
+        boolean isValid = EIP712Signer.verifySignature(event, signerType);
         if(!isValid) {
-            EIP712Tag eip712Tag = postIntentEvent.getEip712Tag();
-            log.warn("verify sign fail:" + eip712Tag.getSign());
-            throw new RuntimeException(String.format("verify sign fail:%s", eip712Tag.getSign()));
+            log.warn("verify sign fail");
+            throw new RuntimeException("verify sign fail");
         }
     }
 

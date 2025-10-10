@@ -28,7 +28,7 @@ import java.util.List;
         @Index(name="IX_INTENT_EVENT_ID_STRING", columnList = "eventIdString", unique = true),
         @Index(name="IX_INTENT_SYMBOL", columnList = "symbol" ),
         @Index(name="IX_INTENT_SIDE", columnList = "side"),
-        @Index(name="IX_INTENT_QUOTE_CURRENCY", columnList = "quoteCurrency")
+        @Index(name="IX_INTENT_CURRENCY", columnList = "currency")
 })
 public class IntentEventEntity {
 
@@ -52,12 +52,11 @@ public class IntentEventEntity {
 
     /** quote **/
     private BigDecimal price;
-    private String quoteCurrency;
+    private String currency;
     private String timestamp;
     private String quoteSignature;
 
     /** limit **/
-    private String currency;
     private BigDecimal lowLimit;
     private BigDecimal upLimit;
 
@@ -84,7 +83,7 @@ public class IntentEventEntity {
     public IntentEventEntity(String side, String nip05, String pubkey,
                              String symbol, String chain, String network, String address, BigDecimal amount, BigInteger chainId, String expireTime,
                              String walletAddress, String domainVersion,String domainAppName, String contractAddress, String sign,
-                             BigDecimal price, String quoteCurrency,
+                             BigDecimal price,
                              String currency, BigDecimal lowLimit, BigDecimal upLimit,
                              String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content) {
         this.side = side;
@@ -102,7 +101,6 @@ public class IntentEventEntity {
         this.domainAppName = domainAppName;
         this.contractAddress = contractAddress;
         this.price = price;
-        this.quoteCurrency = quoteCurrency;
         this.currency = currency;
         this.lowLimit = lowLimit;
         this.upLimit = upLimit;
@@ -133,15 +131,13 @@ public class IntentEventEntity {
         List<BaseTag> tagList = new ArrayList<>(tags);
         MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey);
         TokenTag token = new TokenTag(symbol, chain, network, address, amount.stripTrailingZeros(), chainId, expireTime);
-        QuoteTag quote = new QuoteTag(price, quoteCurrency, BigDecimal.ZERO, timestamp, quoteSignature);
+        QuoteTag quote = new QuoteTag(price, currency, BigDecimal.ZERO, timestamp, quoteSignature);
         EIP712Tag eip712Tag = new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, sign);
-        if(StringUtils.hasLength(currency)) {
-            LimitTag limit = new LimitTag(
-                    lowLimit==null?null:lowLimit.stripTrailingZeros(),
-                    upLimit==null?null:upLimit.stripTrailingZeros()
-            );
-            tagList.add(limit);
-        }
+        LimitTag limit = new LimitTag(
+                lowLimit==null?null:lowLimit.stripTrailingZeros(),
+                upLimit==null?null:upLimit.stripTrailingZeros()
+        );
+        tagList.add(limit);
         tagList.add(eip712Tag);
         tagList.add(make);
         tagList.add(token);

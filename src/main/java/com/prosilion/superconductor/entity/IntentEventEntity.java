@@ -11,14 +11,12 @@ import nostr.event.Kind;
 import nostr.event.Side;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.PostIntentEvent;
-import nostr.event.tag.LimitTag;
-import nostr.event.tag.MakeTag;
-import nostr.event.tag.QuoteTag;
-import nostr.event.tag.TokenTag;
+import nostr.event.tag.*;
 import nostr.util.NostrUtil;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,10 +47,14 @@ public class IntentEventEntity {
     private String network;
     private String address;
     private BigDecimal amount;
+    private BigInteger chainId;
+    private String expireTime;
 
     /** quote **/
     private BigDecimal price;
     private String quoteCurrency;
+    private String timestamp;
+    private String quoteSignature;
 
     /** limit **/
     private String currency;
@@ -65,6 +67,13 @@ public class IntentEventEntity {
     private Integer nip;
     private Long createdAt;
 
+    /** eip712 **/
+    private String walletAddress;
+    private String domainVersion;
+    private String domainAppName;
+    private String contractAddress;
+    private String sign;
+
     @Lob
     private String content;
 
@@ -73,7 +82,8 @@ public class IntentEventEntity {
     private List<BaseTag> tags;
 
     public IntentEventEntity(String side, String nip05, String pubkey,
-                             String symbol, String chain, String network, String address, BigDecimal amount,
+                             String symbol, String chain, String network, String address, BigDecimal amount, BigInteger chainId, String expireTime,
+                             String walletAddress, String domainVersion,String domainAppName, String contractAddress, String sign,
                              BigDecimal price, String quoteCurrency,
                              String currency, BigDecimal lowLimit, BigDecimal upLimit,
                              String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content) {
@@ -85,6 +95,12 @@ public class IntentEventEntity {
         this.network = network;
         this.address = address;
         this.amount = amount;
+        this.expireTime = expireTime;
+        this.walletAddress = walletAddress;
+        this.sign = sign;
+        this.domainVersion = domainVersion;
+        this.domainAppName = domainAppName;
+        this.contractAddress = contractAddress;
         this.price = price;
         this.quoteCurrency = quoteCurrency;
         this.currency = currency;
@@ -96,6 +112,7 @@ public class IntentEventEntity {
         this.nip = nip;
         this.createdAt = createdAt;
         this.content = content;
+        this.chainId = chainId;
 
     }
 
@@ -115,16 +132,17 @@ public class IntentEventEntity {
 
         List<BaseTag> tagList = new ArrayList<>(tags);
         MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey);
-        TokenTag token = new TokenTag(symbol, chain, network, address, amount.stripTrailingZeros());
-        QuoteTag quote = new QuoteTag(price, quoteCurrency, BigDecimal.ZERO);
+        TokenTag token = new TokenTag(symbol, chain, network, address, amount.stripTrailingZeros(), chainId, expireTime);
+        QuoteTag quote = new QuoteTag(price, quoteCurrency, BigDecimal.ZERO, timestamp, quoteSignature);
+        EIP712Tag eip712Tag = new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, sign);
         if(StringUtils.hasLength(currency)) {
             LimitTag limit = new LimitTag(
-                    currency,
                     lowLimit==null?null:lowLimit.stripTrailingZeros(),
                     upLimit==null?null:upLimit.stripTrailingZeros()
             );
             tagList.add(limit);
         }
+        tagList.add(eip712Tag);
         tagList.add(make);
         tagList.add(token);
         tagList.add(quote);

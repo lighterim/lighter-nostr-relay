@@ -29,6 +29,8 @@
     <maven-javadoc-plugin.version>3.7.0</maven-javadoc-plugin.version>
     <mysql-connector-j.version>8.4.0</mysql-connector-j.version>
     <postgresql.version>42.7.3</postgresql.version>
+    <org.web3j.core.version>5.0.1</org.web3j.core.version>
+    <com.google.code.gson.version>2.13.2</com.google.code.gson.version>
   </properties>
 
   <dependencyManagement>
@@ -114,6 +116,11 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.web3j</groupId>
+      <artifactId>core</artifactId>
+      <version>${org.web3j.core.version}</version>
+    </dependency>
+    <dependency>
       <groupId>nostr-java</groupId>
       <artifactId>nostr-java-api</artifactId>
       <version>${nostr-java.version}</version>
@@ -165,6 +172,11 @@
       <artifactId>h2</artifactId>
       <version>${h2.version}</version>
       <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>${com.google.code.gson.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -225,6 +237,23 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <mainClass>com.prosilion.superconductor.SuperConductorApplication</mainClass> <!-- 替换为你的主启动类 -->
+          <layout>ZIP</layout>
+          <includes>
+            <include>
+              <groupId>nothing</groupId>
+              <artifactId>nothing</artifactId>
+            </include>
+          </includes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -269,6 +298,24 @@
           <source>22</source>
           <target>22</target>
         </configuration>
+      </plugin>
+
+      <!-- Maven 依赖插件：用于将依赖的JAR包复制到指定目录 -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

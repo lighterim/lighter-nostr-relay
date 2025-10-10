@@ -16,6 +16,7 @@ import nostr.util.NostrUtil;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 
 @Setter
@@ -41,11 +42,15 @@ public class TakeIntentEventEntity {
     private String buyerPubKey;
     private String sellerId;
     private String sellerPubKey;
+    private BigDecimal buyerFeeRate;
+    private BigDecimal sellerFeeRate;
 
     private String chain;
     private String network;
     private String tokenAddr;
     private String symbol;
+    private BigInteger chainId;
+    private String expireTime;
 
     /** The price for trade symbol based currency */
     @Column(precision = 18, scale = 9)
@@ -53,6 +58,8 @@ public class TakeIntentEventEntity {
     private String currency;
     @Column(precision = 18, scale = 9)
     private BigDecimal usdRate;
+    private String timestamp;
+    private String quoteSignature;
 
     private String paymentMethod;
     private String paymentAccount;
@@ -83,31 +90,37 @@ public class TakeIntentEventEntity {
             String eventIdString,
             String takeSide,
             String makeIntentEventId,
-             BigDecimal volume,
-             String buyerId,
-             String buyerPubKey,
-             String sellerId,
-             String sellerPubKey,
-             String tokenAddr,
-             String symbol,
-             String chain,
-             String network,
-             BigDecimal price,
-             String currency,
-             BigDecimal usdRate,
-             String paymentMethod,
-             String paymentAccount,
-             String paymentQrCode,
-             String paymentMemo,
-             String keyForBuyer,
-             String keyForSeller,
-             String keyForWitness,
-             String keyForSomeone,
-             String tradePubKey,
-             String tradeStatus,
-             String content,
-             String signature,
-             Long createAt){
+         BigDecimal volume,
+         String buyerId,
+         String buyerPubKey,
+         String sellerId,
+         String sellerPubKey,
+         BigDecimal sellerFeeRate,
+         BigDecimal buyerFeeRate,
+         String tokenAddr,
+         String symbol,
+         BigInteger chainId,
+         String expireTime,
+         String chain,
+         String network,
+         BigDecimal price,
+         String currency,
+         BigDecimal usdRate,
+         String timestamp,
+         String quoteSignature,
+         String paymentMethod,
+         String paymentAccount,
+         String paymentQrCode,
+         String paymentMemo,
+         String keyForBuyer,
+         String keyForSeller,
+         String keyForWitness,
+         String keyForSomeone,
+         String tradePubKey,
+         String tradeStatus,
+         String content,
+         String signature,
+         Long createAt){
         this.kind = kind;
         this.nip = nip;
         this.eventIdString = eventIdString;
@@ -118,13 +131,19 @@ public class TakeIntentEventEntity {
         this.buyerPubKey = buyerPubKey;
         this.sellerId = sellerId;
         this.sellerPubKey = sellerPubKey;
+        this.sellerFeeRate = sellerFeeRate;
+        this.buyerFeeRate = buyerFeeRate;
         this.chain = chain;
+        this.chainId = chainId;
+        this.expireTime = expireTime;
         this.network = network;
         this.tokenAddr = tokenAddr;
         this.symbol = symbol;
         this.price = price;
         this.currency = currency;
         this.usdRate = usdRate;
+        this.timestamp = timestamp;
+        this.quoteSignature = quoteSignature;
         this.paymentMethod = paymentMethod;
         this.paymentAccount = paymentAccount;
         this.paymentQrCode = paymentQrCode;
@@ -155,9 +174,9 @@ public class TakeIntentEventEntity {
                     new PublicKey(buyerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, sellerId, sellerPubKey, volume.stripTrailingZeros(), buyerId, buyerPubKey),
-                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros()),
-                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros()),
+                            new TakeTag(side, makeIntentEventId, sellerId, sellerPubKey, volume.stripTrailingZeros(), buyerId, buyerPubKey, sellerFeeRate, buyerFeeRate),
+                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime),
+                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), timestamp, quoteSignature),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey)
                     ),
@@ -171,9 +190,9 @@ public class TakeIntentEventEntity {
                     new PublicKey(sellerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, buyerId, buyerPubKey, volume.stripTrailingZeros(), sellerId, sellerPubKey),
-                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros()),
-                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros()),
+                            new TakeTag(side, makeIntentEventId, buyerId, buyerPubKey, volume.stripTrailingZeros(), sellerId, sellerPubKey, sellerFeeRate, buyerFeeRate),
+                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime),
+                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), timestamp, quoteSignature),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey)
                     ),

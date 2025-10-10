@@ -40,6 +40,7 @@ public class EventDto extends NIP01Event {
         TokenTag token = event.getTokenTag();
         QuoteTag quote = event.getQuoteTag();
         LimitTag limit = event.getLimitTag();
+        EIP712Tag eip712Tag = event.getEip712Tag();
 
         return new IntentEventEntity(
                 make.getSide().getSide(),
@@ -51,11 +52,19 @@ public class EventDto extends NIP01Event {
                 token.getNetwork(),
                 token.getAddress(),
                 token.getAmount(),
+                token.getChainId(),
+                token.getExpiryTime(),
+
+                eip712Tag.getWalletAddress(),
+                eip712Tag.getDomainVersion(),
+                eip712Tag.getDomainAppName(),
+                eip712Tag.getContractAddress(),
+                eip712Tag.getSign(),
 
                 quote.getNumber(),
                 quote.getCurrency(),
 
-                limit == null ? null : limit.getCurrency(),
+                null,
                 limit == null || limit.getLowLimit() == null ? null : limit.getLowLimit(),
                 limit == null || limit.getUpLimit() == null ? null : limit.getUpLimit(),
 
@@ -107,8 +116,9 @@ public class EventDto extends NIP01Event {
                 buyerPubKey,
                 sellerId,
                 sellerPubKey,
-                tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChain(), tokenTag.getNetwork(),
-                quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(),
+                takeTag.getSellerFeeRate(), takeTag.getBuyerFeeRate(),
+                tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChainId(), tokenTag.getExpiryTime(), tokenTag.getChain(), tokenTag.getNetwork(),
+                quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(), quoteTag.getTimestamp(), quoteTag.getSignature(),
                 paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
                 keyTag.getKeyForBuyer(), keyTag.getKeyForSeller(), keyTag.getKeyForWitness(), keyTag.getKeyForSomeone(), keyTag.getPubkey(),
                 event.getTradeStatus(),

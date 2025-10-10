@@ -72,7 +72,8 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
         registry.addHandler(this, "/")
                 .setHandshakeHandler(
                         new DefaultHandshakeHandler(
-                                new TomcatRequestUpgradeStrategy()));
+                                new TomcatRequestUpgradeStrategy()))
+                .setAllowedOrigins("*");
     }
 
     @Override

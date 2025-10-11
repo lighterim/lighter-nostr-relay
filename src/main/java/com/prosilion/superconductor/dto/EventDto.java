@@ -13,6 +13,7 @@ import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.impl.TradeMessageEvent;
 import nostr.event.tag.*;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -104,7 +105,11 @@ public class EventDto extends NIP01Event {
             sellerPubKey = takeTag.getTakerPubkey();
         }
 
+        // 参数进行eip712签名，用于后面合约验证
         String eip712Sign = EIP712Signer.reqSignature(event);
+        if(!StringUtils.hasText(eip712Sign)) {
+            throw new RuntimeException(String.format("request eip712 sign fail: %s, %s", event.getId(), takeTag.getIntentEventId()));
+        }
 
         return new TakeIntentEventEntity(
                 event.getNip(),

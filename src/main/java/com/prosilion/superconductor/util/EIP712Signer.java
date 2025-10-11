@@ -23,7 +23,7 @@ public class EIP712Signer {
 
     private static final Gson gson = new GsonBuilder().create();
 
-    private static final String API_URL = "http://127.0.0.1:5000/signature/eip712";
+    private static final String API_URL = "http://backend.lighter.im/signature/eip712";
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();

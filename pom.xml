@@ -8,7 +8,7 @@
   <version>1.7.4</version>
   <name>superconductor</name>
   <description>SuperConductor Java Nostr-Relay Framework and Web Application</description>
-  <packaging>war</packaging>
+  <packaging>jar</packaging>
 
   <parent>
     <groupId>org.springframework.boot</groupId>

@@ -2,6 +2,7 @@ package com.prosilion.superconductor.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import nostr.event.NIP77Event;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
@@ -11,11 +12,48 @@ import org.web3j.utils.Numeric;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.*;
 
 public class EIP712Signer {
 
     private static final Gson gson = new GsonBuilder().create();
+
+    private static final String API_URL = "http://127.0.0.1:5000/signature/eip712";
+    private static final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
+    public static String reqSignature(TakeIntentEvent event) {
+        try {
+            String data = createTakeStructuredDataJson(event);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_URL))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(data))
+                    .timeout(Duration.ofSeconds(15))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(
+                    request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                JsonObject jsonObject = gson.fromJson(response.body(), JsonObject.class);
+                int code = jsonObject.get("code").getAsInt();
+                if(code==0) {
+                    return jsonObject.get("data").getAsJsonObject().get("signature").getAsString();
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("验证请求失败: " + e.getMessage());
+        }
+        return null;
+    }
 
     /**
      * 使用私钥进行 EIP-712 签名
@@ -112,6 +150,48 @@ public class EIP712Signer {
         typeMap.put("name", name);
         typeMap.put("type", type);
         return typeMap;
+    }
+
+    private static String createTakeStructuredDataJson(TakeIntentEvent event) {
+        Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
+        Map<String, Object> structuredData = new LinkedHashMap<>();
+
+        List<Map<String, String>> domainType = createDomainTypes();
+        types.put("EIP712Domain", domainType);
+
+
+        List<Map<String, String>> paramsType = new ArrayList<>();
+        paramsType.add(createType("maker", "string"));
+        paramsType.add(createType("taker", "string"));
+        paramsType.add(createType("volume", "uint256"));
+        paramsType.add(createType("price", "uint256"));
+        paramsType.add(createType("payment", "string"));
+        types.put("EIP712Params", paramsType);
+
+        EIP712Tag eip712Tag = event.getEip712Tag();
+        TokenTag tokenTag = event.getTokenTag();
+        TakeTag takeTag = event.getTakeTag();
+        QuoteTag quoteTag = event.getQuoteTag();
+        PaymentTag paymentTag = event.getPaymentTag();
+        Map<String, Object> domainMap = new LinkedHashMap<>();
+        domainMap.put("name", eip712Tag.getDomainAppName());
+        domainMap.put("version", eip712Tag.getDomainVersion());
+        domainMap.put("chainId", tokenTag.getChainId());
+        domainMap.put("verifyingContract", eip712Tag.getContractAddress());
+        structuredData.put("domain", domainMap);
+
+        //消息数据
+        Map<String, Object> messageMap = new LinkedHashMap<>();
+        messageMap.put("maker", takeTag.getMakerPubkey());
+        messageMap.put("taker", takeTag.getTakerPubkey());
+        messageMap.put("volume", takeTag.getVolume());
+        messageMap.put("price", quoteTag.getNumber().toPlainString());
+        messageMap.put("payment", paymentTag.getMethod() + paymentTag.getAccount());
+
+        structuredData.put("message", messageMap);
+        structuredData.put("primaryType", "EIP712Params");
+        structuredData.put("types", types);
+        return gson.toJson(structuredData);
     }
 
     private static String createPriceStructuredDataJson(TakeIntentEvent event) {

@@ -1,6 +1,7 @@
 package com.prosilion.superconductor.dto;
 
 import com.prosilion.superconductor.entity.*;
+import com.prosilion.superconductor.util.EIP712Signer;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
 import nostr.event.BaseTag;
@@ -103,6 +104,7 @@ public class EventDto extends NIP01Event {
             sellerPubKey = takeTag.getTakerPubkey();
         }
 
+        String eip712Sign = EIP712Signer.reqSignature(event);
 
         return new TakeIntentEventEntity(
                 event.getNip(),
@@ -123,6 +125,7 @@ public class EventDto extends NIP01Event {
                 event.getTradeStatus(),
                 event.getContent(),
                 event.getSignature().toString(),
+                eip712Sign,
                 event.getCreatedAt()
         );
     }

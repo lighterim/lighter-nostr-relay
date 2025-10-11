@@ -48,17 +48,49 @@
               <label for="eventId">eventId: </label>
               <input type="text" value="" id="eventId" class="form-control" placeholder="eventId">
           </div>
+        <div class="form-group">
+          <label for="walletAddress">walletAddress: </label>
+          <input type="text" value="0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B" id="walletAddress" class="form-control" placeholder="userId" readonly>
+        </div>
+        <div class="form-group">
+          <label for="domainAppName">domainAppName: </label>
+          <input type="text" value="MainnetUserTxn" id="domainAppName" class="form-control" placeholder="userId" readonly>
+        </div>
+        <div class="form-group">
+          <label for="domainVersion">domainVersion: </label>
+          <input type="text" value="1" id="domainVersion" class="form-control" placeholder="userId" readonly>
+        </div>
+        <div class="form-group">
+          <label for="contractAddress">contractAddress: </label>
+          <input type="text" value="0xecd4fff6ea02f004143f9cf0b9546964800b16aa" id="contractAddress" class="form-control" placeholder="userId" readonly>
+        </div>
+        <div class="form-group">
+          <label for="number">Price</label>
+          <input type="text" id="number" name="number" value=10 class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="sign">sign: </label>
+          <input type="text" value="0x36eb005b2731d2522d096f26db575031bd9e7ede3700debbece2ff49292f948a26f8668c9bfbdff1741534c988710580f2fc60b5f6ca7d8e7a0233b96b973e611b" id="sign" class="form-control" placeholder="userId" readonly>
+        </div>
+        <div class="form-group">
+          <label for="timestamp">timestamp: </label>
+          <input type="text" value="1760355495" id="timestamp" class="form-control" placeholder="timestamp" readonly>
+        </div>
           <div class="form-group">
               <label for="pubkey">Pubkey: </label>
-              <input type="text" value="aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984" id="pubkey" class="form-control" placeholder="pubkey" readonly>
+              <input type="text" value="03d11b66e0c52be5a3a0a4e81cb5c9d6b0c5ae2c18687b22cd91bd402bba0f8566" id="pubkey" class="form-control" placeholder="pubkey" readonly>
           </div>
           <div class="form-group">
               <label for="userId">UserId: </label>
               <input type="text" value="taker.lighter.im" id="userId" class="form-control" placeholder="userId" readonly>
           </div>
         <div class="form-group">
+          <label for="chainId">chainId: </label>
+          <input type="text" value="11155111" id="chainId" class="form-control" placeholder="userId" readonly>
+        </div>
+        <div class="form-group">
           <label for="volume">Volume: </label>
-          <input type="text" value="" id="volume" class="form-control" placeholder="volume">
+          <input type="text" value="122" id="volume" class="form-control" placeholder="volume">
         </div>
         <div class="form-group">
           <label for="kind">kind: </label>
@@ -84,6 +116,7 @@
           <input type="hidden" id="paymentMethod" name="paymentMethod" value="">
           <input type="hidden" id="symbol" name="symbol" value="">
           <input type="hidden" id="currency" name="currency" value="">
+        <input type="hidden" id="token_addr" name="token_addr" value="0x1c7d4b196cb0c7b01d743fbc6116a902379c7238">
 
         <div class="row" align="center">
           <button id="send" class="btn btn-default" type="submit">Send</button>

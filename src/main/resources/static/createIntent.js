@@ -50,7 +50,7 @@ function replaceHash(id_hash) {
                     ['limit', "1000000", "100000000"],
                     ['token', $("#symbol").val(), $("#chain").val(), "stokenet", $("#token_addr").val(), $("#amount").val(), $("#chainId").val(), $("#expiryTime").val()],
                     ['quote', $("#number").val(), $("#currency").val(), "7.19", $("#sign").val()],
-                    ['payment'].concat($('#paymentMethod').val().split(","))
+                    ['payment', 'alipay', 'cash11', 'cash11', 'cash11']
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'seller'],
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'buyer'],
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'witness']

@@ -18,6 +18,19 @@ public class EIP712Signer {
     private static final Gson gson = new GsonBuilder().create();
 
     /**
+     * 使用私钥进行 EIP-712 签名
+     */
+    public static Sign.SignatureData signMessage(
+            String privateKeyHex,
+            String structuredDataJson
+    ) throws Exception {
+        StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
+        byte[] messageHash = encoder.hashStructuredData();
+        ECKeyPair keyPair = ECKeyPair.create(Numeric.toBigInt(privateKeyHex));
+        return Sign.signMessage(messageHash, keyPair, false);
+    }
+
+    /**
      * 验证签名
      */
     public static boolean verifySignature(NIP77Event event, SignerType signerType) {

@@ -3,6 +3,7 @@ package com.prosilion.superconductor.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import lombok.extern.slf4j.Slf4j;
 import nostr.event.NIP77Event;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
@@ -18,12 +19,12 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.*;
-
+@Slf4j
 public class EIP712Signer {
 
     private static final Gson gson = new GsonBuilder().create();
 
-    private static final String API_URL = "http://backend.lighter.im/signature/eip712";
+    private static final String API_URL = "https://api.lighter.im/signature/eip712";
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -50,7 +51,7 @@ public class EIP712Signer {
             }
 
         } catch (Exception e) {
-            System.err.println("验证请求失败: " + e.getMessage());
+            log.error("验证请求失败: ", e.getMessage());
         }
         return null;
     }

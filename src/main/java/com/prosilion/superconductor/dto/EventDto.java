@@ -126,7 +126,7 @@ public class EventDto extends NIP01Event {
                 tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChainId(), tokenTag.getExpiryTime(), tokenTag.getChain(), tokenTag.getNetwork(),
                 quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(), quoteTag.getTimestamp(), quoteTag.getSignature(),
                 paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
-                keyTag.getKeyForBuyer(), keyTag.getKeyForSeller(), keyTag.getKeyForWitness(), keyTag.getKeyForSomeone(), keyTag.getPubkey(),
+                keyTag==null?"":keyTag.getKeyForBuyer(), keyTag==null?"":keyTag.getKeyForSeller(), keyTag==null?"":keyTag.getKeyForWitness(), keyTag==null?"":keyTag.getKeyForSomeone(), keyTag==null?"":keyTag.getPubkey(),
                 event.getTradeStatus(),
                 event.getContent(),
                 event.getSignature().toString(),

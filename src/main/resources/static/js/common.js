@@ -3,7 +3,7 @@ let currentSubscriptonId
 let dateNow
 
 function connect() {
-    //ws = new WebSocket('ws://localhost:5555');
+    //ws = new WebSocket('ws://localhost:6666');
     ws = new WebSocket("wss://nostr-relay.lighter.im");
     ws.onmessage = function (messageEvent) {
         showEvent(messageEvent.data);

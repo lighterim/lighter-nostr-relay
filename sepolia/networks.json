@@ -1,0 +1,8 @@
+{
+  "sepolia": {
+    "ligher": {
+      "address": "0x30D3A1Bc456c6449EFfC83bEe9055B5B0607853B",
+      "startBlock": 9393893
+    }
+  }
+}

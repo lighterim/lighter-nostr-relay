@@ -60,10 +60,8 @@ public class RedisCache<T extends GenericEvent> {
     private static TradeKeyTag buildTradeKey(TakeIntentEvent event) {
         TakeTag takeTag = event.getTakeTag();
         Side side = takeTag.getSide();
-
         Identity identity = Identity.generateRandomIdentity();
         String hexPrivateKey = identity.getPrivateKey().toHexString();
-
         String encPrivKeyForBuyer, encPrivKeyForSeller;
         if (side == Side.BUY) {
             // taker.side = buyer
@@ -136,7 +134,7 @@ public class RedisCache<T extends GenericEvent> {
             case POST_INTENT -> postEventEntityService.saveEventEntity((PostIntentEvent) event);
             case TAKE_INTENT -> {
                 TakeIntentEvent takeIntentEvent = (TakeIntentEvent) event;
-                takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
+                //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
                 Long tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
                 takeIntentEvent.setTradeId(tradeId);
                 yield tradeId;

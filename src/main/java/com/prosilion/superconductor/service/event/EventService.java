@@ -83,7 +83,6 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         textNoteEvent.setSignature(event.getSignature());
 
         Long id = redisCache.saveEventEntity(event);
-
 //    if (event.getKind() == Kind.TAKE_INTENT.getValue()) {
 //      notifierService.nostrEventHandler(new AddNostrEvent<>(tradeEventEntityService.getById(id)));
 //    }else {

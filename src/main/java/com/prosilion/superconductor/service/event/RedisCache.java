@@ -31,6 +31,7 @@ public class RedisCache<T extends GenericEvent> {
     private final TradeEntityService tradeEntityService;
     private final TradeMessageEntityService tradeMessageEntityService;
     private final ProfileEntityService profileEntityService;
+    private final AccountMessageEntityService accountMessageEntityService;
     private final EventEntityService<T> eventEntityService;
     @Value("${notice.lighter.im.pubkey:aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984}")
     private String noticePusherPubkey;
@@ -47,7 +48,7 @@ public class RedisCache<T extends GenericEvent> {
         tradeMessageEntityService = (TradeMessageEntityService) eventEntityServiceMap.get(Kind.TRADE_MESSAGE);
         profileEntityService = (ProfileEntityService) eventEntityServiceMap.get(Kind.SET_METADATA);
         eventEntityService = (EventEntityService<T>) eventEntityServiceMap.get(Kind.TEXT_NOTE);
-
+        accountMessageEntityService = (AccountMessageEntityService) eventEntityServiceMap.get(Kind.ACCOUNT_INTENT);
     }
 
 //  public Map<Kind, Map<Long, T>> getAll() {
@@ -115,6 +116,13 @@ public class RedisCache<T extends GenericEvent> {
             }
         }
 
+        Map<Kind, Map<Long, AccountIntentEvent>> accountMessageMap = accountMessageEntityService.getAll();
+        for (Map.Entry<Kind, Map<Long, AccountIntentEvent>> accountMapEntry : accountMessageMap.entrySet()) {
+            if (map.put(accountMapEntry.getKey(), convertToGenericEventMap(accountMapEntry.getValue())) != null) {
+                throw new IllegalStateException("Duplicate key");
+            }
+        }
+
         return map;
     }
 
@@ -132,6 +140,7 @@ public class RedisCache<T extends GenericEvent> {
         Long id = switch (kind) {
             case SET_METADATA -> profileEntityService.saveEventEntity((MetadataEvent) event);
             case POST_INTENT -> postEventEntityService.saveEventEntity((PostIntentEvent) event);
+            case ACCOUNT_INTENT -> accountMessageEntityService.saveEventEntity((AccountIntentEvent) event);
             case TAKE_INTENT -> {
                 TakeIntentEvent takeIntentEvent = (TakeIntentEvent) event;
                 //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
@@ -172,6 +181,7 @@ public class RedisCache<T extends GenericEvent> {
     public T getEventEntityByEventId(Kind kind, String eventId) {
         GenericEvent event = switch (kind) {
             case SET_METADATA -> profileEntityService.getEventByEventIdString(eventId);
+            case ACCOUNT_INTENT -> accountMessageEntityService.getEventByEventIdString(eventId);
             case POST_INTENT -> postEventEntityService.getEventByEventIdString(eventId);
             case TAKE_INTENT -> tradeEntityService.getEventByEventIdString(eventId);
             case TRADE_MESSAGE -> tradeMessageEntityService.getEventByEventIdString(eventId);
@@ -184,6 +194,7 @@ public class RedisCache<T extends GenericEvent> {
         GenericEvent event = switch (kind) {
             case SET_METADATA -> profileEntityService.getEventById(id);
             case POST_INTENT -> postEventEntityService.getEventById(id);
+            case ACCOUNT_INTENT -> accountMessageEntityService.getEventById(id);
             case TAKE_INTENT -> tradeEntityService.getEventById(id);
             case TRADE_MESSAGE -> tradeMessageEntityService.getEventById(id);
             default -> eventEntityService.getEventById(id);

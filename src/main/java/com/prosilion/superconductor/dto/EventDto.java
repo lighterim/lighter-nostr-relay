@@ -8,14 +8,12 @@ import nostr.event.BaseTag;
 import nostr.event.Kind;
 import nostr.event.NIP01Event;
 import nostr.event.Side;
-import nostr.event.impl.MetadataEvent;
-import nostr.event.impl.PostIntentEvent;
-import nostr.event.impl.TakeIntentEvent;
-import nostr.event.impl.TradeMessageEvent;
+import nostr.event.impl.*;
 import nostr.event.tag.*;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 
 public class EventDto extends NIP01Event {
@@ -78,6 +76,15 @@ public class EventDto extends NIP01Event {
                 event.getContent()
 
         );
+    }
+
+    public static AccountMessageEntity convertToEntity(AccountIntentEvent event) {
+        AccountTag tag = event.getAccountTag();
+        return new AccountMessageEntity(event.getNip(),
+                event.getKind(),
+                event.getId(),
+                event.getContent(),
+                tag.getNftId(), tag.getTba(), tag.getNostrPubKey(), tag.getChainId(), event.getCreatedAt());
     }
 
     public static TakeIntentEventEntity convertToEntity(TakeIntentEvent event) {

@@ -73,6 +73,10 @@ public class IntentEventEntity {
     private String contractAddress;
     private String sign;
 
+    /** permit2 **/
+    private String nonce;
+    private String permit2Sign;
+
     @Lob
     private String content;
 
@@ -85,6 +89,7 @@ public class IntentEventEntity {
                              String walletAddress, String domainVersion,String domainAppName, String contractAddress, String sign,
                              BigDecimal price,
                              String currency, BigDecimal lowLimit, BigDecimal upLimit,
+                             String nonce, String permit2Sign,
                              String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content) {
         this.side = side;
         this.nip05 = nip05;
@@ -104,6 +109,8 @@ public class IntentEventEntity {
         this.currency = currency;
         this.lowLimit = lowLimit;
         this.upLimit = upLimit;
+        this.nonce = nonce;
+        this.permit2Sign = permit2Sign;
         this.signature = signature;
         this.eventIdString = eventId;
         this.kind = kind;
@@ -137,11 +144,13 @@ public class IntentEventEntity {
                 lowLimit==null?null:lowLimit.stripTrailingZeros(),
                 upLimit==null?null:upLimit.stripTrailingZeros()
         );
+        Permit2Tag permit2Tag = new Permit2Tag(nonce, permit2Sign);
         tagList.add(limit);
         tagList.add(eip712Tag);
         tagList.add(make);
         tagList.add(token);
         tagList.add(quote);
+        tagList.add(permit2Tag);
 
         event.setTags(tagList);
 

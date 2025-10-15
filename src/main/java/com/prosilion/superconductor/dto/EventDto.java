@@ -40,6 +40,7 @@ public class EventDto extends NIP01Event {
         TokenTag token = event.getTokenTag();
         QuoteTag quote = event.getQuoteTag();
         LimitTag limit = event.getLimitTag();
+        Permit2Tag permit2Tag = event.getPermit2Tag();
         EIP712Tag eip712Tag = event.getEip712Tag();
 
         return new IntentEventEntity(
@@ -66,6 +67,9 @@ public class EventDto extends NIP01Event {
 
                 limit == null || limit.getLowLimit() == null ? null : limit.getLowLimit(),
                 limit == null || limit.getUpLimit() == null ? null : limit.getUpLimit(),
+
+                permit2Tag.getNonce(),
+                permit2Tag.getSignature(),
 
                 event.getSignature().toString(),
                 event.getId(),

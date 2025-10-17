@@ -19,9 +19,9 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "remark_intent", indexes={
-        @Index(name="IX_REMARK_ADDRESS", columnList = "address"),
-        @Index(name="IX_REMARK_CREATED_BY", columnList = "created_by" )
+@Table(name = "address_book", indexes={
+        @Index(name="IX_ADDRESSBOOK_ADDRESS", columnList = "address"),
+        @Index(name="IX_ADDRESSBOOK_CREATED_BY", columnList = "created_by" )
 })
 public class AddressBookMessageEntity {
 

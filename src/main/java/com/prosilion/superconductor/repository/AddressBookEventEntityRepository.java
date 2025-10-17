@@ -1,7 +1,6 @@
 package com.prosilion.superconductor.repository;
 
-import com.prosilion.superconductor.entity.AccountMessageEntity;
-import com.prosilion.superconductor.entity.RemarkMessageEntity;
+import com.prosilion.superconductor.entity.AddressBookMessageEntity;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -10,18 +9,18 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RemarkEventEntityRepository extends JpaRepository<RemarkMessageEntity, Long> {
+public interface AddressBookEventEntityRepository extends JpaRepository<AddressBookMessageEntity, Long> {
 
     //  @Cacheable("events")
 //  @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @NotNull
-    List<RemarkMessageEntity> findAll();
+    List<AddressBookMessageEntity> findAll();
 
     //  @Cacheable("events")
 //  @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 //    List<PostIntentEventEntity> findByContent(String content);
 
-    Optional<RemarkMessageEntity> findById(Long id);
+    Optional<AddressBookMessageEntity> findById(Long id);
 
-    Optional<RemarkMessageEntity> findByEventIdString(String eventIdString);
+    Optional<AddressBookMessageEntity> findByEventIdString(String eventIdString);
 }

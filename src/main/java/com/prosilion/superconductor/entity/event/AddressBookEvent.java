@@ -2,14 +2,13 @@ package com.prosilion.superconductor.entity.event;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
 
 @Getter
 @AllArgsConstructor
-public class RemarkEvent {
+public class AddressBookEvent {
 
     @SerializedName("id")
     private String id;

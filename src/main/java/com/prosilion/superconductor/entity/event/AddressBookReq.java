@@ -1,15 +1,11 @@
 package com.prosilion.superconductor.entity.event;
 
-import com.google.gson.annotations.SerializedName;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 
 import java.math.BigInteger;
-import java.util.List;
 
 @Data
-public class RemarkReq {
+public class AddressBookReq {
 
     private String name;
 

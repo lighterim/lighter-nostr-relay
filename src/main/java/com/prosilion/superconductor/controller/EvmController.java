@@ -1,30 +1,26 @@
 package com.prosilion.superconductor.controller;
 
 import com.google.gson.Gson;
-import com.prosilion.superconductor.entity.event.RemarkReq;
+import com.prosilion.superconductor.entity.event.AddressBookReq;
 import com.prosilion.superconductor.service.event.EventServiceIF;
-import com.prosilion.superconductor.service.event.ProfileEntityService;
 import com.prosilion.superconductor.util.TagUtil;
-import jakarta.persistence.NoResultException;
 import lombok.extern.slf4j.Slf4j;
-import nostr.base.UserProfile;
 import nostr.event.BaseMessage;
 import nostr.event.Kind;
-import nostr.event.impl.MetadataEvent;
-import nostr.event.impl.RemarkIntentEvent;
+import nostr.event.impl.AddressBookIntentEvent;
 import nostr.event.json.codec.BaseMessageDecoder;
 import nostr.event.message.EventMessage;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 @Slf4j
 @RestController
@@ -34,29 +30,29 @@ public class EvmController<T extends BaseMessage> {
     @Autowired
     private EventServiceIF<EventMessage> eventService;
 
-    @PostMapping("/pushRemarkMessage")
-    public Map<String, String> pushRemarkMessage(@RequestBody RemarkReq remarkReq) {
+    @PostMapping("/addressbook/add")
+    public Map<String, String> pushAddressBookMessage(@RequestBody AddressBookReq addressBookReq) {
         Gson gson = new Gson();
         Map<String, Object> event = new LinkedHashMap<>();
 
-        int kind = Kind.REMARK_INTENT.getValue();
+        int kind = Kind.ADDRESS_BOOK_INTENT.getValue();
         long ts = System.currentTimeMillis();
         String digestContent = String.format("[[%d,%s,%d,%s,%s]]",
                 ts,
-                remarkReq.getPubkey(),
+                addressBookReq.getPubkey(),
                 kind,
-                remarkReq.getCreatedBy(),
-                remarkReq.getAddress());
+                addressBookReq.getCreatedBy(),
+                addressBookReq.getAddress());
 
         event.put("id", TagUtil.createDigest(digestContent));
         event.put("kind", kind);
-        event.put("content", RemarkIntentEvent.REMARK_INTENT_EVENT);
+        event.put("content", AddressBookIntentEvent.ADDRESS_BOOK_TAG_CODE);
         event.put("tags", Arrays.asList(
-                Arrays.asList("remark", remarkReq.getName(), remarkReq.getAddress(),
-                        remarkReq.getPubkey(),
-                        remarkReq.getNftId(),
-                        remarkReq.getChainId(), remarkReq.getCreatedBy())));
-        event.put("pubkey", remarkReq.getPubkey());
+                Arrays.asList("address_book", addressBookReq.getName(), addressBookReq.getAddress(),
+                        addressBookReq.getPubkey(),
+                        addressBookReq.getNftId(),
+                        addressBookReq.getChainId(), addressBookReq.getCreatedBy())));
+        event.put("pubkey", addressBookReq.getPubkey());
         event.put("created_at", ts);
 
         Object[] eventObj = new Object[]{"EVENT", event};

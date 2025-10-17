@@ -7,11 +7,9 @@ import lombok.Setter;
 import nostr.base.PublicKey;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
-import nostr.event.impl.AccountIntentEvent;
+import nostr.event.impl.AddressBookIntentEvent;
 import nostr.event.impl.GenericEvent;
-import nostr.event.impl.RemarkIntentEvent;
-import nostr.event.tag.AccountTag;
-import nostr.event.tag.RemarkTag;
+import nostr.event.tag.AddressBookTag;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -25,7 +23,7 @@ import java.util.List;
         @Index(name="IX_REMARK_ADDRESS", columnList = "address"),
         @Index(name="IX_REMARK_CREATED_BY", columnList = "created_by" )
 })
-public class RemarkMessageEntity {
+public class AddressBookMessageEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,7 +45,7 @@ public class RemarkMessageEntity {
     @Transient
     private List<BaseTag> tags;
 
-    public RemarkMessageEntity(Integer nip, Integer kind, String eventIdString, String content, String nftId, String name, String remarkPubkey, BigInteger chainId, String address, String createdBy, Long createdAt) {
+    public AddressBookMessageEntity(Integer nip, Integer kind, String eventIdString, String content, String nftId, String name, String remarkPubkey, BigInteger chainId, String address, String createdBy, Long createdAt) {
         this.nip = nip;
         this.kind = kind;
         this.content = content;
@@ -62,17 +60,17 @@ public class RemarkMessageEntity {
     }
 
     public <T extends GenericEvent> T convertEntityToDto() {
-        RemarkIntentEvent event = new RemarkIntentEvent(
+        AddressBookIntentEvent event = new AddressBookIntentEvent(
                 new PublicKey(remarkPubkey), List.of(
-                new RemarkTag(name, address, remarkPubkey, nftId, chainId, createdBy)
+                new AddressBookTag(name, address, remarkPubkey, nftId, chainId, createdBy)
         ), content, eventIdString, nip, createdAt);
         event.setPubKey(new PublicKey(remarkPubkey));
-        event.setKind(Kind.REMARK_INTENT.getValue());
+        event.setKind(Kind.ADDRESS_BOOK_INTENT.getValue());
         event.setCreatedAt(createdAt);
         event.setNip(nip);
 
         List<BaseTag> tagList = new ArrayList<>(tags);
-        RemarkTag remarkTag = new RemarkTag(name, address, remarkPubkey, nftId, chainId, createdBy);
+        AddressBookTag remarkTag = new AddressBookTag(name, address, remarkPubkey, nftId, chainId, createdBy);
         tagList.add(remarkTag);
 
         event.setTags(tagList);

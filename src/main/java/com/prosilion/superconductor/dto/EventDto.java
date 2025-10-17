@@ -13,7 +13,6 @@ import nostr.event.tag.*;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.List;
 
 public class EventDto extends NIP01Event {
@@ -91,9 +90,9 @@ public class EventDto extends NIP01Event {
                 tag.getNftId(), tag.getTba(), tag.getNostrPubKey(), tag.getChainId(), event.getCreatedAt());
     }
 
-    public static RemarkMessageEntity convertToEntity(RemarkIntentEvent event) {
-        RemarkTag tag = event.getRemarkTag();
-        return new RemarkMessageEntity(event.getNip(),
+    public static AddressBookMessageEntity convertToEntity(AddressBookIntentEvent event) {
+        AddressBookTag tag = event.getAddressBookTag();
+        return new AddressBookMessageEntity(event.getNip(),
                 event.getKind(),
                 event.getId(),
                 event.getContent(),

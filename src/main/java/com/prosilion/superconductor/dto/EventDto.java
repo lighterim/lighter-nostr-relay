@@ -91,6 +91,17 @@ public class EventDto extends NIP01Event {
                 tag.getNftId(), tag.getTba(), tag.getNostrPubKey(), tag.getChainId(), event.getCreatedAt());
     }
 
+    public static RemarkMessageEntity convertToEntity(RemarkIntentEvent event) {
+        RemarkTag tag = event.getRemarkTag();
+        return new RemarkMessageEntity(event.getNip(),
+                event.getKind(),
+                event.getId(),
+                event.getContent(),
+                tag.getNftId(), tag.getName(), tag.getPubkey(), tag.getChainId(),
+                tag.getAddress(),
+                tag.getCreatedBy(), event.getCreatedAt());
+    }
+
     public static TakeIntentEventEntity convertToEntity(TakeIntentEvent event) {
         TakeTag takeTag = event.getTakeTag();
         TokenTag tokenTag = event.getTokenTag();

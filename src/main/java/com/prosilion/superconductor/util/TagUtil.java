@@ -5,10 +5,28 @@ import nostr.base.ElementAttribute;
 import nostr.event.BaseTag;
 import nostr.event.impl.GenericTag;
 
-import java.util.Collections;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public class TagUtil {
+
+    public static String createDigest(String message) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(message.getBytes(StandardCharsets.UTF_8));
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                hexString.append(String.format("%02x", b));
+            }
+            return hexString.toString();
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 algorithm not available", e);
+        }
+    }
 
     public static String getGenericTagAttributeValue(List<BaseTag> tags, String code, int attributeIndex){
         if (StringUtils.isEmpty(code))

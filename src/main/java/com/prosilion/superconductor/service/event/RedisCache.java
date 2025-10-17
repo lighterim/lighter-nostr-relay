@@ -32,6 +32,7 @@ public class RedisCache<T extends GenericEvent> {
     private final TradeMessageEntityService tradeMessageEntityService;
     private final ProfileEntityService profileEntityService;
     private final AccountMessageEntityService accountMessageEntityService;
+    private final RemarkMessageEntityService remarkMessageEntityService;
     private final EventEntityService<T> eventEntityService;
     @Value("${notice.lighter.im.pubkey:aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984}")
     private String noticePusherPubkey;
@@ -49,6 +50,7 @@ public class RedisCache<T extends GenericEvent> {
         profileEntityService = (ProfileEntityService) eventEntityServiceMap.get(Kind.SET_METADATA);
         eventEntityService = (EventEntityService<T>) eventEntityServiceMap.get(Kind.TEXT_NOTE);
         accountMessageEntityService = (AccountMessageEntityService) eventEntityServiceMap.get(Kind.ACCOUNT_INTENT);
+        remarkMessageEntityService = (RemarkMessageEntityService) eventEntityServiceMap.get(Kind.REMARK_INTENT);
     }
 
 //  public Map<Kind, Map<Long, T>> getAll() {
@@ -116,12 +118,19 @@ public class RedisCache<T extends GenericEvent> {
             }
         }
 
-        Map<Kind, Map<Long, AccountIntentEvent>> accountMessageMap = accountMessageEntityService.getAll();
-        for (Map.Entry<Kind, Map<Long, AccountIntentEvent>> accountMapEntry : accountMessageMap.entrySet()) {
-            if (map.put(accountMapEntry.getKey(), convertToGenericEventMap(accountMapEntry.getValue())) != null) {
-                throw new IllegalStateException("Duplicate key");
-            }
-        }
+//        Map<Kind, Map<Long, AccountIntentEvent>> accountMessageMap = accountMessageEntityService.getAll();
+//        for (Map.Entry<Kind, Map<Long, AccountIntentEvent>> accountMapEntry : accountMessageMap.entrySet()) {
+//            if (map.put(accountMapEntry.getKey(), convertToGenericEventMap(accountMapEntry.getValue())) != null) {
+//                throw new IllegalStateException("Duplicate key");
+//            }
+//        }
+//
+//        Map<Kind, Map<Long, RemarkIntentEvent>> remarkMessageMap = remarkMessageEntityService.getAll();
+//        for (Map.Entry<Kind, Map<Long, RemarkIntentEvent>> remarkMapEntry : remarkMessageMap.entrySet()) {
+//            if (map.put(remarkMapEntry.getKey(), convertToGenericEventMap(remarkMapEntry.getValue())) != null) {
+//                throw new IllegalStateException("Duplicate key");
+//            }
+//        }
 
         return map;
     }
@@ -141,6 +150,7 @@ public class RedisCache<T extends GenericEvent> {
             case SET_METADATA -> profileEntityService.saveEventEntity((MetadataEvent) event);
             case POST_INTENT -> postEventEntityService.saveEventEntity((PostIntentEvent) event);
             case ACCOUNT_INTENT -> accountMessageEntityService.saveEventEntity((AccountIntentEvent) event);
+            case REMARK_INTENT -> remarkMessageEntityService.saveEventEntity((RemarkIntentEvent) event);
             case TAKE_INTENT -> {
                 TakeIntentEvent takeIntentEvent = (TakeIntentEvent) event;
                 //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));

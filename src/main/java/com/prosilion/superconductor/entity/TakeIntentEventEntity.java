@@ -36,7 +36,7 @@ public class TakeIntentEventEntity {
     private String takeSide;
     private String makeIntentEventId;
     /** The volume means volume of trade symbol **/
-    @Column(precision = 36, scale = 18)
+    @Column(precision = 36, scale = 0)
     private BigDecimal volume;
     private String buyerId;
     private String buyerPubKey;
@@ -44,6 +44,7 @@ public class TakeIntentEventEntity {
     private String sellerPubKey;
     private BigDecimal buyerFeeRate;
     private BigDecimal sellerFeeRate;
+    private String payer;
 
     private String chain;
     private String network;
@@ -53,10 +54,10 @@ public class TakeIntentEventEntity {
     private String expireTime;
 
     /** The price for trade symbol based currency */
-    @Column(precision = 18, scale = 9)
+    @Column(precision = 36, scale = 0)
     private BigDecimal price;
     private String currency;
-    @Column(precision = 18, scale = 9)
+    @Column(precision = 36, scale = 0)
     private BigDecimal usdRate;
     private String timestamp;
     private String quoteSignature;
@@ -99,6 +100,7 @@ public class TakeIntentEventEntity {
          String sellerPubKey,
          BigDecimal sellerFeeRate,
          BigDecimal buyerFeeRate,
+         String payer,
          String tokenAddr,
          String symbol,
          BigInteger chainId,
@@ -122,7 +124,6 @@ public class TakeIntentEventEntity {
          String tradeStatus,
          String content,
          String signature,
-         String eip712Sign,
          Long createAt){
         this.kind = kind;
         this.nip = nip;
@@ -136,6 +137,7 @@ public class TakeIntentEventEntity {
         this.sellerPubKey = sellerPubKey;
         this.sellerFeeRate = sellerFeeRate;
         this.buyerFeeRate = buyerFeeRate;
+        this.payer = payer;
         this.chain = chain;
         this.chainId = chainId;
         this.expireTime = expireTime;
@@ -161,7 +163,6 @@ public class TakeIntentEventEntity {
         }
         this.content = content;
         this.signature = signature;
-        this.eip712Sign = eip712Sign;
         this.createAt = createAt;
     }
 
@@ -178,7 +179,7 @@ public class TakeIntentEventEntity {
                     new PublicKey(buyerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, sellerId, sellerPubKey, volume.stripTrailingZeros(), buyerId, buyerPubKey, sellerFeeRate, buyerFeeRate),
+                            new TakeTag(side, makeIntentEventId, sellerId, sellerPubKey, volume.stripTrailingZeros(), buyerId, buyerPubKey, sellerFeeRate, buyerFeeRate, payer),
                             new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime),
                             new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), timestamp, quoteSignature),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
@@ -194,7 +195,7 @@ public class TakeIntentEventEntity {
                     new PublicKey(sellerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, buyerId, buyerPubKey, volume.stripTrailingZeros(), sellerId, sellerPubKey, sellerFeeRate, buyerFeeRate),
+                            new TakeTag(side, makeIntentEventId, buyerId, buyerPubKey, volume.stripTrailingZeros(), sellerId, sellerPubKey, sellerFeeRate, buyerFeeRate, payer),
                             new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime),
                             new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), timestamp, quoteSignature),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),

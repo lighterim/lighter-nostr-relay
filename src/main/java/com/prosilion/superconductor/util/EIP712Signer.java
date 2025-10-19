@@ -8,7 +8,6 @@ import nostr.event.NIP77Event;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
-import org.springframework.security.crypto.codec.Hex;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
 
@@ -18,44 +17,13 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 @Slf4j
 public class EIP712Signer {
 
     private static final Gson gson = new GsonBuilder().create();
-
-    private static final String API_URL = "https://api.lighter.im/signature/eip712";
-    private static final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
-
-    public static String reqSignature(TakeIntentEvent event) {
-        try {
-            String data = createTakeStructuredDataJson(event);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(API_URL))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(data))
-                    .timeout(Duration.ofSeconds(15))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(
-                    request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200) {
-                JsonObject jsonObject = gson.fromJson(response.body(), JsonObject.class);
-                int code = jsonObject.get("code").getAsInt();
-                if(code==0) {
-                    return jsonObject.get("data").getAsJsonObject().get("signature").getAsString();
-                }
-            }
-
-        } catch (Exception e) {
-            log.error("验证请求失败: ", e.getMessage());
-        }
-        return null;
-    }
 
     /**
      * 使用私钥进行 EIP-712 签名
@@ -70,12 +38,16 @@ public class EIP712Signer {
         return Sign.signMessage(messageHash, keyPair, false);
     }
 
+    public static String keccak256(String msg) {
+        byte[] hash = Hash.sha3(msg.getBytes(StandardCharsets.UTF_8));
+        return org.web3j.utils.Numeric.toHexString(hash);
+    }
+
     /**
      * 验证签名
      */
     public static boolean verifySignature(NIP77Event event, SignerType signerType) {
         String structuredDataJson;
-        QuoteTag quoteTag;
         EIP712Tag eip712Tag;
         String signature;
         if(signerType.equals(SignerType.POST_EVENT)) {
@@ -83,21 +55,14 @@ public class EIP712Signer {
             eip712Tag = postIntentEvent.getEip712Tag();
             signature = eip712Tag.getSign();
             structuredDataJson = createPostStructuredDataJson(postIntentEvent);
-        } else if(signerType.equals(SignerType.PRICE)) {
-            TakeIntentEvent takeIntentEvent = (TakeIntentEvent)event;
-            quoteTag = takeIntentEvent.getQuoteTag();
-            eip712Tag = takeIntentEvent.getEip712Tag();
-            signature = quoteTag.getSignature();
-            structuredDataJson = createPriceStructuredDataJson(takeIntentEvent);
         } else {
             return false;
         }
         try {
             String expectedAddress = eip712Tag.getWalletAddress();
             StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
-
             byte[] messageHash = encoder.hashStructuredData();
-            log.info("event-id:{}, structDataJson:{}, hash:{}, event:{}", event.getId(), structuredDataJson, new String(Hex.encode(messageHash)), event);
+            log.info("event-id:{}, structDataJson:{}, hash:{}, event:{}", event.getId(), structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash), event);
             return verifySignature(messageHash, signature, expectedAddress);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -156,83 +121,6 @@ public class EIP712Signer {
         return typeMap;
     }
 
-    private static String createTakeStructuredDataJson(TakeIntentEvent event) {
-        Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
-        Map<String, Object> structuredData = new LinkedHashMap<>();
-
-        List<Map<String, String>> domainType = createDomainTypes();
-        types.put("EIP712Domain", domainType);
-
-
-        List<Map<String, String>> paramsType = new ArrayList<>();
-        paramsType.add(createType("maker", "string"));
-        paramsType.add(createType("taker", "string"));
-        paramsType.add(createType("volume", "uint256"));
-        paramsType.add(createType("price", "uint256"));
-        paramsType.add(createType("payment", "string"));
-        types.put("EIP712Params", paramsType);
-
-        EIP712Tag eip712Tag = event.getEip712Tag();
-        TokenTag tokenTag = event.getTokenTag();
-        TakeTag takeTag = event.getTakeTag();
-        QuoteTag quoteTag = event.getQuoteTag();
-        PaymentTag paymentTag = event.getPaymentTag();
-        Map<String, Object> domainMap = new LinkedHashMap<>();
-        domainMap.put("name", eip712Tag.getDomainAppName());
-        domainMap.put("version", eip712Tag.getDomainVersion());
-        domainMap.put("chainId", tokenTag.getChainId());
-        domainMap.put("verifyingContract", eip712Tag.getContractAddress());
-        structuredData.put("domain", domainMap);
-
-        //消息数据
-        Map<String, Object> messageMap = new LinkedHashMap<>();
-        messageMap.put("maker", takeTag.getMakerPubkey());
-        messageMap.put("taker", takeTag.getTakerPubkey());
-        messageMap.put("volume", takeTag.getVolume());
-        messageMap.put("price", quoteTag.getNumber().toPlainString());
-        messageMap.put("payment", paymentTag.getMethod() + paymentTag.getAccount());
-
-        structuredData.put("message", messageMap);
-        structuredData.put("primaryType", "EIP712Params");
-        structuredData.put("types", types);
-        return gson.toJson(structuredData);
-    }
-
-    private static String createPriceStructuredDataJson(TakeIntentEvent event) {
-        Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
-        Map<String, Object> structuredData = new LinkedHashMap<>();
-
-        List<Map<String, String>> domainType = createDomainTypes();
-        types.put("EIP712Domain", domainType);
-
-        List<Map<String, String>> paramsType = new ArrayList<>();
-        paramsType.add(createType("timestamp", "string"));
-        paramsType.add(createType("price", "uint256"));
-        types.put("PriceParams", paramsType);
-
-        // 域数据
-        EIP712Tag eip712Tag = event.getEip712Tag();
-        TokenTag tokenTag = event.getTokenTag();
-        QuoteTag quoteTag = event.getQuoteTag();
-        Map<String, Object> domainMap = new LinkedHashMap<>();
-        domainMap.put("name", eip712Tag.getDomainAppName());
-        domainMap.put("version", eip712Tag.getDomainVersion());
-        domainMap.put("chainId", tokenTag.getChainId());
-        domainMap.put("verifyingContract", eip712Tag.getContractAddress());
-        structuredData.put("domain", domainMap);
-
-        //消息数据
-        Map<String, Object> messageMap = new LinkedHashMap<>();
-        messageMap.put("timestamp", quoteTag.getTimestamp());
-        messageMap.put("price", quoteTag.getNumber().toPlainString());
-
-        structuredData.put("message", messageMap);
-        structuredData.put("primaryType", "PriceParams");
-        structuredData.put("types", types);
-
-        return gson.toJson(structuredData);
-    }
-
     private static String createPostStructuredDataJson(PostIntentEvent event) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
 
@@ -253,9 +141,10 @@ public class EIP712Signer {
         paramsType.add(createType("token", "address"));
         paramsType.add(createType("range", "Range"));
         paramsType.add(createType("expiryTime", "uint64"));
-        paramsType.add(createType("currency", "string"));
-        paramsType.add(createType("paymentMethod", "string"));
-        paramsType.add(createType("payeeDetails", "string"));
+        paramsType.add(createType("currency", "bytes32"));
+        paramsType.add(createType("paymentMethod", "bytes32"));
+        paramsType.add(createType("payeeDetails", "bytes32"));
+        paramsType.add(createType("usdRate", "uint256"));
         paramsType.add(createType("price", "uint256"));
 
         types.put("IntentParams", paramsType);
@@ -283,10 +172,11 @@ public class EIP712Signer {
         messageMap.put("token", tokenTag.getAddress());
         messageMap.put("range", rangeMap);
         messageMap.put("expiryTime", tokenTag.getExpiryTime());
-        messageMap.put("currency", quoteTag.getCurrency());
-        messageMap.put("paymentMethod", paymentTag.getMethod());
-        messageMap.put("payeeDetails", paymentTag.getAccount());
+        messageMap.put("currency", keccak256(quoteTag.getCurrency()));
+        messageMap.put("paymentMethod", keccak256(paymentTag.getMethod()));
+        messageMap.put("payeeDetails", keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()));
         messageMap.put("price", quoteTag.getNumber().toPlainString());
+        messageMap.put("usdRate", quoteTag.getUsdRate().intValue());
 
         structuredData.put("message", messageMap);
         structuredData.put("primaryType", "IntentParams");

@@ -77,8 +77,6 @@ public class TakeIntentEventEntity {
     @Column(nullable = false)
     private String status = TradeStatus.TakeEvent.getValue();
 
-    private String eip712Sign;
-
     private String content;
     private String signature;
     private Long createAt;

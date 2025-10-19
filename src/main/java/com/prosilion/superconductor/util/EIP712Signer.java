@@ -8,6 +8,7 @@ import nostr.event.NIP77Event;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
+import org.springframework.security.crypto.codec.Hex;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
 
@@ -94,7 +95,9 @@ public class EIP712Signer {
         try {
             String expectedAddress = eip712Tag.getWalletAddress();
             StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
+
             byte[] messageHash = encoder.hashStructuredData();
+            log.info("event-id:{}, structDataJson:{}, hash:{}", event.getId(), structuredDataJson, new String(Hex.encode(messageHash)));
             return verifySignature(messageHash, signature, expectedAddress);
         } catch (IOException e) {
             throw new RuntimeException(e);

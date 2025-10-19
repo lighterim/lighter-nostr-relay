@@ -59,7 +59,6 @@ public class EventDto extends NIP01Event {
                 eip712Tag.getDomainVersion(),
                 eip712Tag.getDomainAppName(),
                 eip712Tag.getContractAddress(),
-                eip712Tag.getSign(),
 
                 quote.getNumber(),
                 quote.getCurrency(),
@@ -69,6 +68,7 @@ public class EventDto extends NIP01Event {
 
                 permit2Tag.getNonce(),
                 permit2Tag.getSignature(),
+                permit2Tag.getPayer(),
 
                 event.getSignature().toString(),
                 event.getId(),
@@ -126,12 +126,6 @@ public class EventDto extends NIP01Event {
             sellerPubKey = takeTag.getTakerPubkey();
         }
 
-        // 参数进行eip712签名，用于后面合约验证
-        String eip712Sign = EIP712Signer.reqSignature(event);
-        if(!StringUtils.hasText(eip712Sign)) {
-            throw new RuntimeException(String.format("request eip712 sign fail: %s, %s", event.getId(), takeTag.getIntentEventId()));
-        }
-
         return new TakeIntentEventEntity(
                 event.getNip(),
                 event.getKind(),
@@ -151,7 +145,6 @@ public class EventDto extends NIP01Event {
                 event.getTradeStatus(),
                 event.getContent(),
                 event.getSignature().toString(),
-                eip712Sign,
                 event.getCreatedAt()
         );
     }

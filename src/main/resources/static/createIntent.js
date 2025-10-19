@@ -49,10 +49,10 @@ function replaceHash(id_hash) {
                     // ['summary', $("#summary").val()],
                     ['limit', "1000000", "100000000"],
                     [
-                        'permit2', $("#nonce").val(), $("#permit2_signature").val()
+                        'permit2', $("#nonce").val(), $("#permit2_signature").val(), $('#payer').val()
                     ],
                     ['token', $("#symbol").val(), $("#chain").val(), "stokenet", $("#token_addr").val(), $("#amount").val(), $("#chainId").val(), $("#expiryTime").val()],
-                    ['quote', $("#number").val(), $("#currency").val(), "7.19", $("#sign").val()],
+                    ['quote', $("#number").val(), $("#currency").val(), "71900000", $("#sign").val()],
                     ['payment', 'alipay', 'cash11', 'cash11', 'cash11']
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'seller'],
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'buyer'],

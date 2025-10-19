@@ -76,8 +76,6 @@ public class TakeIntentEventEntity {
     @Column(nullable = false)
     private String status = TradeStatus.TakeEvent.getValue();
 
-    private String eip712Sign;
-
     private String content;
     private String signature;
     private Long createAt;
@@ -122,7 +120,6 @@ public class TakeIntentEventEntity {
          String tradeStatus,
          String content,
          String signature,
-         String eip712Sign,
          Long createAt){
         this.kind = kind;
         this.nip = nip;
@@ -161,7 +158,6 @@ public class TakeIntentEventEntity {
         }
         this.content = content;
         this.signature = signature;
-        this.eip712Sign = eip712Sign;
         this.createAt = createAt;
     }
 

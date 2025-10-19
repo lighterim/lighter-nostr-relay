@@ -6,6 +6,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.prosilion.superconductor.service.request.NotifierService;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
+import com.prosilion.superconductor.util.ED25519Signer;
 import com.prosilion.superconductor.util.EIP712Signer;
 import com.prosilion.superconductor.util.SignerType;
 import lombok.NonNull;
@@ -96,7 +97,6 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             validateEIP712(postIntentEvent, SignerType.POST_EVENT);
         } else if (event instanceof TakeIntentEvent takeIntentEvent) {
             validateTakeIntentEvent(takeIntentEvent);
-            validateEIP712(takeIntentEvent, SignerType.PRICE);
         } else if (event instanceof TradeMessageEvent tradeMessageEvent) {
             validateTradeMessageEvent(tradeMessageEvent);
         }
@@ -129,15 +129,36 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             // 1. event properties
             takeIntentEvent.validate();
 
-            TakeTag take = takeIntentEvent.getTakeTag();
-            if (!isValidNip05(take.getTakerNip05(), take.getTakerPubkey())) {
+            //ed25519 verify
+            TokenTag tokenTag = takeIntentEvent.getTokenTag();
+            EIP712Tag eip712Tag = takeIntentEvent.getEip712Tag();
+            TakeTag takeTag = takeIntentEvent.getTakeTag();
+            QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
+            String buyer;
+            String seller;
+            if(takeTag.getSide().equals(Side.SELL)) {
+                buyer = takeTag.getMakerNip05();
+                seller = takeTag.getTakerNip05();
+            } else {
+                buyer = takeTag.getTakerNip05();
+                seller = takeTag.getMakerNip05();
+            }
+            String signMsg = String.format("%d%s%s%s%s%s", tokenTag.getChainId(),
+                    quoteTag.getSignature(), buyer, seller, tokenTag.getAddress(), quoteTag.getCurrency());
+            boolean verify = ED25519Signer.verify(ED25519Signer.PUBKEY, signMsg, eip712Tag.getSign());
+            if(!verify) {
+                log.warn("escrow params verify fail. {} {}", takeTag.getMakerNip05(), takeTag.getMakerPubkey());
+                throw new RuntimeException(String.format("escrow params verify fail. %s, %s", takeTag.getMakerNip05(), takeTag.getMakerPubkey()));
+            }
+
+            if (!isValidNip05(takeTag.getTakerNip05(), takeTag.getTakerPubkey())) {
                 // 2. taker nip05 & pubkey
-                log.warn("invalid nip05: {}, {}", take.getMakerNip05(), take.getMakerPubkey());
-                throw new RuntimeException(String.format("invalid nip05: %s, %s", take.getMakerNip05(), take.getMakerPubkey()));
+                log.warn("invalid nip05: {}, {}", takeTag.getMakerNip05(), takeTag.getMakerPubkey());
+                throw new RuntimeException(String.format("invalid nip05: %s, %s", takeTag.getMakerNip05(), takeTag.getMakerPubkey()));
             }
 
             // 3. make.intent & take.make
-            String makeEventId = take.getIntentEventId();
+            String makeEventId = takeTag.getIntentEventId();
             GenericEvent event = redisCache.getEventEntityByEventId(Kind.POST_INTENT, makeEventId);
             if (isSkipCheckTake) {
                 return;
@@ -145,14 +166,14 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             if (event instanceof PostIntentEvent postIntentEvent) {
                 MakeTag make = postIntentEvent.getSideTag();
                 // 3.0 take.side & make.side
-                if (take.getSide() == make.getSide()) {
-                    String msg = String.format("invalid intent.side: %s, and take.side:%s.", make.getSide(), take.getSide());
+                if (takeTag.getSide() == make.getSide()) {
+                    String msg = String.format("invalid intent.side: %s, and take.side:%s.", make.getSide(), takeTag.getSide());
                     log.warn(msg);
                     throw new RuntimeException(msg);
                 }
                 // 3.1 nip05, pubkey
-                if (!take.getMakerNip05().equals(make.getMakerNip05()) || !take.getMakerPubkey().equals(make.getMakerPubkey())) {
-                    String msg = String.format("invalid intent.make nip05:%s, pubkey:%s, event id:%s", take.getMakerNip05(), take.getMakerPubkey(), makeEventId);
+                if (!takeTag.getMakerNip05().equals(make.getMakerNip05()) || !takeTag.getMakerPubkey().equals(make.getMakerPubkey())) {
+                    String msg = String.format("invalid intent.make nip05:%s, pubkey:%s, event id:%s", takeTag.getMakerNip05(), takeTag.getMakerPubkey(), makeEventId);
                     log.warn(msg);
                     throw new RuntimeException(msg);
                 }
@@ -187,7 +208,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                     log.warn(msg);
                     throw new RuntimeException(msg);
                 }
-                if (take.getSide() == Side.BUY) {
+                if (takeTag.getSide() == Side.BUY) {
                     List<String> accounts = paymentTags.stream().map(PaymentTag::getAccount).toList();
                     List<String> qrCodes = paymentTags.stream().map(PaymentTag::getQrCode).toList();
                     if (!accounts.contains(takePayment.getAccount()) && !qrCodes.contains(takePayment.getQrCode())) {

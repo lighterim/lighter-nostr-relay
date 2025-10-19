@@ -31,6 +31,7 @@
     <postgresql.version>42.7.3</postgresql.version>
     <org.web3j.core.version>5.0.1</org.web3j.core.version>
     <com.google.code.gson.version>2.13.2</com.google.code.gson.version>
+    <bouncycastle.version>1.82</bouncycastle.version>
   </properties>
 
   <dependencyManagement>
@@ -172,6 +173,11 @@
       <artifactId>h2</artifactId>
       <version>${h2.version}</version>
       <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk18on</artifactId>
+      <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>

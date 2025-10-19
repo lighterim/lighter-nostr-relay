@@ -129,33 +129,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             // 1. event properties
             takeIntentEvent.validate();
 
-            //ed25519 verify
-            TokenTag tokenTag = takeIntentEvent.getTokenTag();
-            EIP712Tag eip712Tag = takeIntentEvent.getEip712Tag();
             TakeTag takeTag = takeIntentEvent.getTakeTag();
-            QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
-            String buyer;
-            String seller;
-            if(takeTag.getSide().equals(Side.SELL)) {
-                buyer = takeTag.getMakerNip05();
-                seller = takeTag.getTakerNip05();
-            } else {
-                buyer = takeTag.getTakerNip05();
-                seller = takeTag.getMakerNip05();
-            }
-            String signMsg = String.format("%d%s%s%s%s%s", tokenTag.getChainId(),
-                    quoteTag.getSignature(), buyer, seller, tokenTag.getAddress(), quoteTag.getCurrency());
-            boolean verify = ED25519Signer.verify(ED25519Signer.PUBKEY, signMsg, eip712Tag.getSign());
-            if(!verify) {
-                log.warn("escrow params verify fail. {} {}", takeTag.getMakerNip05(), takeTag.getMakerPubkey());
-                throw new RuntimeException(String.format("escrow params verify fail. %s, %s", takeTag.getMakerNip05(), takeTag.getMakerPubkey()));
-            }
-
-            if (!isValidNip05(takeTag.getTakerNip05(), takeTag.getTakerPubkey())) {
-                // 2. taker nip05 & pubkey
-                log.warn("invalid nip05: {}, {}", takeTag.getMakerNip05(), takeTag.getMakerPubkey());
-                throw new RuntimeException(String.format("invalid nip05: %s, %s", takeTag.getMakerNip05(), takeTag.getMakerPubkey()));
-            }
 
             // 3. make.intent & take.make
             String makeEventId = takeTag.getIntentEventId();

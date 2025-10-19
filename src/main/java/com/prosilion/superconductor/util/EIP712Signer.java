@@ -175,7 +175,7 @@ public class EIP712Signer {
         messageMap.put("paymentMethod", keccak256(paymentTag.getMethod()));
         messageMap.put("payeeDetails", keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()));
         messageMap.put("price", quoteTag.getNumber().toPlainString());
-        messageMap.put("usdRate", quoteTag.getUsdRate().intValue());
+        messageMap.put("usdRate", quoteTag.getUsdRate().toPlainString());
 
         structuredData.put("message", messageMap);
         structuredData.put("primaryType", "IntentParams");

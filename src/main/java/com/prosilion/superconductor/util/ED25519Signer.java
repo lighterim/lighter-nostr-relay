@@ -32,10 +32,4 @@ public class ED25519Signer {
         }
     }
 
-    public static void main(String[] args) {
-        verify("f8141e0fbd570817ff8e417a10027f1368ef4993edee3c9d2fdf4074aac78fa0",
-                "111551115a950500ccd601ec1a04bf4b224935caf9847d2ee6447b2c79ae2ee767fac91ab7abed17d61e2f699298b2cc2ff26ebead0006d4a0870b405b00345ac5ccad010x846eFbf0F3d91C8896B557Ff27b7E53D76637AF10x846eFbf0F3d91C8896B557Ff27b7E53D76637AF10x0000000000CNY",
-                "6dd67d3ddf3b8fa9353d867788df8b65297c2c5fe796dcbe3f8dc6a64e1ecb562ccf228c8bbfe66377c243470a8ed2b5b0b00da58209d8e11f07464199edea09");
-    }
-
 }

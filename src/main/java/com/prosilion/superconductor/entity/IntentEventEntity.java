@@ -7,6 +7,7 @@ import lombok.Setter;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
 import nostr.event.BaseTag;
+import nostr.event.IntentType;
 import nostr.event.Kind;
 import nostr.event.Side;
 import nostr.event.impl.GenericEvent;
@@ -40,24 +41,29 @@ public class IntentEventEntity {
     private String side;
     private String nip05;
     private String pubkey;
+    private IntentType intentType;
 
     /** token **/
     private String symbol;
     private String chain;
     private String network;
     private String address;
+    @Column(precision = 36, scale=0)
     private BigDecimal amount;
     private BigInteger chainId;
     private String expireTime;
 
     /** quote **/
+    @Column(precision = 36, scale=0)
     private BigDecimal price;
     private String currency;
     private String timestamp;
     private String quoteSignature;
 
     /** limit **/
+    @Column(precision = 36, scale=0)
     private BigDecimal lowLimit;
+    @Column(precision = 36, scale=0)
     private BigDecimal upLimit;
 
     private String signature;
@@ -85,7 +91,7 @@ public class IntentEventEntity {
     @Transient
     private List<BaseTag> tags;
 
-    public IntentEventEntity(String side, String nip05, String pubkey,
+    public IntentEventEntity(String side, String nip05, String pubkey, IntentType intentType,
                              String symbol, String chain, String network, String address, BigDecimal amount, BigInteger chainId, String expireTime,
                              String walletAddress, String domainVersion,String domainAppName, String contractAddress,
                              BigDecimal price,
@@ -95,6 +101,7 @@ public class IntentEventEntity {
         this.side = side;
         this.nip05 = nip05;
         this.pubkey = pubkey;
+        this.intentType = intentType;
         this.symbol = symbol;
         this.chain = chain;
         this.network = network;
@@ -138,7 +145,7 @@ public class IntentEventEntity {
         event.setSignature(signature);
 
         List<BaseTag> tagList = new ArrayList<>(tags);
-        MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey);
+        MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType);
         TokenTag token = new TokenTag(symbol, chain, network, address, amount.stripTrailingZeros(), chainId, expireTime);
         QuoteTag quote = new QuoteTag(price, currency, BigDecimal.ZERO, timestamp, quoteSignature);
         EIP712Tag eip712Tag = new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, sign);

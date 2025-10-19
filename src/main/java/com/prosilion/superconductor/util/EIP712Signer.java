@@ -60,8 +60,10 @@ public class EIP712Signer {
         }
         try {
             String expectedAddress = eip712Tag.getWalletAddress();
+            log.info("event-id:{}, structDataJson1:{}, event1:{}", event.getId(), structuredDataJson, event);
             StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
             byte[] messageHash = encoder.hashStructuredData();
+            log.info("event-id:{}, structDataJson:{}, hash:{}, event:{}", event.getId(), structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash), event);
             return verifySignature(messageHash, signature, expectedAddress);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -143,7 +145,7 @@ public class EIP712Signer {
         paramsType.add(createType("currency", "bytes32"));
         paramsType.add(createType("paymentMethod", "bytes32"));
         paramsType.add(createType("payeeDetails", "bytes32"));
-        paramsType.add(createType("usdRate", "uint256"));
+//        paramsType.add(createType("usdRate", "uint256"));
         paramsType.add(createType("price", "uint256"));
 
         types.put("IntentParams", paramsType);
@@ -175,7 +177,6 @@ public class EIP712Signer {
         messageMap.put("paymentMethod", keccak256(paymentTag.getMethod()));
         messageMap.put("payeeDetails", keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()));
         messageMap.put("price", quoteTag.getNumber().toPlainString());
-        messageMap.put("usdRate", quoteTag.getUsdRate().toPlainString());
 
         structuredData.put("message", messageMap);
         structuredData.put("primaryType", "IntentParams");

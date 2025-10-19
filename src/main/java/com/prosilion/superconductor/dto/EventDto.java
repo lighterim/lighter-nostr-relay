@@ -1,7 +1,6 @@
 package com.prosilion.superconductor.dto;
 
 import com.prosilion.superconductor.entity.*;
-import com.prosilion.superconductor.util.EIP712Signer;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
 import nostr.event.BaseTag;
@@ -10,7 +9,6 @@ import nostr.event.NIP01Event;
 import nostr.event.Side;
 import nostr.event.impl.*;
 import nostr.event.tag.*;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -137,7 +135,7 @@ public class EventDto extends NIP01Event {
                 buyerPubKey,
                 sellerId,
                 sellerPubKey,
-                takeTag.getSellerFeeRate(), takeTag.getBuyerFeeRate(),
+                takeTag.getSellerFeeRate(), takeTag.getBuyerFeeRate(), takeTag.getPayer(),
                 tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChainId(), tokenTag.getExpiryTime(), tokenTag.getChain(), tokenTag.getNetwork(),
                 quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(), quoteTag.getTimestamp(), quoteTag.getSignature(),
                 paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),

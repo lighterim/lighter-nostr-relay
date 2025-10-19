@@ -97,7 +97,7 @@ public class EIP712Signer {
             StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
 
             byte[] messageHash = encoder.hashStructuredData();
-            log.info("event-id:{}, structDataJson:{}, hash:{}", event.getId(), structuredDataJson, new String(Hex.encode(messageHash)));
+            log.info("event-id:{}, structDataJson:{}, hash:{}, event:{}", event.getId(), structuredDataJson, new String(Hex.encode(messageHash)), event);
             return verifySignature(messageHash, signature, expectedAddress);
         } catch (IOException e) {
             throw new RuntimeException(e);

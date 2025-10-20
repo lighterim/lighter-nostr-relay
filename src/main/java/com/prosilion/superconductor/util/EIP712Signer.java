@@ -4,10 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
+import nostr.event.IntentType;
 import nostr.event.NIP77Event;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
+import org.jetbrains.annotations.NotNull;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
 
@@ -123,6 +125,55 @@ public class EIP712Signer {
     }
 
     private static String createPostStructuredDataJson(PostIntentEvent event) {
+        IntentType intentType = event.getSideTag().getIntentType();
+        switch (intentType) {
+            case BUYER_INTENT -> {
+                return getBuyerIntentStructuredData(event);
+            }
+            case BULK_SELL -> {
+                return getBulkSellIntentStructuredData(event);
+            }
+            case SIGNATURE_SELL -> {
+                return getSignatureSellStructuredData(event);
+            }
+        }
+    }
+
+    private static String getSignatureSellStructuredData(PostIntentEvent event){
+// 1. 定义所有类型（包括嵌套结构）
+        Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
+
+        // EIP712Domain 类型定义
+        List<Map<String, String>> domainType = createDomainTypes();
+        types.put("PermitWitnessTransferFrom", domainType);
+
+        // IntentRange 类型定义
+        List<Map<String, String>> rangeType = new ArrayList<>();
+        rangeType.add(createType("min", "uint256"));
+        rangeType.add(createType("max", "uint256"));
+
+        // IntentParams 类型定义 - 包含对 IntentRange 的引用
+        List<Map<String, String>> paramsType = new ArrayList<>();
+        paramsType.add(createType("token", "address"));
+        paramsType.add(createType("range", "Range"));
+        paramsType.add(createType("expiryTime", "uint64"));
+        paramsType.add(createType("currency", "bytes32"));
+        paramsType.add(createType("paymentMethod", "bytes32"));
+        paramsType.add(createType("payeeDetails", "bytes32"));
+//        paramsType.add(createType("usdRate", "uint256"));
+        paramsType.add(createType("price", "uint256"));
+
+        types.put("IntentParams", paramsType);
+        types.put("Range", rangeType);
+        return "{}";
+    }
+
+    private static String getBulkSellIntentStructuredData(PostIntentEvent event) {
+        return "{}";
+    }
+
+    @NotNull
+    private static String getBuyerIntentStructuredData(PostIntentEvent event) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
 
         // 1. 定义所有类型（包括嵌套结构）

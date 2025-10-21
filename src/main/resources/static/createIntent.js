@@ -43,7 +43,7 @@ function replaceHash(id_hash) {
                 'tags': [
                     // ['subject', $("#subject").val()],
                     ['title', $("#title").val()],
-                    ['make', $("#side").val(), $("#userId").val(), $("#pubkey").val()],
+                    ['make', $("#side").val(), $("#userId").val(), $("#pubkey").val(), $("#intentType").val()],
                     ['eip712', $("#walletAddress").val(), $("#contractAddress").val(), $("#domainAppName").val(), $("#domainVersion").val(), $("#sign").val()],
                     ['published_at', Date.now()],
                     // ['summary', $("#summary").val()],

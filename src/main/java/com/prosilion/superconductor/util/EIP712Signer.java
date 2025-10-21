@@ -119,21 +119,14 @@ public class EIP712Signer {
     private static String createPostStructuredDataJson(PostIntentEvent event) {
         IntentType intentType = event.getSideTag().getIntentType();
         switch (intentType) {
-            case BUYER_INTENT -> {
+            case BUYER_INTENT, BULK_SELL -> {
                 return getBuyerIntentStructuredData(event);
-            }
-            case BULK_SELL -> {
-                return getBulkSellIntentStructuredData(event);
             }
             case SIGNATURE_SELL -> {
                 return getSignatureSellStructuredData(event);
             }
         }
         return null;
-    }
-
-    private static String getBulkSellIntentStructuredData(PostIntentEvent event) {
-        return "{}";
     }
 
     private static String getSignatureSellStructuredData(PostIntentEvent event) {
@@ -160,7 +153,7 @@ public class EIP712Signer {
 
         List<Map<String, String>> tokenPermissionsType = new ArrayList<>();
         tokenPermissionsType.add(createType("token", "address"));
-        tokenPermissionsType.add(createType("amount", "uint64"));
+        tokenPermissionsType.add(createType("amount", "uint256"));
 
         List<Map<String, String>> permitWitnessTransferFromType = new ArrayList<>();
         permitWitnessTransferFromType.add(createType("permitted", "TokenPermissions"));
@@ -187,7 +180,7 @@ public class EIP712Signer {
 
         Map<String, Object> tokenPermissionsMap = new LinkedHashMap<>();
         tokenPermissionsMap.put("token", tokenTag.getAddress());
-        tokenPermissionsMap.put("amount", tokenTag.getAmount());
+        tokenPermissionsMap.put("amount", tokenTag.getAmount().toPlainString());
 
         Map<String, Object> intentParamsMap = new LinkedHashMap<>();
         intentParamsMap.put("token", tokenTag.getAddress());

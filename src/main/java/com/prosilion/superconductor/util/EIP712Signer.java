@@ -7,7 +7,6 @@ import nostr.event.IntentType;
 import nostr.event.NIP77Event;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.tag.*;
-import org.springframework.util.StringUtils;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
 
@@ -51,9 +50,6 @@ public class EIP712Signer {
             signature = eip712Tag.getSign();
             structuredDataJson = createPostStructuredDataJson(postIntentEvent);
         } else {
-            return false;
-        }
-        if(!StringUtils.hasText(structuredDataJson)) {
             return false;
         }
         try {
@@ -122,21 +118,25 @@ public class EIP712Signer {
 
     private static String createPostStructuredDataJson(PostIntentEvent event) {
         IntentType intentType = event.getSideTag().getIntentType();
-        if(IntentType.BUYER_INTENT.equals(intentType)) {
-            return getBuyerIntentStructuredDate(event);
-        } else if(IntentType.SIGNATURE_SELL.equals(intentType)) {
-            return getSignatureSellStructuredDate(event);
-        } else if(IntentType.BULK_SELL.equals(intentType)) {
-            return getBulkSellStructuredDate(event);
+        switch (intentType) {
+            case BUYER_INTENT -> {
+                return getBuyerIntentStructuredData(event);
+            }
+            case BULK_SELL -> {
+                return getBulkSellIntentStructuredData(event);
+            }
+            case SIGNATURE_SELL -> {
+                return getSignatureSellStructuredData(event);
+            }
         }
         return null;
     }
 
-    private static String getBulkSellStructuredDate(PostIntentEvent event) {
-        return "";
+    private static String getBulkSellIntentStructuredData(PostIntentEvent event) {
+        return "{}";
     }
 
-    private static String getSignatureSellStructuredDate(PostIntentEvent event) {
+    private static String getSignatureSellStructuredData(PostIntentEvent event) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
@@ -212,7 +212,7 @@ public class EIP712Signer {
         return gson.toJson(structuredData);
     }
 
-    private static String getBuyerIntentStructuredDate(PostIntentEvent event) {
+    private static String getBuyerIntentStructuredData(PostIntentEvent event) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();

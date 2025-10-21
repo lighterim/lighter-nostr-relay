@@ -2,23 +2,18 @@ package com.prosilion.superconductor.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
+import nostr.event.IntentType;
 import nostr.event.NIP77Event;
 import nostr.event.impl.PostIntentEvent;
-import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
+import org.springframework.util.StringUtils;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.*;
 @Slf4j
 public class EIP712Signer {
@@ -56,6 +51,9 @@ public class EIP712Signer {
             signature = eip712Tag.getSign();
             structuredDataJson = createPostStructuredDataJson(postIntentEvent);
         } else {
+            return false;
+        }
+        if(!StringUtils.hasText(structuredDataJson)) {
             return false;
         }
         try {
@@ -123,39 +121,121 @@ public class EIP712Signer {
     }
 
     private static String createPostStructuredDataJson(PostIntentEvent event) {
-        Map<String, Object> structuredData = new LinkedHashMap<>();
+        IntentType intentType = event.getSideTag().getIntentType();
+        if(IntentType.BUYER_INTENT.equals(intentType)) {
+            return getBuyerIntentStructuredDate(event);
+        } else if(IntentType.SIGNATURE_SELL.equals(intentType)) {
+            return getSignatureSellStructuredDate(event);
+        } else if(IntentType.BULK_SELL.equals(intentType)) {
+            return getBulkSellStructuredDate(event);
+        }
+        return null;
+    }
 
+    private static String getBulkSellStructuredDate(PostIntentEvent event) {
+        return "";
+    }
+
+    private static String getSignatureSellStructuredDate(PostIntentEvent event) {
+        Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
 
+        EIP712Tag eip712Tag = event.getEip712Tag();
+        TokenTag tokenTag = event.getTokenTag();
+        LimitTag limitTag = event.getLimitTag();
+        Permit2Tag permit2Tag = event.getPermit2Tag();
+        QuoteTag quoteTag = event.getQuoteTag();
+        PaymentTag paymentTag = event.getPaymentTags().get(0);
+
         // EIP712Domain 类型定义
-        List<Map<String, String>> domainType = createDomainTypes();
+        List<Map<String, String>> domainType = createNoVDomainTypes();
         types.put("EIP712Domain", domainType);
 
         // IntentRange 类型定义
-        List<Map<String, String>> rangeType = new ArrayList<>();
-        rangeType.add(createType("min", "uint256"));
-        rangeType.add(createType("max", "uint256"));
+        List<Map<String, String>> rangeType = getRangeType();
 
         // IntentParams 类型定义 - 包含对 IntentRange 的引用
-        List<Map<String, String>> paramsType = new ArrayList<>();
-        paramsType.add(createType("token", "address"));
-        paramsType.add(createType("range", "Range"));
-        paramsType.add(createType("expiryTime", "uint64"));
-        paramsType.add(createType("currency", "bytes32"));
-        paramsType.add(createType("paymentMethod", "bytes32"));
-        paramsType.add(createType("payeeDetails", "bytes32"));
-//        paramsType.add(createType("usdRate", "uint256"));
-        paramsType.add(createType("price", "uint256"));
+        List<Map<String, String>> intentParamsType = getIntentParamsType();
 
-        types.put("IntentParams", paramsType);
+        List<Map<String, String>> tokenPermissionsType = new ArrayList<>();
+        tokenPermissionsType.add(createType("token", "address"));
+        tokenPermissionsType.add(createType("amount", "uint64"));
+
+        List<Map<String, String>> permitWitnessTransferFromType = new ArrayList<>();
+        permitWitnessTransferFromType.add(createType("permitted", "TokenPermissions"));
+        permitWitnessTransferFromType.add(createType("spender", "address"));
+        permitWitnessTransferFromType.add(createType("nonce", "uint256"));
+        permitWitnessTransferFromType.add(createType("deadline", "uint256"));
+        permitWitnessTransferFromType.add(createType("witness", "IntentParams"));
+
+        types.put("IntentParams", intentParamsType);
+        types.put("TokenPermissions", tokenPermissionsType);
+        types.put("PermitWitnessTransferFrom", permitWitnessTransferFromType);
         types.put("Range", rangeType);
+
+        // 3. 域数据
+        Map<String, Object> domainMap = new LinkedHashMap<>();
+        domainMap.put("name", eip712Tag.getDomainAppName());
+        domainMap.put("chainId", tokenTag.getChainId());
+        domainMap.put("verifyingContract", eip712Tag.getContractAddress());
+        structuredData.put("domain", domainMap);
+
+        Map<String, Object> rangeMap = new LinkedHashMap<>();
+        rangeMap.put("min", limitTag.getLowLimit().toPlainString());
+        rangeMap.put("max", limitTag.getUpLimit().toPlainString());
+
+        Map<String, Object> tokenPermissionsMap = new LinkedHashMap<>();
+        tokenPermissionsMap.put("token", tokenTag.getAddress());
+        tokenPermissionsMap.put("amount", tokenTag.getAmount());
+
+        Map<String, Object> intentParamsMap = new LinkedHashMap<>();
+        intentParamsMap.put("token", tokenTag.getAddress());
+        intentParamsMap.put("range", rangeMap);
+        intentParamsMap.put("expiryTime", tokenTag.getExpiryTime());
+        intentParamsMap.put("currency", keccak256(quoteTag.getCurrency()));
+        intentParamsMap.put("paymentMethod", keccak256(paymentTag.getMethod()));
+        intentParamsMap.put("payeeDetails", keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()));
+        intentParamsMap.put("price", quoteTag.getNumber().toPlainString());
+
+        Map<String, Object> permitWitnessTransferFromMap = new LinkedHashMap<>();
+        permitWitnessTransferFromMap.put("permitted", tokenPermissionsMap);
+        permitWitnessTransferFromMap.put("spender", eip712Tag.getContractAddress());
+        permitWitnessTransferFromMap.put("nonce", permit2Tag.getNonce());
+        permitWitnessTransferFromMap.put("deadline", tokenTag.getExpiryTime());
+        permitWitnessTransferFromMap.put("witness", intentParamsMap);
+
+        structuredData.put("message", permitWitnessTransferFromMap);
+        structuredData.put("primaryType", "PermitWitnessTransferFrom");
+        structuredData.put("types", types);
+
+        return gson.toJson(structuredData);
+    }
+
+    private static String getBuyerIntentStructuredDate(PostIntentEvent event) {
+        Map<String, Object> structuredData = new LinkedHashMap<>();
+        // 1. 定义所有类型（包括嵌套结构）
+        Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
 
         EIP712Tag eip712Tag = event.getEip712Tag();
         TokenTag tokenTag = event.getTokenTag();
         LimitTag limitTag = event.getLimitTag();
         QuoteTag quoteTag = event.getQuoteTag();
         PaymentTag paymentTag = event.getPaymentTags().get(0);
+
+        // EIP712Domain 类型定义
+        List<Map<String, String>> domainType = createDomainTypes();
+        types.put("EIP712Domain", domainType);
+
+        // IntentRange 类型定义
+        List<Map<String, String>> rangeType = getRangeType();
+
+        // IntentParams 类型定义 - 包含对 IntentRange 的引用
+        List<Map<String, String>> intentParamsType = getIntentParamsType();
+
+        types.put("IntentParams", intentParamsType);
+        types.put("Range", rangeType);
+
         // 3. 域数据
         Map<String, Object> domainMap = new LinkedHashMap<>();
         domainMap.put("name", eip712Tag.getDomainAppName());
@@ -192,5 +272,32 @@ public class EIP712Signer {
         domainType.add(createType("chainId", "uint256"));
         domainType.add(createType("verifyingContract", "address"));
         return domainType;
+    }
+
+    private static List<Map<String, String>> createNoVDomainTypes() {
+        List<Map<String, String>> domainType = new ArrayList<>();
+        domainType.add(createType("name", "string"));
+        domainType.add(createType("chainId", "uint256"));
+        domainType.add(createType("verifyingContract", "address"));
+        return domainType;
+    }
+
+    private static List<Map<String, String>> getRangeType() {
+        List<Map<String, String>> rangeType = new ArrayList<>();
+        rangeType.add(createType("min", "uint256"));
+        rangeType.add(createType("max", "uint256"));
+        return rangeType;
+    }
+
+    private static List<Map<String, String>> getIntentParamsType() {
+        List<Map<String, String>> intentParamsType = new ArrayList<>();
+        intentParamsType.add(createType("token", "address"));
+        intentParamsType.add(createType("range", "Range"));
+        intentParamsType.add(createType("expiryTime", "uint64"));
+        intentParamsType.add(createType("currency", "bytes32"));
+        intentParamsType.add(createType("paymentMethod", "bytes32"));
+        intentParamsType.add(createType("payeeDetails", "bytes32"));
+        intentParamsType.add(createType("price", "uint256"));
+        return intentParamsType;
     }
 }

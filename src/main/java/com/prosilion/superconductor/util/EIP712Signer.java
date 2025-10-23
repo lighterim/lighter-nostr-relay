@@ -47,7 +47,7 @@ public class EIP712Signer {
         if(signerType.equals(SignerType.POST_EVENT)) {
             PostIntentEvent postIntentEvent = (PostIntentEvent)event;
             eip712Tag = postIntentEvent.getEip712Tag();
-            signature = eip712Tag.getSign();
+            signature = postIntentEvent.getSideTag().getIntentType() == IntentType.SIGNATURE_SELL ? postIntentEvent.getPermit2Tag().getSignature() :eip712Tag.getSign();
             structuredDataJson = createPostStructuredDataJson(postIntentEvent);
         } else {
             return false;
@@ -193,7 +193,7 @@ public class EIP712Signer {
 
         Map<String, Object> permitWitnessTransferFromMap = new LinkedHashMap<>();
         permitWitnessTransferFromMap.put("permitted", tokenPermissionsMap);
-        permitWitnessTransferFromMap.put("spender", eip712Tag.getContractAddress());
+        permitWitnessTransferFromMap.put("spender", permit2Tag.getSpender());
         permitWitnessTransferFromMap.put("nonce", permit2Tag.getNonce());
         permitWitnessTransferFromMap.put("deadline", tokenTag.getExpiryTime());
         permitWitnessTransferFromMap.put("witness", intentParamsMap);

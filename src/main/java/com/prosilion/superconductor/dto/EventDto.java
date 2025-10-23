@@ -68,6 +68,7 @@ public class EventDto extends NIP01Event {
                 permit2Tag.getNonce(),
                 permit2Tag.getSignature(),
                 permit2Tag.getPayer(),
+                permit2Tag.getSpender(),
 
                 event.getSignature().toString(),
                 event.getId(),

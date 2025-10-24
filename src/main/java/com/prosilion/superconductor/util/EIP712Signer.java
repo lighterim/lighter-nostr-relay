@@ -1,16 +1,21 @@
 package com.prosilion.superconductor.util;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
+import nostr.base.PublicKey;
+import nostr.event.BaseTag;
 import nostr.event.IntentType;
 import nostr.event.NIP77Event;
+import nostr.event.Side;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.tag.*;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -292,5 +297,26 @@ public class EIP712Signer {
         intentParamsType.add(createType("payeeDetails", "bytes32"));
         intentParamsType.add(createType("price", "uint256"));
         return intentParamsType;
+    }
+
+
+    public static void main(String[] args){
+        validateSignatureSell();
+    }
+
+    private static void validateSignatureSell(){
+        PublicKey pk = new PublicKey("b1fa4af2eec41f798352271d3e01c52457789e01586ab37b4f50bb74601569db");
+        List<BaseTag> tags = List.of(
+            new EIP712Tag("0xece12A4E213990bC00fe3BCf89E1Df5dF37D663e", "", "Permit2", "0x000000000022D473030F116dDEE9F6B43aC78BA3", ""),
+            //["token","WETH","ethereum",11155111,"Sepolia","0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14","1761237799",1000000000000000000]
+            new TokenTag("USDC", "ethereum", "sepolia", "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", new BigDecimal(1000000000000000000L), BigInteger.valueOf(11155111), "1761237799"),
+            // ["quote","3.221E+21","USD","1E+18",""]
+            new QuoteTag(new BigDecimal("3221000000000000000000"), "USD", new BigDecimal("1000000000000000000"), "1761237799", ""),
+            new MakeTag(Side.SELL, "", pk.toString(), IntentType.SIGNATURE_SELL),
+            new Permit2Tag("3", "0x6989c0044eeab23d55490b38b9d2a131a70748d022a177e1c44bb334fca516813e851e04a9db4a24de93785749b606e281a8bc228936907f25447da1150622be1c", "0x37Fb3a55652042d41Ff1e089C03Ff1fE45093CF4", "0x1e4d58c5a97ab35c614a90ab04acc78711729f18"),
+            new LimitTag(BigDecimal.valueOf(100000000000000000L), BigDecimal.valueOf(1000000000000000000L)), new PaymentTag("wechat", "oren", "wxp://f2f0cFGOsdaOtU3SQfpyBcl_0u0UCU9AIIVaTEmmVDgvN-Q", "wechat")
+        );
+        PostIntentEvent e = new PostIntentEvent(pk, tags, "ccc");
+        System.out.println(verifySignature(e, SignerType.POST_EVENT));
     }
 }

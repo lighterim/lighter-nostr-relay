@@ -305,16 +305,17 @@ public class EIP712Signer {
     }
 
     private static void validateSignatureSell(){
-        PublicKey pk = new PublicKey("b1fa4af2eec41f798352271d3e01c52457789e01586ab37b4f50bb74601569db");
+        PublicKey pk = new PublicKey("107a920c39760225f1b2494121093ded75dae5363321d456f8922227f0539607");
         List<BaseTag> tags = List.of(
-            new EIP712Tag("0xece12A4E213990bC00fe3BCf89E1Df5dF37D663e", "", "Permit2", "0x000000000022D473030F116dDEE9F6B43aC78BA3", ""),
+            new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x000000000022D473030F116dDEE9F6B43aC78BA3", "Permit2", "", ""),
             //["token","WETH","ethereum",11155111,"Sepolia","0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14","1761237799",1000000000000000000]
-            new TokenTag("USDC", "ethereum", "sepolia", "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", new BigDecimal(1000000000000000000L), BigInteger.valueOf(11155111), "1761237799"),
+            new TokenTag("USDT", "ethereum", "sepolia", "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0", new BigDecimal(1000000L), BigInteger.valueOf(11155111), "1761904920"),
             // ["quote","3.221E+21","USD","1E+18",""]
-            new QuoteTag(new BigDecimal("3221000000000000000000"), "USD", new BigDecimal("1000000000000000000"), "1761237799", ""),
+            new QuoteTag(new BigDecimal("1000000000000000000"), "USD", new BigDecimal("1000000000000000000"), "1761237799", ""),
             new MakeTag(Side.SELL, "", pk.toString(), IntentType.SIGNATURE_SELL),
-            new Permit2Tag("3", "0x6989c0044eeab23d55490b38b9d2a131a70748d022a177e1c44bb334fca516813e851e04a9db4a24de93785749b606e281a8bc228936907f25447da1150622be1c", "0x37Fb3a55652042d41Ff1e089C03Ff1fE45093CF4", "0x1e4d58c5a97ab35c614a90ab04acc78711729f18"),
-            new LimitTag(BigDecimal.valueOf(100000000000000000L), BigDecimal.valueOf(1000000000000000000L)), new PaymentTag("wechat", "oren", "wxp://f2f0cFGOsdaOtU3SQfpyBcl_0u0UCU9AIIVaTEmmVDgvN-Q", "wechat")
+            new Permit2Tag("270178257646664", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x1e4d58c5a97ab35c614a90ab04acc78711729f18"),
+            new LimitTag(BigDecimal.valueOf(1000000L), BigDecimal.valueOf(1000000L)),
+            new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")
         );
         PostIntentEvent e = new PostIntentEvent(pk, tags, "ccc");
         System.out.println(verifySignature(e, SignerType.POST_EVENT));

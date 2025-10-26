@@ -156,7 +156,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 TokenTag token = postIntentEvent.getTokenTag();
                 TokenTag takeToken = takeIntentEvent.getTokenTag();
                 if (!takeToken.getSymbol().equals(token.getSymbol())
-                        || !takeToken.getChain().equals(token.getChain())
+                        || !takeToken.getChainId().equals(token.getChainId())
                         || !takeToken.getNetwork().equals(token.getNetwork())
                         || !takeToken.getAddress().equals(token.getAddress())) {
                     String msg = String.format("invalid intent token: %s, %s, %s, %s, event id:%s", takeToken.getSymbol(), takeToken.getChain(), takeToken.getNetwork(), takeToken.getAddress(), makeEventId);
@@ -175,16 +175,18 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
 
                 //3.4 payment
                 PaymentTag takePayment = takeIntentEvent.getPaymentTag();
-                List<PaymentTag> paymentTags = postIntentEvent.getPaymentTags();
-                List<String> methods = paymentTags.stream().map(PaymentTag::getMethod).toList();
+                List<PaymentTag> makePaymentTags = postIntentEvent.getPaymentTags();
+                List<String> methods = makePaymentTags.stream().map(PaymentTag::getMethod).toList();
                 if (!methods.contains(takePayment.getMethod())) {
                     String msg = String.format("take payment{%s} does not matches: %s", takePayment.getMethod(), methods);
                     log.warn(msg);
                     throw new RuntimeException(msg);
                 }
+
                 if (takeTag.getSide() == Side.BUY) {
-                    List<String> accounts = paymentTags.stream().map(PaymentTag::getAccount).toList();
-                    List<String> qrCodes = paymentTags.stream().map(PaymentTag::getQrCode).toList();
+                    // 3.4.1 payment detail
+                    List<String> accounts = makePaymentTags.stream().map(PaymentTag::getAccount).toList();
+                    List<String> qrCodes = makePaymentTags.stream().map(PaymentTag::getQrCode).toList();
                     if (!accounts.contains(takePayment.getAccount()) && !qrCodes.contains(takePayment.getQrCode())) {
                         String msg = String.format("take payment:%s, %s does not matches: %s, %s",
                                 takePayment.getAccount(), takePayment.getQrCode(), accounts, qrCodes
@@ -192,8 +194,11 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                         log.warn(msg);
                         throw new RuntimeException(msg);
                     }
+
+                    //4. seller permit2 TODO:
                 }
                 //well done
+                return;
             }
             log.warn("unknown event id: {}", makeEventId);
             throw new RuntimeException(String.format("unknown event id: %s", makeEventId));

@@ -66,7 +66,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         this.concreteTagEntitiesService = concreteTagEntitiesService;
         this.genericTagEntitiesService = genericTagEntitiesService;
         this.takeEventEntityRepository = takeEventEntityRepository;
-        this.eventFieldNames = new HashSet<>(List.of(TAKE_TAG_CODE, TOKEN_TAG_CODE, PAYMENT_TAG_CODE, QUOTE_TAG_CODE));
+        this.eventFieldNames = new HashSet<>(List.of(TAKE_TAG_CODE, TOKEN_TAG_CODE, PAYMENT_TAG_CODE, QUOTE_TAG_CODE, LIMIT_TAG_CODE, EIP712_TAG_CODE, PERMIT2_TAG_CODE));
     }
 
     @Override

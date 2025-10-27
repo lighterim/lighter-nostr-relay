@@ -58,12 +58,16 @@ public class EventDto extends NIP01Event {
                 eip712Tag.getDomainVersion(),
                 eip712Tag.getDomainAppName(),
                 eip712Tag.getContractAddress(),
+                eip712Tag.getSign(),
 
                 quote.getNumber(),
                 quote.getCurrency(),
+                quote.getTimestamp(),
+                quote.getSignature(),
+                quote.getUsdRate(),
 
-                limit == null || limit.getLowLimit() == null ? null : limit.getLowLimit(),
-                limit == null || limit.getUpLimit() == null ? null : limit.getUpLimit(),
+                limit == null || limit.getLowLimit() == null ? BigDecimal.ZERO : limit.getLowLimit(),
+                limit == null || limit.getUpLimit() == null ? BigDecimal.ZERO : limit.getUpLimit(),
 
                 permit2Tag.getNonce(),
                 permit2Tag.getSignature(),
@@ -75,7 +79,6 @@ public class EventDto extends NIP01Event {
                 event.getKind(),
                 event.getNip(),
                 event.getCreatedAt(),
-
                 event.getContent()
 
         );
@@ -106,6 +109,9 @@ public class EventDto extends NIP01Event {
         TokenTag tokenTag = event.getTokenTag();
         PaymentTag paymentTag = event.getPaymentTag();
         QuoteTag quoteTag = event.getQuoteTag();
+        Permit2Tag permit2Tag = event.getPermit2Tag();
+        EIP712Tag eip712Tag = event.getEip712Tag();
+        LimitTag limitTag = event.getLimitTag();
         TradeKeyTag keyTag = event.getTradeKeyTag();
         BigDecimal volume = takeTag.getVolume();
 
@@ -145,7 +151,10 @@ public class EventDto extends NIP01Event {
                 event.getTradeStatus(),
                 event.getContent(),
                 event.getSignature().toString(),
-                event.getCreatedAt()
+                event.getCreatedAt(),
+                limitTag.getLowLimit(), limitTag.getUpLimit(),
+                eip712Tag.getWalletAddress(), eip712Tag.getDomainVersion(), eip712Tag.getDomainAppName(), eip712Tag.getContractAddress(), eip712Tag.getSign(),
+                permit2Tag.getNonce(), permit2Tag.getSignature(), permit2Tag.getSpender()
         );
     }
 

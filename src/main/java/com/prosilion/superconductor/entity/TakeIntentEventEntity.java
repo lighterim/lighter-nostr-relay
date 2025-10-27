@@ -29,27 +29,24 @@ public class TakeIntentEventEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Integer kind;
-    private Integer nip;
-    private String eventIdString;
 
     private String takeSide;
     private String makeIntentEventId;
     /** The volume means volume of trade symbol **/
     @Column(precision = 36, scale = 0)
     private BigDecimal volume;
-    private String buyerId;
+    private String buyer;
     private String buyerPubKey;
-    private String sellerId;
+    private String seller;
     private String sellerPubKey;
     private BigDecimal buyerFeeRate;
     private BigDecimal sellerFeeRate;
     private String payer;
 
+    private String symbol;
     private String chain;
     private String network;
     private String tokenAddr;
-    private String symbol;
     private BigInteger chainId;
     private String expireTime;
 
@@ -57,15 +54,33 @@ public class TakeIntentEventEntity {
     @Column(precision = 36, scale = 0)
     private BigDecimal price;
     private String currency;
+    private BigInteger quoteDeadline;
+    private String quoteSignature;
     @Column(precision = 36, scale = 0)
     private BigDecimal usdRate;
-    private String timestamp;
-    private String quoteSignature;
+
+    /** limit **/
+    @Column(precision = 36, scale=0)
+    private BigDecimal lowLimit;
+    @Column(precision = 36, scale=0)
+    private BigDecimal upLimit;
 
     private String paymentMethod;
     private String paymentAccount;
     private String paymentQrCode;
     private String paymentMemo;
+
+    /** eip712 **/
+    private String walletAddress;
+    private String domainVersion;
+    private String domainAppName;
+    private String contractAddress;
+    private String eip712Signature;
+
+    /** permit2 **/
+    private String nonce;
+    private String permit2Sign;
+    private String spender;
 
     /** trade key for participant and public key of current trade **/
     private String keyForBuyer;
@@ -77,6 +92,9 @@ public class TakeIntentEventEntity {
     @Column(nullable = false)
     private String status = TradeStatus.TakeEvent.getValue();
 
+    private Integer kind;
+    private Integer nip;
+    private String eventIdString;
     private String content;
     private String signature;
     private Long createAt;
@@ -108,7 +126,7 @@ public class TakeIntentEventEntity {
          BigDecimal price,
          String currency,
          BigDecimal usdRate,
-         String timestamp,
+         BigInteger timestamp,
          String quoteSignature,
          String paymentMethod,
          String paymentAccount,
@@ -122,35 +140,60 @@ public class TakeIntentEventEntity {
          String tradeStatus,
          String content,
          String signature,
-         Long createAt){
-        this.kind = kind;
-        this.nip = nip;
-        this.eventIdString = eventIdString;
+         Long createAt,
+            BigDecimal lowLimit,
+            BigDecimal upLimit,
+            String walletAddress,
+            String domainVersion,
+            String domainAppName,
+            String contractAddress,
+            String eip712Signature,
+            String nonce,
+            String permit2Sign,
+            String spender
+            ){
         this.takeSide = takeSide;
         this.makeIntentEventId = makeIntentEventId;
         this.volume = volume;
-        this.buyerId = buyerId;
+        this.buyer = buyerId;
         this.buyerPubKey = buyerPubKey;
-        this.sellerId = sellerId;
+        this.seller = sellerId;
         this.sellerPubKey = sellerPubKey;
         this.sellerFeeRate = sellerFeeRate;
         this.buyerFeeRate = buyerFeeRate;
         this.payer = payer;
+
+        this.symbol = symbol;
         this.chain = chain;
-        this.chainId = chainId;
-        this.expireTime = expireTime;
         this.network = network;
         this.tokenAddr = tokenAddr;
-        this.symbol = symbol;
+        this.chainId = chainId;
+        this.expireTime = expireTime;
+
         this.price = price;
         this.currency = currency;
-        this.usdRate = usdRate;
-        this.timestamp = timestamp;
+        this.quoteDeadline = timestamp;
         this.quoteSignature = quoteSignature;
+        this.usdRate = usdRate;
+
+        this.lowLimit = lowLimit;
+        this.upLimit = upLimit;
+
         this.paymentMethod = paymentMethod;
         this.paymentAccount = paymentAccount;
         this.paymentQrCode = paymentQrCode;
         this.paymentMemo = paymentMemo;
+
+        this.walletAddress = walletAddress;
+        this.domainVersion = domainVersion;
+        this.domainAppName = domainAppName;
+        this.contractAddress = contractAddress;
+        this.eip712Signature = eip712Signature;
+
+        this.nonce = nonce;
+        this.permit2Sign = permit2Sign;
+        this.spender = spender;
+
         this.keyForBuyer = keyForBuyer;
         this.keyForSeller = keyForSeller;
         this.keyForWitness = keyForWitness;
@@ -159,6 +202,9 @@ public class TakeIntentEventEntity {
         if(StringUtils.hasText(tradeStatus)) {
             this.status = tradeStatus;
         }
+        this.kind = kind;
+        this.nip = nip;
+        this.eventIdString = eventIdString;
         this.content = content;
         this.signature = signature;
         this.createAt = createAt;
@@ -177,10 +223,13 @@ public class TakeIntentEventEntity {
                     new PublicKey(buyerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, sellerId, sellerPubKey, volume.stripTrailingZeros(), buyerId, buyerPubKey, sellerFeeRate, buyerFeeRate, payer),
+                            new TakeTag(side, makeIntentEventId, seller, sellerPubKey, volume.stripTrailingZeros(), buyer, buyerPubKey, sellerFeeRate, buyerFeeRate, payer),
                             new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime),
-                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), timestamp, quoteSignature),
+                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), quoteDeadline, quoteSignature),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
+                            new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
+                            new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature),
+                            new Permit2Tag(nonce, permit2Sign, payer, spender),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey)
                     ),
                     eventIdString,
@@ -193,10 +242,13 @@ public class TakeIntentEventEntity {
                     new PublicKey(sellerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, buyerId, buyerPubKey, volume.stripTrailingZeros(), sellerId, sellerPubKey, sellerFeeRate, buyerFeeRate, payer),
+                            new TakeTag(side, makeIntentEventId, buyer, buyerPubKey, volume.stripTrailingZeros(), seller, sellerPubKey, sellerFeeRate, buyerFeeRate, payer),
                             new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime),
-                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), timestamp, quoteSignature),
+                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), quoteDeadline, quoteSignature),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
+                            new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
+                            new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature),
+                            new Permit2Tag(nonce, permit2Sign, payer, spender),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey)
                     ),
                     eventIdString,

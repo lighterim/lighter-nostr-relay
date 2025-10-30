@@ -45,12 +45,13 @@ public class AccountMessageEntity {
     private String nostrPubkey;
     private BigInteger chainId;
     private Long createdAt;
+    private String ipfsHash;
 
     /** relays **/
     @Transient
     private List<BaseTag> tags;
 
-    public AccountMessageEntity(Integer nip, Integer kind, String eventIdString, String content, String nftId, String tba, String nostrPubkey, BigInteger chainId, Long createdAt) {
+    public AccountMessageEntity(Integer nip, Integer kind, String eventIdString, String content, String nftId, String tba, String nostrPubkey, String ipfsHash, BigInteger chainId, Long createdAt) {
         this.nip = nip;
         this.kind = kind;
         this.content = content;
@@ -60,12 +61,13 @@ public class AccountMessageEntity {
         this.nostrPubkey = nostrPubkey;
         this.chainId = chainId;
         this.createdAt = createdAt;
+        this.ipfsHash = ipfsHash;
     }
 
     public <T extends GenericEvent> T convertEntityToDto() {
         AccountIntentEvent event = new AccountIntentEvent(
                 new PublicKey(nostrPubkey), List.of(
-                new AccountTag(nftId, chainId, tba, nostrPubkey)
+                new AccountTag(nftId, chainId, tba, nostrPubkey, ipfsHash)
         ), content, eventIdString, nip, createdAt);
         event.setPubKey(new PublicKey(nostrPubkey));
         event.setKind(Kind.ACCOUNT_INTENT.getValue());
@@ -73,7 +75,7 @@ public class AccountMessageEntity {
         event.setNip(nip);
 
         List<BaseTag> tagList = new ArrayList<>(tags);
-        AccountTag accountTag = new AccountTag(nftId, chainId, tba, nostrPubkey);
+        AccountTag accountTag = new AccountTag(nftId, chainId, tba, nostrPubkey, ipfsHash);
         tagList.add(accountTag);
 
         event.setTags(tagList);

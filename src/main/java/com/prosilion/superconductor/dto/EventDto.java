@@ -86,7 +86,7 @@ public class EventDto extends NIP01Event {
                 event.getKind(),
                 event.getId(),
                 event.getContent(),
-                tag.getNftId(), tag.getTba(), tag.getNostrPubKey(), tag.getChainId(), event.getCreatedAt());
+                tag.getNftId(), tag.getTba(), tag.getNostrPubKey(), tag.getIpfsHash(), tag.getChainId(), event.getCreatedAt());
     }
 
     public static AddressBookMessageEntity convertToEntity(AddressBookIntentEvent event) {

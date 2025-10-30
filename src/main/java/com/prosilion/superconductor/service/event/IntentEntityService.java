@@ -52,7 +52,7 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
         this.concreteTagEntitiesService = concreteTagEntitiesService;
 //        this.genericTagEntitiesService = genericTagEntitiesService;
         this.postEventEntityRepository = postEventEntityRepository;
-        this.eventFieldNames = new HashSet<>(List.of(MAKE_TAG_CODE, TOKEN_TAG_CODE, LIMIT_TAG_CODE, QUOTE_TAG_CODE));
+        this.eventFieldNames = new HashSet<>(List.of(MAKE_TAG_CODE, TOKEN_TAG_CODE, LIMIT_TAG_CODE, QUOTE_TAG_CODE, PERMIT2_TAG_CODE, EIP712_TAG_CODE));
     }
 
     @Override

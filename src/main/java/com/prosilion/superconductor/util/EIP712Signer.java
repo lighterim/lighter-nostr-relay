@@ -1,16 +1,21 @@
 package com.prosilion.superconductor.util;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
+import nostr.base.PublicKey;
+import nostr.event.BaseTag;
 import nostr.event.IntentType;
 import nostr.event.NIP77Event;
+import nostr.event.Side;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.tag.*;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -47,7 +52,7 @@ public class EIP712Signer {
         if(signerType.equals(SignerType.POST_EVENT)) {
             PostIntentEvent postIntentEvent = (PostIntentEvent)event;
             eip712Tag = postIntentEvent.getEip712Tag();
-            signature = eip712Tag.getSign();
+            signature = postIntentEvent.getSideTag().getIntentType() == IntentType.SIGNATURE_SELL ? postIntentEvent.getPermit2Tag().getSignature() :eip712Tag.getSign();
             structuredDataJson = createPostStructuredDataJson(postIntentEvent);
         } else {
             return false;
@@ -193,7 +198,7 @@ public class EIP712Signer {
 
         Map<String, Object> permitWitnessTransferFromMap = new LinkedHashMap<>();
         permitWitnessTransferFromMap.put("permitted", tokenPermissionsMap);
-        permitWitnessTransferFromMap.put("spender", eip712Tag.getContractAddress());
+        permitWitnessTransferFromMap.put("spender", permit2Tag.getSpender());
         permitWitnessTransferFromMap.put("nonce", permit2Tag.getNonce());
         permitWitnessTransferFromMap.put("deadline", tokenTag.getExpiryTime());
         permitWitnessTransferFromMap.put("witness", intentParamsMap);
@@ -292,5 +297,262 @@ public class EIP712Signer {
         intentParamsType.add(createType("payeeDetails", "bytes32"));
         intentParamsType.add(createType("price", "uint256"));
         return intentParamsType;
+    }
+
+    private static List<Map<String, String>> getEscrowParamsType() {
+        /**
+         * {
+         *   "EIP712Domain": [
+         *     {
+         *       "name": "name",
+         *       "type": "string"
+         *     },
+         *     {
+         *       "name": "version",
+         *       "type": "string"
+         *     },
+         *     {
+         *       "name": "chainId",
+         *       "type": "uint256"
+         *     },
+         *     {
+         *       "name": "verifyingContract",
+         *       "type": "address"
+         *     }
+         *   ],
+         *   "EscrowParams": [
+         *     {
+         *       "name": "id",
+         *       "type": "uint256"
+         *     },
+         *     {
+         *       "name": "token",
+         *       "type": "address"
+         *     },
+         *     {
+         *       "name": "volume",
+         *       "type": "uint256"
+         *     },
+         *     {
+         *       "name": "price",
+         *       "type": "uint256"
+         *     },
+         *     {
+         *       "name": "usdRate",
+         *       "type": "uint256"
+         *     },
+         *     {
+         *       "name": "payer",
+         *       "type": "address"
+         *     },
+         *     {
+         *       "name": "seller",
+         *       "type": "address"
+         *     },
+         *     {
+         *       "name": "sellerFeeRate",
+         *       "type": "uint256"
+         *     },
+         *     {
+         *       "name": "paymentMethod",
+         *       "type": "bytes32"
+         *     },
+         *     {
+         *       "name": "currency",
+         *       "type": "bytes32"
+         *     }{
+         *       "name": "payeeDetails",
+         *       "type": "bytes32"
+         *     },
+         *     {
+         *       "name": "buyer",
+         *       "type": "address"
+         *     },
+         *     {
+         *       "name": "buyerFeeRate",
+         *       "type": "uint256"
+         *     }
+         *   ]
+         * }
+         * }
+         */
+        List<Map<String, String>> intentParamsType = new ArrayList<>();
+        intentParamsType.add(createType("id", "uint256"));
+        intentParamsType.add(createType("token", "address"));
+        intentParamsType.add(createType("volume", "uint256"));
+        intentParamsType.add(createType("price", "uint256"));
+        intentParamsType.add(createType("usdRate", "uint256"));
+        intentParamsType.add(createType("payer", "address"));
+        intentParamsType.add(createType("seller", "address"));
+        intentParamsType.add(createType("sellerFeeRate","uint256"));
+        intentParamsType.add(createType("paymentMethod", "bytes32"));
+        intentParamsType.add(createType("currency", "bytes32"));
+        intentParamsType.add(createType("payeeDetails", "bytes32"));
+        intentParamsType.add(createType("buyer", "address"));
+        intentParamsType.add(createType("buyerFeeRate", "uint256"));
+        return intentParamsType;
+    }
+
+
+    public static void main(String[] args){
+        validateSignatureSell();
+        System.out.println("validateEscrowParams="+validateEscrowParams());
+    }
+
+    private static boolean validateEscrowParams(){
+        String domainName = "MainnetUserTxn";
+        String domainVersion = "1";
+        int chainId = 11155111;
+        String verifyContract = "0xd5379dca1bf8c1d204121374b3f8d8fbf7c6605e";
+        int tradeId = 1;
+        String tokenAddr = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
+        BigDecimal volume = new BigDecimal("1000000");
+        BigDecimal price = new BigDecimal("1000000000000000000");
+        BigDecimal usdRate = new BigDecimal("0");
+        String seller = "0x58344547f5C5eDbc8a15Ba2584089b30A04ca0E3";
+        String payer = "0x58344547f5C5eDbc8a15Ba2584089b30A04ca0E3";
+        String sellerFeeRate = "0";
+        String paymentMethod = "wechat";
+        String currency = "USD";
+        String buyer = "0x58344547f5C5eDbc8a15Ba2584089b30A04ca0E3";
+        String buyerFeeRate = "0";
+        String account = "dust";
+        String qrCode = "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0";
+        String memo = "memo";
+//        String signature = "0x18e58d3647bcf7f1d627fbd3659e9517227f1169f5b3140851a9c63b7cd681617519064c83cddf17bf6c773f71096d25966d76b224f0e64019fa5a7eb4da536f1b";
+        String signature = "0x217dc98fe27bb191e7378fe8f6260bc7e61b311b231cab2b54f1ad45e9a2f619590372a0a67b899ad0e0b8a04faa24f904cf5a7a84afddf87e8c736f5aabbb371b";
+//        String expectedAddress = "0x58344547f5C5eDbc8a15Ba2584089b30A04ca0E3";
+        String expectedAddress = "0xd58382f295f5c98baeb525fabb7febccc62bc63b";
+        String structuredDataJson = getEscrowParamsEip712Struct(domainName,
+                domainVersion,
+                chainId,
+                verifyContract,
+                tradeId,
+                tokenAddr,
+                volume,
+                price,
+                usdRate,
+                seller,
+                payer,
+                sellerFeeRate,
+                paymentMethod,
+                currency,
+                buyer,
+                buyerFeeRate,
+                account,
+                qrCode,
+                memo);
+        StructuredDataEncoder encoder = null;
+        try {
+            encoder = new StructuredDataEncoder(structuredDataJson);
+            byte[] messageHash = encoder.hashStructuredData();
+            log.info("event-id:{}, structDataJson:{}, hash:{}", tradeId, structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash));
+            return verifySignature(messageHash, signature, expectedAddress);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void validateSignatureSell(){
+        PublicKey pk = new PublicKey("107a920c39760225f1b2494121093ded75dae5363321d456f8922227f0539607");
+        List<BaseTag> tags = List.of(
+            new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x000000000022D473030F116dDEE9F6B43aC78BA3", "Permit2", "", ""),
+            //["token","WETH","ethereum",11155111,"Sepolia","0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14","1761237799",1000000000000000000]
+            new TokenTag("USDT", "ethereum", "sepolia", "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0", new BigDecimal(1000000L), BigInteger.valueOf(11155111), "1761904920"),
+            // ["quote","3.221E+21","USD","1E+18",""]
+            new QuoteTag(new BigDecimal("1000000000000000000"), "USD", new BigDecimal("1000000000000000000"), new BigInteger("1761237799"), ""),
+            new MakeTag(Side.SELL, "", pk.toString(), IntentType.SIGNATURE_SELL),
+            new Permit2Tag("270178257646664", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x1e4d58c5a97ab35c614a90ab04acc78711729f18"),
+            new LimitTag(BigDecimal.valueOf(1000000L), BigDecimal.valueOf(1000000L)),
+            new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")
+        );
+        PostIntentEvent e = new PostIntentEvent(pk, tags, "ccc");
+        System.out.println(verifySignature(e, SignerType.POST_EVENT));
+    }
+
+    private static String getEscrowParamsEip712Struct(
+            String domainName,
+            String domainVersion,
+            int chainId,
+            String verifyContract,
+            int tradeId,
+            String tokenAddr,
+            BigDecimal volume,
+            BigDecimal price,
+            BigDecimal usdRate,
+            String seller,
+            String payer,
+            String sellerFeeRate,
+            String paymentMethod,
+            String currency,
+            String buyer,
+            String buyerFeeRate,
+            String account,
+            String qrCode,
+            String memo
+
+    ){
+        Map<String, Object> structuredData = new LinkedHashMap<>();
+        // 1. 定义所有类型（包括嵌套结构）
+        Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
+
+
+
+        // EIP712Domain 类型定义
+        List<Map<String, String>> domainType = createDomainTypes();
+        types.put("EIP712Domain", domainType);
+
+        // IntentParams 类型定义 - 包含对 IntentRange 的引用
+        List<Map<String, String>> escrowParamsType = getEscrowParamsType();
+
+        types.put("EscrowParams", escrowParamsType);
+        // 3. 域数据
+        Map<String, Object> domainMap = new LinkedHashMap<>();
+        domainMap.put("name", domainName);
+        domainMap.put("version", domainVersion);
+        domainMap.put("chainId", chainId);
+        domainMap.put("verifyingContract", verifyContract);
+        structuredData.put("domain", domainMap);
+
+        /**
+         * message['id'] = tag[1]
+         *             message['token'] = tag[2]
+         *             message['volume'] = tag[3]
+         *             message['price'] = tag[4]
+         *             message['usdRate'] = tag[5]
+         *             message['payer'] = tag[6]
+         *             message['seller'] = tag[7]
+         *             message['sellerFeeRate'] = tag[8]
+         *             message['paymentMethod'] = tag[9]
+         *             message['currency'] = tag[10]
+         *             message['buyer'] = tag[11]
+         *             message['buyerFeeRate'] = tag[12]
+         *
+         *             account = tag[13]
+         *             qr_code = tag[14]
+         *             memo = tag[15]
+         *             message['payeeDetails'] = account + qr_code + memo
+         */
+        // 4. 消息数据
+        Map<String, Object> messageMap = new LinkedHashMap<>();
+        messageMap.put("id", tradeId);
+        messageMap.put("token", tokenAddr);
+        messageMap.put("volume", volume.toPlainString());
+        messageMap.put("price", price.toPlainString());
+        messageMap.put("usdRate", usdRate.toPlainString());
+        messageMap.put("payer", payer);
+        messageMap.put("seller", seller);
+        messageMap.put("sellerFeeRate", sellerFeeRate);
+        messageMap.put("paymentMethod", keccak256(paymentMethod));
+        messageMap.put("currency", keccak256(currency));
+        messageMap.put("buyer", buyer);
+        messageMap.put("buyerFeeRate", buyerFeeRate);
+        messageMap.put("payeeDetails", keccak256(account + qrCode + memo));
+
+        structuredData.put("message", messageMap);
+        structuredData.put("primaryType", "EscrowParams");
+        structuredData.put("types", types);
+
+        return gson.toJson(structuredData);
     }
 }

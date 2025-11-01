@@ -3,6 +3,9 @@ package com.prosilion.superconductor.repository;
 import com.prosilion.superconductor.entity.IntentEventEntity;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,6 +18,9 @@ public interface PostEventEntityRepository extends JpaRepository<IntentEventEnti
 //  @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @NotNull
     List<IntentEventEntity> findAll();
+
+    @NotNull
+    List<IntentEventEntity> findByStatus(Integer status);
 
     //  @Cacheable("events")
 //  @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)

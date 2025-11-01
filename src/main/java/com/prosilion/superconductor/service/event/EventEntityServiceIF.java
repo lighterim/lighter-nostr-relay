@@ -15,7 +15,7 @@ public interface EventEntityServiceIF<T> {
 //    public void saveEventEntity(@NonNull GenericEvent event);
     Long saveEventEntity(@NonNull T event);
 
-    public Map<Kind, Map<Long, T>> getAll();
+    Map<Kind, Map<Long, T>> getAll();
 
     T getEventById(@NonNull Long id);
 

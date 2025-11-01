@@ -79,8 +79,8 @@ public class EventDto extends NIP01Event {
                 event.getKind(),
                 event.getNip(),
                 event.getCreatedAt(),
-                event.getContent()
-
+                event.getContent(),
+                1
         );
     }
 

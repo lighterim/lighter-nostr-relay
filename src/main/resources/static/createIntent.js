@@ -49,7 +49,7 @@ function replaceHash(id_hash) {
                     // ['summary', $("#summary").val()],
                     ['limit', "1000000", "100000000"],
                     [
-                        'permit2', $("#nonce").val(), $("#permit2_signature").val(), $('#payer').val()
+                        'permit2', $("#nonce").val(), $("#permit2_signature").val(), $('#payer').val(), $('#payer').val()
                     ],
                     ['token', $("#symbol").val(), $("#chain").val(), "stokenet", $("#token_addr").val(), $("#amount").val(), $("#chainId").val(), $("#expiryTime").val()],
                     ['quote', $("#number").val(), $("#currency").val(), "71900000", $("#sign").val()],

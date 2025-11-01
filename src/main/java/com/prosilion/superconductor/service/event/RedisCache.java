@@ -156,6 +156,7 @@ public class RedisCache<T extends GenericEvent> {
                 //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
                 Long tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
                 takeIntentEvent.setTradeId(tradeId);
+                postEventEntityService.updateStatus(takeIntentEvent.getTakeTag().getIntentEventId(), 0);
 //                //when taker take Intent( of maker), retrieve original(maker) intent.
 //                PostIntentEvent makerIntentEvent = (PostIntentEvent)getEventEntityByEventId(Kind.POST_INTENT, takeIntentEvent.getTakeTag().getIntentEventId());
 //                takeIntentEvent.setLimitTag(makerIntentEvent.getLimitTag());

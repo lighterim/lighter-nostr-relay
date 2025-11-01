@@ -92,13 +92,15 @@ public class IntentEventEntity {
     @Transient
     private List<BaseTag> tags;
 
+    private Integer status;
+
     public IntentEventEntity(String side, String nip05, String pubkey, IntentType intentType,
                              String symbol, String chain, String network, String address, BigDecimal amount, BigInteger chainId, String expireTime,
                              String walletAddress, String domainVersion,String domainAppName, String contractAddress, String eip712Signature,
                              BigDecimal price, String currency, BigInteger quoteDeadline, String quoteSignature, BigDecimal usdRate,
                              BigDecimal lowLimit, BigDecimal upLimit,
                              String nonce, String permit2Sign, String payer, String spender,
-                             String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content) {
+                             String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content, Integer status) {
         this.side = side;
         this.nip05 = nip05;
         this.pubkey = pubkey;
@@ -138,7 +140,7 @@ public class IntentEventEntity {
         this.nip = nip;
         this.createdAt = createdAt;
         this.content = content;
-
+        this.status = status;
 
     }
 

@@ -70,9 +70,16 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
         return savedEntity.getId();
     }
 
+    public void updateStatus(@NonNull String eventId, @NonNull Integer status) {
+        IntentEventEntity entity = postEventEntityRepository.findByEventIdString(eventId)
+                .orElseThrow(() -> new RuntimeException("PostEvent not found with id: " + eventId));
+        entity.setStatus(status);
+        postEventEntityRepository.save(entity);
+    }
+
     @Override
     public Map<Kind, Map<Long, PostIntentEvent>> getAll() {
-        Map<Kind, Map<Long, PostIntentEvent>> map = postEventEntityRepository.findAll().stream()
+        Map<Kind, Map<Long, PostIntentEvent>> map = postEventEntityRepository.findByStatus(1).stream()
                 .map(this::populateEventEntity)
                 .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
                         Collectors.toMap(IntentEventEntity::getId, IntentEventEntity::convertEntityToDto)));

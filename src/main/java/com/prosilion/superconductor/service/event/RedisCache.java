@@ -79,12 +79,13 @@ public class RedisCache<T extends GenericEvent> {
     }
 
     private static String encryptWithPublicKey(String plainText, String tradePubKey) {
-        try {
-            return Identity.encryptWithPublicKey(plainText, new PublicKey(tradePubKey));
-        } catch (Exception e) {
-            log.error("encPrivateKeyWithPubKey:" + e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+//        try {
+//            return Identity.encryptWithPublicKey(plainText, new PublicKey(tradePubKey));
+//        } catch (Exception e) {
+//            log.error("encPrivateKeyWithPubKey:" + e.getMessage(), e);
+//            throw new RuntimeException(e);
+//        }
+        return plainText;
     }
 
     public Map<Kind, Map<Long, GenericEvent>> getAll() {

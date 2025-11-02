@@ -11,8 +11,10 @@ import jakarta.persistence.NoResultException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
+import nostr.event.IntentType;
 import nostr.event.Kind;
 import nostr.event.impl.PostIntentEvent;
+import nostr.event.impl.TakeIntentEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -70,10 +72,20 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
         return savedEntity.getId();
     }
 
-    public void updateStatus(@NonNull String eventId, @NonNull Integer status) {
+    public void updateStatus(@NonNull TakeIntentEvent takeIntentEvent) {
+        String eventId = takeIntentEvent.getTakeTag().getIntentEventId();
         IntentEventEntity entity = postEventEntityRepository.findByEventIdString(eventId)
                 .orElseThrow(() -> new RuntimeException("PostEvent not found with id: " + eventId));
-        entity.setStatus(status);
+        IntentType intentType = entity.getIntentType();
+        if(IntentType.BULK_SELL.equals(intentType) && takeIntentEvent.getTakeTag().getVolume().compareTo(takeIntentEvent.getTokenTag().getAmount()) == 1) {
+            throw new RuntimeException("The quantity taken exceeds the remaining quantity. eventId: " + eventId);
+        }
+
+        if(IntentType.BUYER_INTENT.equals(intentType) || IntentType.SIGNATURE_SELL.equals(intentType)
+        || (IntentType.BULK_SELL.equals(intentType) && takeIntentEvent.getTakeTag().getVolume().compareTo(takeIntentEvent.getTokenTag().getAmount()) == 0)) {
+            entity.setStatus(0);
+        }
+        entity.setTradedAmount(takeIntentEvent.getTakeTag().getVolume());
         postEventEntityRepository.save(entity);
     }
 

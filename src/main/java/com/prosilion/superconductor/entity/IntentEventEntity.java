@@ -88,6 +88,9 @@ public class IntentEventEntity {
     private Integer nip;
     private Long createdAt;
 
+    @Column(precision = 36, scale=0)
+    private BigDecimal tradedAmount; //只针对bulk_sell
+
     /** relays **/
     @Transient
     private List<BaseTag> tags;
@@ -100,7 +103,7 @@ public class IntentEventEntity {
                              BigDecimal price, String currency, BigInteger quoteDeadline, String quoteSignature, BigDecimal usdRate,
                              BigDecimal lowLimit, BigDecimal upLimit,
                              String nonce, String permit2Sign, String payer, String spender,
-                             String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content, Integer status) {
+                             String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content, Integer status, BigDecimal tradedAmount) {
         this.side = side;
         this.nip05 = nip05;
         this.pubkey = pubkey;
@@ -141,6 +144,7 @@ public class IntentEventEntity {
         this.createdAt = createdAt;
         this.content = content;
         this.status = status;
+        this.tradedAmount = tradedAmount;
 
     }
 
@@ -160,7 +164,7 @@ public class IntentEventEntity {
 
         List<BaseTag> tagList = new ArrayList<>(tags);
         MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType);
-        TokenTag token = new TokenTag(symbol, chain, network, tokenAddress, amount.stripTrailingZeros(), chainId, expireTime);
+        TokenTag token = new TokenTag(symbol, chain, network, tokenAddress, amount.stripTrailingZeros(), chainId, expireTime, tradedAmount);
         QuoteTag quote = new QuoteTag(price, currency, usdRate, quoteDeadline, quoteSignature);
         EIP712Tag eip712Tag = new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature);
         LimitTag limit = new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros());

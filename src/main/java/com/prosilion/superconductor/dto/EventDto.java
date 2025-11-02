@@ -80,7 +80,8 @@ public class EventDto extends NIP01Event {
                 event.getNip(),
                 event.getCreatedAt(),
                 event.getContent(),
-                1
+                1,
+                BigDecimal.ZERO
         );
     }
 

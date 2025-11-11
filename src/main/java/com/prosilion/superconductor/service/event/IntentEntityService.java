@@ -1,5 +1,9 @@
 package com.prosilion.superconductor.service.event;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import com.prosilion.superconductor.entity.IntentEventEntity;
@@ -7,17 +11,25 @@ import com.prosilion.superconductor.entity.join.IntentEntityAbstractTagEntity;
 import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
 import com.prosilion.superconductor.repository.PostEventEntityRepository;
 import com.prosilion.superconductor.repository.join.IntentEntityAbstractTagEntityRepository;
+import com.prosilion.superconductor.util.ED25519Signer;
+import com.prosilion.superconductor.util.RestClient;
 import jakarta.persistence.NoResultException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
 import nostr.event.IntentType;
 import nostr.event.Kind;
+import nostr.event.Side;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
+import nostr.event.tag.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.net.http.HttpResponse;
+
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -85,7 +97,7 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
         || (IntentType.BULK_SELL.equals(intentType) && takeIntentEvent.getTakeTag().getVolume().compareTo(takeIntentEvent.getTokenTag().getAmount()) == 0)) {
             entity.setStatus(0);
         }
-        entity.setTradedAmount(takeIntentEvent.getTakeTag().getVolume());
+        entity.setTradedAmount(entity.getTradedAmount().add(takeIntentEvent.getTakeTag().getVolume()));
         postEventEntityRepository.save(entity);
     }
 

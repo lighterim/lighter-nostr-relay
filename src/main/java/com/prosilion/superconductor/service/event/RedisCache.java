@@ -154,6 +154,7 @@ public class RedisCache<T extends GenericEvent> {
             case ADDRESS_BOOK_INTENT -> addressBookMessageEntityService.saveEventEntity((AddressBookIntentEvent) event);
             case TAKE_INTENT -> {
                 TakeIntentEvent takeIntentEvent = (TakeIntentEvent) event;
+                tradeEntityService.updateRealtimePrice(takeIntentEvent);
                 //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
                 Long tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
                 takeIntentEvent.setTradeId(tradeId);

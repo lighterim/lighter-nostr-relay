@@ -65,6 +65,7 @@ public class EventDto extends NIP01Event {
                 quote.getTimestamp(),
                 quote.getSignature(),
                 quote.getUsdRate(),
+                quote.getSlippageBP(),
 
                 limit == null || limit.getLowLimit() == null ? BigDecimal.ZERO : limit.getLowLimit(),
                 limit == null || limit.getUpLimit() == null ? BigDecimal.ZERO : limit.getUpLimit(),
@@ -146,7 +147,7 @@ public class EventDto extends NIP01Event {
                 sellerPubKey,
                 takeTag.getSellerFeeRate(), takeTag.getBuyerFeeRate(), takeTag.getPayer(),
                 tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChainId(), tokenTag.getExpiryTime(), tokenTag.getChain(), tokenTag.getNetwork(),
-                quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(), quoteTag.getTimestamp(), quoteTag.getSignature(),
+                quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(), quoteTag.getSlippageBP(), quoteTag.getTimestamp(), quoteTag.getSignature(),
                 paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
                 keyTag==null?"":keyTag.getKeyForBuyer(), keyTag==null?"":keyTag.getKeyForSeller(), keyTag==null?"":keyTag.getKeyForWitness(), keyTag==null?"":keyTag.getKeyForSomeone(), keyTag==null?"":keyTag.getPubkey(),
                 event.getTradeStatus(),

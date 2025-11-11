@@ -7,9 +7,9 @@ import org.bouncycastle.crypto.Signer;
 
 public class ED25519Signer {
 
-    public final static String PUBKEY = "f8141e0fbd570817ff8e417a10027f1368ef4993edee3c9d2fdf4074aac78fa0";
+    public final static String publicKeyHex = "f8141e0fbd570817ff8e417a10027f1368ef4993edee3c9d2fdf4074aac78fa0";
 
-    public static boolean verify(String publicKeyHex, String message, String signatureHex) {
+    public static boolean verify(String message, String signatureHex) {
         try {
             // 将十六进制字符串转换为字节数组
             byte[] publicKeyBytes = HexFormat.of().parseHex(publicKeyHex);

@@ -60,6 +60,7 @@ public class IntentEventEntity {
     private BigInteger quoteDeadline;
     private String quoteSignature;
     private BigDecimal usdRate;
+    private Integer slippageBP;
 
     /** limit **/
     @Column(precision = 36, scale=0)
@@ -100,7 +101,7 @@ public class IntentEventEntity {
     public IntentEventEntity(String side, String nip05, String pubkey, IntentType intentType,
                              String symbol, String chain, String network, String address, BigDecimal amount, BigInteger chainId, String expireTime,
                              String walletAddress, String domainVersion,String domainAppName, String contractAddress, String eip712Signature,
-                             BigDecimal price, String currency, BigInteger quoteDeadline, String quoteSignature, BigDecimal usdRate,
+                             BigDecimal price, String currency, BigInteger quoteDeadline, String quoteSignature, BigDecimal usdRate, Integer slippageBP,
                              BigDecimal lowLimit, BigDecimal upLimit,
                              String nonce, String permit2Sign, String payer, String spender,
                              String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content, Integer status, BigDecimal tradedAmount) {
@@ -128,6 +129,7 @@ public class IntentEventEntity {
         this.quoteDeadline = quoteDeadline;
         this.quoteSignature = quoteSignature;
         this.usdRate = usdRate;
+        this.slippageBP = slippageBP;
 
         this.lowLimit = lowLimit;
         this.upLimit = upLimit;
@@ -165,7 +167,7 @@ public class IntentEventEntity {
         List<BaseTag> tagList = new ArrayList<>(tags);
         MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType);
         TokenTag token = new TokenTag(symbol, chain, network, tokenAddress, amount.stripTrailingZeros(), chainId, expireTime, tradedAmount);
-        QuoteTag quote = new QuoteTag(price, currency, usdRate, quoteDeadline, quoteSignature);
+        QuoteTag quote = new QuoteTag(price, currency, usdRate, quoteDeadline, quoteSignature, slippageBP);
         EIP712Tag eip712Tag = new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature);
         LimitTag limit = new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros());
         Permit2Tag permit2Tag = new Permit2Tag(nonce, permit2Sign, payer, spender);

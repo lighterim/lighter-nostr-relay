@@ -32,10 +32,10 @@ function replaceHash(id_hash) {
                 'kind': parseInt($("#kind").val(), 10),
                 'content': "take intent",
                 'tags': [
-                    ['take','buy', $("#eventId").val(), $("#userId").val(), $("#pubkey").val(), $("#volume").val(), $("#userId").val(), $("#pubkey").val(), "0.2", "0.5", $("#userId").val()],
+                    ['take','buy', $("#eventId").val(), $("#userId").val(), $("#pubkey").val(), $("#volume").val(), $("#userId").val(), $("#pubkey").val(), "0", "0", $("#userId").val()],
                     ['eip712', $("#walletAddress").val(), $("#contractAddress").val(), $("#domainAppName").val(), $("#domainVersion").val(), $("#sign").val()],
                     ["token", "USDT", "radixDLT", "stokenet", $("#token_addr").val(), $("#volume").val(), $("#chainId").val()],
-                    ["quote", $("#number").val(), "CNY", "719", "11111", "55"],
+                    ["quote", $("#number").val(), "CNY", "719", "11111", "55", "10000"],
                     ["limit", "11111", "222222"],
                     ["permit2", "sss", "sss", "ddd", "zz"],
                     ["payment", "alipay", "cash11", "cash11", "cash11"],

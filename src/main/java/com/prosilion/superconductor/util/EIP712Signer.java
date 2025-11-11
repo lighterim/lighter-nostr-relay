@@ -460,7 +460,7 @@ public class EIP712Signer {
             //["token","WETH","ethereum",11155111,"Sepolia","0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14","1761237799",1000000000000000000]
             new TokenTag("USDT", "ethereum", "sepolia", "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0", new BigDecimal(1000000L), BigInteger.valueOf(11155111), "1761904920", new BigDecimal(5000L)),
             // ["quote","3.221E+21","USD","1E+18",""]
-            new QuoteTag(new BigDecimal("1000000000000000000"), "USD", new BigDecimal("1000000000000000000"), new BigInteger("1761237799"), ""),
+            new QuoteTag(new BigDecimal("1000000000000000000"), "USD", new BigDecimal("1000000000000000000"), new BigInteger("1761237799"), "", 0),
             new MakeTag(Side.SELL, "", pk.toString(), IntentType.SIGNATURE_SELL),
             new Permit2Tag("270178257646664", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x1e4d58c5a97ab35c614a90ab04acc78711729f18"),
             new LimitTag(BigDecimal.valueOf(1000000L), BigDecimal.valueOf(1000000L)),

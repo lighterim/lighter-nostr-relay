@@ -14,6 +14,7 @@ import com.prosilion.superconductor.repository.join.IntentEntityAbstractTagEntit
 import com.prosilion.superconductor.util.ED25519Signer;
 import com.prosilion.superconductor.util.RestClient;
 import jakarta.persistence.NoResultException;
+import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
@@ -84,20 +85,36 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
         return savedEntity.getId();
     }
 
-    public void updateStatus(@NonNull TakeIntentEvent takeIntentEvent) {
+    @Transactional
+    public void updateStatus(@NonNull String pubkey, @NonNull TakeIntentEvent takeIntentEvent) {
         String eventId = takeIntentEvent.getTakeTag().getIntentEventId();
         IntentEventEntity entity = postEventEntityRepository.findByEventIdString(eventId)
                 .orElseThrow(() -> new RuntimeException("PostEvent not found with id: " + eventId));
-        IntentType intentType = entity.getIntentType();
-        if(IntentType.BULK_SELL.equals(intentType) && takeIntentEvent.getTakeTag().getVolume().compareTo(takeIntentEvent.getTokenTag().getAmount()) == 1) {
-            throw new RuntimeException("The quantity taken exceeds the remaining quantity. eventId: " + eventId);
-        }
+        TakeTag takeTag = takeIntentEvent.getTakeTag();
+        if(takeTag.getVisibleStatus()!=null) {
+            String buyerPubKey;
+            if (takeTag.getSide() == Side.BUY) {
+                buyerPubKey = takeTag.getTakerPubkey();
+            } else {
+                buyerPubKey = takeTag.getMakerPubkey();
+            }
+            if(entity.getStatus()==1 || !pubkey.equals(buyerPubKey)) {
+                throw new RuntimeException("No permission to set visibility. eventId: " + eventId);
+            }
+            entity.setTradedAmount(entity.getTradedAmount().subtract(takeIntentEvent.getTakeTag().getVolume()));
+            entity.setStatus(1);
+        } else {
+            IntentType intentType = entity.getIntentType();
+            if (IntentType.BULK_SELL.equals(intentType) && takeIntentEvent.getTakeTag().getVolume().compareTo(takeIntentEvent.getTokenTag().getAmount()) == 1) {
+                throw new RuntimeException("The quantity taken exceeds the remaining quantity. eventId: " + eventId);
+            }
 
-        if(IntentType.BUYER_INTENT.equals(intentType) || IntentType.SIGNATURE_SELL.equals(intentType)
-        || (IntentType.BULK_SELL.equals(intentType) && takeIntentEvent.getTakeTag().getVolume().compareTo(takeIntentEvent.getTokenTag().getAmount()) == 0)) {
-            entity.setStatus(0);
+            if (IntentType.BUYER_INTENT.equals(intentType) || IntentType.SIGNATURE_SELL.equals(intentType)
+                    || (IntentType.BULK_SELL.equals(intentType) && takeIntentEvent.getTakeTag().getVolume().compareTo(takeIntentEvent.getTokenTag().getAmount()) == 0)) {
+                entity.setStatus(0);
+            }
+            entity.setTradedAmount(entity.getTradedAmount().add(takeIntentEvent.getTakeTag().getVolume()));
         }
-        entity.setTradedAmount(entity.getTradedAmount().add(takeIntentEvent.getTakeTag().getVolume()));
         postEventEntityRepository.save(entity);
     }
 

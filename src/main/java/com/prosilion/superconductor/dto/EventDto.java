@@ -145,7 +145,7 @@ public class EventDto extends NIP01Event {
                 buyerPubKey,
                 sellerId,
                 sellerPubKey,
-                takeTag.getSellerFeeRate(), takeTag.getBuyerFeeRate(), takeTag.getPayer(),
+                takeTag.getSellerFeeRate(), takeTag.getBuyerFeeRate(), takeTag.getPayer(), takeTag.getVisibleStatus(),
                 tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChainId(), tokenTag.getExpiryTime(), tokenTag.getChain(), tokenTag.getNetwork(),
                 quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(), quoteTag.getSlippageBP(), quoteTag.getTimestamp(), quoteTag.getSignature(),
                 paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
@@ -156,8 +156,7 @@ public class EventDto extends NIP01Event {
                 event.getCreatedAt(),
                 limitTag.getLowLimit(), limitTag.getUpLimit(),
                 eip712Tag.getWalletAddress(), eip712Tag.getDomainVersion(), eip712Tag.getDomainAppName(), eip712Tag.getContractAddress(), eip712Tag.getSign(),
-                permit2Tag.getNonce(), permit2Tag.getSignature(), permit2Tag.getSpender(),
-                tokenTag.getTradedAmount()
+                permit2Tag.getNonce(), permit2Tag.getSignature(), permit2Tag.getSpender()
         );
     }
 

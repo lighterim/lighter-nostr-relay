@@ -3,9 +3,9 @@ package com.prosilion.superconductor.service.event;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import nostr.base.PublicKey;
 import nostr.event.Kind;
 import nostr.event.Side;
+import nostr.event.TradeStatus;
 import nostr.event.impl.*;
 import nostr.event.tag.TakeTag;
 import nostr.event.tag.TradeKeyTag;
@@ -153,12 +153,19 @@ public class RedisCache<T extends GenericEvent> {
             case ACCOUNT_INTENT -> accountMessageEntityService.saveEventEntity((AccountIntentEvent) event);
             case ADDRESS_BOOK_INTENT -> addressBookMessageEntityService.saveEventEntity((AddressBookIntentEvent) event);
             case TAKE_INTENT -> {
+                Long tradeId = 0L;
                 TakeIntentEvent takeIntentEvent = (TakeIntentEvent) event;
-                tradeEntityService.updateRealtimePrice(takeIntentEvent);
-                //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
-                Long tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
-                takeIntentEvent.setTradeId(tradeId);
-                postEventEntityService.updateStatus(takeIntentEvent);
+                String pubkey = event.getPubKey().toString();
+                if(takeIntentEvent.getTakeTag().getVisibleStatus()!=null) {
+                    TakeIntentEvent dbTakeIntentEvent = tradeEntityService.getEventById(takeIntentEvent.getTradeId());
+                    postEventEntityService.updateStatus(pubkey, dbTakeIntentEvent);
+                    tradeEntityService.updateTradeStatus(dbTakeIntentEvent.getTradeId(), TradeStatus.DropEvent);
+                } else {
+                    //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
+                    tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
+                    takeIntentEvent.setTradeId(tradeId);
+                    postEventEntityService.updateStatus(pubkey, takeIntentEvent);
+                }
 //                //when taker take Intent( of maker), retrieve original(maker) intent.
 //                PostIntentEvent makerIntentEvent = (PostIntentEvent)getEventEntityByEventId(Kind.POST_INTENT, takeIntentEvent.getTakeTag().getIntentEventId());
 //                takeIntentEvent.setLimitTag(makerIntentEvent.getLimitTag());

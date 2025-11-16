@@ -100,8 +100,6 @@ public class TakeIntentEventEntity {
     private String signature;
     private Long createAt;
 
-    private BigDecimal tradedAmount;
-
     /** other tag list. I.E. relays **/
     @Transient
     private List<BaseTag> tags;
@@ -120,6 +118,7 @@ public class TakeIntentEventEntity {
          BigDecimal sellerFeeRate,
          BigDecimal buyerFeeRate,
          String payer,
+         Integer visibleStatus,
          String tokenAddr,
          String symbol,
          BigInteger chainId,
@@ -154,8 +153,7 @@ public class TakeIntentEventEntity {
             String eip712Signature,
             String nonce,
             String permit2Sign,
-            String spender,
-            BigDecimal tradedAmount
+            String spender
             ){
         this.takeSide = takeSide;
         this.makeIntentEventId = makeIntentEventId;
@@ -214,7 +212,6 @@ public class TakeIntentEventEntity {
         this.content = content;
         this.signature = signature;
         this.createAt = createAt;
-        this.tradedAmount = tradedAmount;
     }
 
     public <T extends GenericEvent> T convertEntityToDto(){
@@ -230,8 +227,8 @@ public class TakeIntentEventEntity {
                     new PublicKey(buyerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, seller, sellerPubKey, volume.stripTrailingZeros(), buyer, buyerPubKey, sellerFeeRate, buyerFeeRate, payer),
-                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime, tradedAmount),
+                            new TakeTag(side, makeIntentEventId, seller, sellerPubKey, volume.stripTrailingZeros(), buyer, buyerPubKey, sellerFeeRate, buyerFeeRate, payer, 1),
+                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime, null),
                             new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), quoteDeadline, quoteSignature, slippageBP),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
                             new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
@@ -249,8 +246,8 @@ public class TakeIntentEventEntity {
                     new PublicKey(sellerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, buyer, buyerPubKey, volume.stripTrailingZeros(), seller, sellerPubKey, sellerFeeRate, buyerFeeRate, payer),
-                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime, tradedAmount),
+                            new TakeTag(side, makeIntentEventId, buyer, buyerPubKey, volume.stripTrailingZeros(), seller, sellerPubKey, sellerFeeRate, buyerFeeRate, payer, 1),
+                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime, null),
                             new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), quoteDeadline, quoteSignature, slippageBP),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
                             new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),

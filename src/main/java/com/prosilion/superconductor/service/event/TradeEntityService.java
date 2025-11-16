@@ -18,6 +18,7 @@ import com.prosilion.superconductor.util.RestClient;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
@@ -84,44 +85,8 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         return Kind.TAKE_INTENT;
     }
 
-    //获取实时市场价
-    public void updateRealtimePrice(@NonNull TakeIntentEvent takeIntentEvent) {
-        QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
-        if(quoteTag.getNumber().compareTo(BigDecimal.ZERO) <= 0) {
-            TokenTag tokenTag = takeIntentEvent.getTokenTag();
-            String symbol = tokenTag.getSymbol();
-            String currency = quoteTag.getCurrency();
-            RestClient restClient = new RestClient("https://spot.lighter.im");
-            HttpResponse<String> response = restClient.get(String.format("/api/price/%d/%s/%s", tokenTag.getChainId(), symbol, currency)).join();
-            if (response.statusCode() == 200) {
-                String responseBody = response.body();
-                JsonObject spotObj = JsonParser.parseString(responseBody).getAsJsonObject();
-                BigDecimal price = spotObj.get("price").getAsBigDecimal();
-                String sign = spotObj.get("sign").getAsString();
-                String tokenAddress = spotObj.get("token_address").getAsString();
-                String timestamp = spotObj.get("timestamp").getAsString();
-                String msg = String.format("%d%s%s%s", tokenTag.getChainId(), tokenAddress, timestamp, price.stripTrailingZeros());
-                boolean verify = ED25519Signer.verify(msg, sign);
-                if(!verify) {
-                    throw new RuntimeException("Spot API price verify fail. msg: " + msg);
-                }
-                if(quoteTag.getSlippageBP()!=null) {
-                    BigDecimal bp = BigDecimal.valueOf(quoteTag.getSlippageBP()).divide(new BigDecimal("10000"));
-                    price = price.add(price.multiply(bp));
-                }
-                String escrowSign = getEscrowSign(takeIntentEvent, sign);
-                if(!StringUtils.hasText(escrowSign)) {
-                    throw new RuntimeException("Get escrow sign fail.");
-                }
-                quoteTag.setNumber(price);
-                quoteTag.setSignature(escrowSign);
-            } else {
-                throw new RuntimeException("Spot API request failed with status:" + response.statusCode());
-            }
-        }
-    }
-
     public Long saveEventEntity(@NonNull TakeIntentEvent event) {
+        updateEscrowPriceSign(event);
         if(!StringUtils.hasText(event.getContent()) && StringUtils.hasText(defaultContent)){
             event.setContent(defaultContent);
         }
@@ -133,8 +98,18 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         return savedEntity.getId();
     }
 
-    private String getEscrowSign(TakeIntentEvent takeIntentEvent, String sign) {
-        String data = getSignEscrowData(takeIntentEvent, sign);
+    private void updateEscrowPriceSign(@NonNull TakeIntentEvent takeIntentEvent) {
+        QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
+        if(StringUtils.hasText(quoteTag.getSignature())) {
+            String escrowSign = getEscrowSign(takeIntentEvent);
+            if(!StringUtils.hasText(escrowSign)) {
+                throw new RuntimeException("Get escrow sign fail.");
+            }
+            quoteTag.setSignature(escrowSign);
+        }
+    }
+    private String getEscrowSign(TakeIntentEvent takeIntentEvent) {
+        String data = getSignEscrowData(takeIntentEvent);
 
         RestClient restClient = new RestClient("https://api.lighter.im");
         HttpResponse<String> response = restClient.post("/signature/escrow", data).join();
@@ -150,7 +125,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         return null;
     }
 
-    private String getSignEscrowData(TakeIntentEvent takeIntentEvent, String sign) {
+    private String getSignEscrowData(TakeIntentEvent takeIntentEvent) {
         TokenTag tokenTag = takeIntentEvent.getTokenTag();
         TakeTag takeTag = takeIntentEvent.getTakeTag();
         QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
@@ -172,16 +147,16 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         escrowParam.add("escrow_param");
         escrowParam.add(String.valueOf(takeIntentEvent.getTradeId()));
         escrowParam.add(tokenTag.getAddress());
-        escrowParam.add(takeTag.getVolume().toPlainString());
-        escrowParam.add(quoteTag.getNumber().toPlainString());
-        escrowParam.add(quoteTag.getUsdRate().toPlainString());
+        escrowParam.add(takeTag.getVolume().multiply(BigDecimal.TEN.pow(18)).stripTrailingZeros().toPlainString());
+        escrowParam.add(quoteTag.getNumber().multiply(BigDecimal.TEN.pow(18)).stripTrailingZeros().toPlainString());
+        escrowParam.add(quoteTag.getUsdRate().multiply(BigDecimal.TEN.pow(18)).stripTrailingZeros().toPlainString());
         escrowParam.add(takeTag.getPayer());
         escrowParam.add(seller);
-        escrowParam.add(takeTag.getSellerFeeRate().toPlainString());
+        escrowParam.add(takeTag.getSellerFeeRate().multiply(BigDecimal.TEN.pow(18)).stripTrailingZeros().toPlainString());
         escrowParam.add(paymentTag.getMethod());
         escrowParam.add(quoteTag.getCurrency());
         escrowParam.add(buyer);
-        escrowParam.add(takeTag.getBuyerFeeRate().toPlainString());
+        escrowParam.add(takeTag.getBuyerFeeRate().multiply(BigDecimal.TEN.pow(18)).stripTrailingZeros().toPlainString());
         escrowParam.add(paymentTag.getAccount());
         escrowParam.add(paymentTag.getQrCode());
         escrowParam.add(paymentTag.getMemo());
@@ -234,6 +209,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         return populateEventEntity(takeEventEntityRepository.findByEventIdString(eventIdString).orElseThrow(NoResultException::new)).convertEntityToDto();
     }
 
+    @Transactional
     public void updateTradeStatus(long tradeId, TradeStatus tradeStatus) {
         Optional<TakeIntentEventEntity> opt  = takeEventEntityRepository.findById(tradeId);
         if(opt.isEmpty()){

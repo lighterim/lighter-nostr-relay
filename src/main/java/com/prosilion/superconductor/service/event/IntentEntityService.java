@@ -1,9 +1,5 @@
 package com.prosilion.superconductor.service.event;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import com.prosilion.superconductor.entity.IntentEventEntity;
@@ -11,8 +7,6 @@ import com.prosilion.superconductor.entity.join.IntentEntityAbstractTagEntity;
 import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
 import com.prosilion.superconductor.repository.PostEventEntityRepository;
 import com.prosilion.superconductor.repository.join.IntentEntityAbstractTagEntityRepository;
-import com.prosilion.superconductor.util.ED25519Signer;
-import com.prosilion.superconductor.util.RestClient;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
@@ -26,11 +20,7 @@ import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
-import java.net.http.HttpResponse;
-
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -86,36 +76,40 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
     }
 
     @Transactional
-    public void updateStatus(@NonNull String pubkey, @NonNull TakeIntentEvent takeIntentEvent) {
-        String eventId = takeIntentEvent.getTakeTag().getIntentEventId();
-        IntentEventEntity entity = postEventEntityRepository.findByEventIdString(eventId)
-                .orElseThrow(() -> new RuntimeException("PostEvent not found with id: " + eventId));
+    public void updateIntentStatus(@NonNull String pubkey, @NonNull TakeIntentEvent takeIntentEvent) {
+        //TODO: 使用 sql(traded_amount -= takeTag.volume, 数据库traded_amount必须为正数), 这里 intent 先读出来，再intent.setTradedAmount, 有并发问题。
+        String intentEventId = takeIntentEvent.getTakeTag().getIntentEventId();
+        IntentEventEntity intent = postEventEntityRepository.findByEventIdString(intentEventId)
+                .orElseThrow(() -> new RuntimeException("PostEvent not found with id: " + intentEventId));
         TakeTag takeTag = takeIntentEvent.getTakeTag();
         if(takeTag.getVisibleStatus()!=null) {
-            String buyerPubKey;
-            if (takeTag.getSide() == Side.BUY) {
-                buyerPubKey = takeTag.getTakerPubkey();
-            } else {
-                buyerPubKey = takeTag.getMakerPubkey();
+            // takerPubkey和takeIntentEvent已在外层判断及问题。
+//            // when takeTag.visibleStatus != null, then Trade.status => Drop.
+//            String buyerPubKey;
+//            if (takeTag.getSide() == Side.BUY) {
+//                buyerPubKey = takeTag.getTakerPubkey();
+//            } else {
+//                buyerPubKey = takeTag.getMakerPubkey();
+//            }
+            if(intent.getStatus()==1) {
+                throw new RuntimeException("No permission to set visibility. intentEventId: " + intentEventId);
             }
-            if(entity.getStatus()==1 || !pubkey.equals(buyerPubKey)) {
-                throw new RuntimeException("No permission to set visibility. eventId: " + eventId);
-            }
-            entity.setTradedAmount(entity.getTradedAmount().subtract(takeIntentEvent.getTakeTag().getVolume()));
-            entity.setStatus(1);
+            intent.setTradedAmount(intent.getTradedAmount().subtract(takeIntentEvent.getTakeTag().getVolume()));
+            intent.setStatus(1);
         } else {
-            IntentType intentType = entity.getIntentType();
+            IntentType intentType = intent.getIntentType();
             if (IntentType.BULK_SELL.equals(intentType) && takeIntentEvent.getTakeTag().getVolume().compareTo(takeIntentEvent.getTokenTag().getAmount()) == 1) {
-                throw new RuntimeException("The quantity taken exceeds the remaining quantity. eventId: " + eventId);
+                throw new RuntimeException("The quantity taken exceeds the remaining quantity. intentEventId: " + intentEventId);
             }
 
             if (IntentType.BUYER_INTENT.equals(intentType) || IntentType.SIGNATURE_SELL.equals(intentType)
                     || (IntentType.BULK_SELL.equals(intentType) && takeIntentEvent.getTakeTag().getVolume().compareTo(takeIntentEvent.getTokenTag().getAmount()) == 0)) {
-                entity.setStatus(0);
+                intent.setStatus(0);
             }
-            entity.setTradedAmount(entity.getTradedAmount().add(takeIntentEvent.getTakeTag().getVolume()));
+            // 使用sql: trade_amount += takeTag.volume
+            intent.setTradedAmount(intent.getTradedAmount().add(takeIntentEvent.getTakeTag().getVolume()));
         }
-        postEventEntityRepository.save(entity);
+        postEventEntityRepository.save(intent);
     }
 
     @Override

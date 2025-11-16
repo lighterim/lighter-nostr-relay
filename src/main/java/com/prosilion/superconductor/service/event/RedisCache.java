@@ -153,18 +153,30 @@ public class RedisCache<T extends GenericEvent> {
             case ACCOUNT_INTENT -> accountMessageEntityService.saveEventEntity((AccountIntentEvent) event);
             case ADDRESS_BOOK_INTENT -> addressBookMessageEntityService.saveEventEntity((AddressBookIntentEvent) event);
             case TAKE_INTENT -> {
-                Long tradeId = 0L;
+
                 TakeIntentEvent takeIntentEvent = (TakeIntentEvent) event;
-                String pubkey = event.getPubKey().toString();
+                Long tradeId = takeIntentEvent.getTradeId();
+                String takerPubkey = event.getPubKey().toString();
                 if(takeIntentEvent.getTakeTag().getVisibleStatus()!=null) {
-                    TakeIntentEvent dbTakeIntentEvent = tradeEntityService.getEventById(takeIntentEvent.getTradeId());
-                    postEventEntityService.updateStatus(pubkey, dbTakeIntentEvent);
+                    if (tradeId == 0L){
+                        log.warn("takeIntentEvent.takeTag.visibleStatus is null{} and tradeId is {}", takeIntentEvent.getId(), tradeId);
+                    }
+
+                    TakeIntentEvent dbTakeIntentEvent = tradeEntityService.getEventById(tradeId);
+                    if (dbTakeIntentEvent == null || !dbTakeIntentEvent.getTakeTag().getTakerPubkey().equals(takerPubkey)) {
+                        log.warn(
+                                "No permission to set visibility. tradeId:{}, eventStringId:{}, takeTag:{} ",
+                                tradeId, dbTakeIntentEvent==null ? "null":dbTakeIntentEvent.getId(), dbTakeIntentEvent==null ? null: dbTakeIntentEvent.getTakeTag()
+                        );
+                        throw new RuntimeException("No permission to set visibility");
+                    }
+                    postEventEntityService.updateIntentStatus(takerPubkey, dbTakeIntentEvent);
                     tradeEntityService.updateTradeStatus(dbTakeIntentEvent.getTradeId(), TradeStatus.DropEvent);
                 } else {
                     //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
                     tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
                     takeIntentEvent.setTradeId(tradeId);
-                    postEventEntityService.updateStatus(pubkey, takeIntentEvent);
+                    postEventEntityService.updateIntentStatus(takerPubkey, takeIntentEvent);
                 }
 //                //when taker take Intent( of maker), retrieve original(maker) intent.
 //                PostIntentEvent makerIntentEvent = (PostIntentEvent)getEventEntityByEventId(Kind.POST_INTENT, takeIntentEvent.getTakeTag().getIntentEventId());

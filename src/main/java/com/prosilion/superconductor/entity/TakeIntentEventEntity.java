@@ -82,6 +82,9 @@ public class TakeIntentEventEntity {
     private String nonce;
     private String permit2Sign;
     private String spender;
+    private String permit2WalletAddress;
+    private String permit2ContractAddress;
+    private String permit2DomainAppName;
 
     /** trade key for participant and public key of current trade **/
     private String keyForBuyer;
@@ -153,7 +156,10 @@ public class TakeIntentEventEntity {
             String eip712Signature,
             String nonce,
             String permit2Sign,
-            String spender
+            String spender,
+            String permit2WalletAddress,
+            String permit2ContractAddress,
+            String permit2DomainAppName
             ){
         this.takeSide = takeSide;
         this.makeIntentEventId = makeIntentEventId;
@@ -197,6 +203,9 @@ public class TakeIntentEventEntity {
         this.nonce = nonce;
         this.permit2Sign = permit2Sign;
         this.spender = spender;
+        this.permit2ContractAddress = permit2ContractAddress;
+        this.permit2DomainAppName = permit2DomainAppName;
+        this.permit2WalletAddress = permit2WalletAddress;
 
         this.keyForBuyer = keyForBuyer;
         this.keyForSeller = keyForSeller;
@@ -233,7 +242,7 @@ public class TakeIntentEventEntity {
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
                             new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
                             new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature),
-                            new Permit2Tag(nonce, permit2Sign, payer, spender),
+                            new Permit2Tag(nonce, permit2Sign, payer, spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey)
                     ),
                     eventIdString,
@@ -252,7 +261,7 @@ public class TakeIntentEventEntity {
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
                             new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
                             new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature),
-                            new Permit2Tag(nonce, permit2Sign, payer, spender),
+                            new Permit2Tag(nonce, permit2Sign, payer, spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey)
                     ),
                     eventIdString,

@@ -80,6 +80,9 @@ public class IntentEventEntity {
     private String permit2Sign;
     private String payer;
     private String spender;
+    private String permit2WalletAddress;
+    private String permit2DomainAppName;
+    private String permit2ContractAddress;
 
     @Lob
     private String content;
@@ -103,7 +106,7 @@ public class IntentEventEntity {
                              String walletAddress, String domainVersion,String domainAppName, String contractAddress, String eip712Signature,
                              BigDecimal price, String currency, BigInteger quoteDeadline, String quoteSignature, BigDecimal usdRate, Integer slippageBP,
                              BigDecimal lowLimit, BigDecimal upLimit,
-                             String nonce, String permit2Sign, String payer, String spender,
+                             String nonce, String permit2Sign, String payer, String spender,String permit2WalletAddress, String permit2DomainAppName, String permit2ContractAddress,
                              String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content, Integer status, BigDecimal tradedAmount) {
         this.side = side;
         this.nip05 = nip05;
@@ -170,7 +173,7 @@ public class IntentEventEntity {
         QuoteTag quote = new QuoteTag(price, currency, usdRate, quoteDeadline, quoteSignature, slippageBP);
         EIP712Tag eip712Tag = new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature);
         LimitTag limit = new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros());
-        Permit2Tag permit2Tag = new Permit2Tag(nonce, permit2Sign, payer, spender);
+        Permit2Tag permit2Tag = new Permit2Tag(nonce, permit2Sign, payer, spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName);
 
         tagList.add(make);
         tagList.add(token);

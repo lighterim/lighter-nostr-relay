@@ -76,7 +76,7 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
     }
 
     @Transactional
-    public void updateIntentStatus(@NonNull String pubkey, @NonNull TakeIntentEvent takeIntentEvent) {
+    public void updateIntentStatus(@NonNull TakeIntentEvent takeIntentEvent) {
         //TODO: 使用 sql(traded_amount -= takeTag.volume, 数据库traded_amount必须为正数), 这里 intent 先读出来，再intent.setTradedAmount, 有并发问题。
         String intentEventId = takeIntentEvent.getTakeTag().getIntentEventId();
         IntentEventEntity intent = postEventEntityRepository.findByEventIdString(intentEventId)

@@ -170,13 +170,13 @@ public class RedisCache<T extends GenericEvent> {
                         );
                         throw new RuntimeException("No permission to set visibility");
                     }
-                    postEventEntityService.updateIntentStatus(takerPubkey, dbTakeIntentEvent);
+                    postEventEntityService.updateIntentStatus(dbTakeIntentEvent);
                     tradeEntityService.updateTradeStatus(dbTakeIntentEvent.getTradeId(), TradeStatus.DropEvent);
                 } else {
                     //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
                     tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
                     takeIntentEvent.setTradeId(tradeId);
-                    postEventEntityService.updateIntentStatus(takerPubkey, takeIntentEvent);
+                    postEventEntityService.updateIntentStatus(takeIntentEvent);
                 }
 //                //when taker take Intent( of maker), retrieve original(maker) intent.
 //                PostIntentEvent makerIntentEvent = (PostIntentEvent)getEventEntityByEventId(Kind.POST_INTENT, takeIntentEvent.getTakeTag().getIntentEventId());

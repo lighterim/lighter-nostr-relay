@@ -29,4 +29,5 @@ public interface PostEventEntityRepository extends JpaRepository<IntentEventEnti
     Optional<IntentEventEntity> findByEventIdString(String eventIdString);
 
     Optional<IntentEventEntity> findById(Long id);
+
 }

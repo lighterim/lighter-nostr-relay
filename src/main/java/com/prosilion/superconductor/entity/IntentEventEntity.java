@@ -101,6 +101,9 @@ public class IntentEventEntity {
 
     private Integer status;
 
+    @Version
+    private Long version; // 版本号字段
+
     public IntentEventEntity(String side, String nip05, String pubkey, IntentType intentType,
                              String symbol, String chain, String network, String address, BigDecimal amount, BigInteger chainId, String expireTime,
                              String walletAddress, String domainVersion,String domainAppName, String contractAddress, String eip712Signature,

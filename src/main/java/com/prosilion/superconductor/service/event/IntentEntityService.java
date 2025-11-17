@@ -10,6 +10,7 @@ import com.prosilion.superconductor.repository.join.IntentEntityAbstractTagEntit
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
+import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
 import nostr.event.IntentType;

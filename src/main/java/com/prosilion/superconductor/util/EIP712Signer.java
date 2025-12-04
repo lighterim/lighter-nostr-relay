@@ -51,18 +51,41 @@ public class EIP712Signer {
         String signature;
         if(signerType.equals(SignerType.POST_EVENT)) {
             PostIntentEvent postIntentEvent = (PostIntentEvent)event;
+            IntentType intentType = postIntentEvent.getSideTag().getIntentType();
+            if(intentType.equals(IntentType.BULK_SELL)) {
+                boolean verifyPermit2 = verifyPermit2(postIntentEvent);
+                if(!verifyPermit2) {
+                    return false;
+                }
+            }
             eip712Tag = postIntentEvent.getEip712Tag();
-            signature = postIntentEvent.getSideTag().getIntentType() == IntentType.SIGNATURE_SELL ? postIntentEvent.getPermit2Tag().getSignature() :eip712Tag.getSign();
-            structuredDataJson = createPostStructuredDataJson(postIntentEvent);
+            signature = eip712Tag.getSign();
+            structuredDataJson = createPostStructuredDataJson(postIntentEvent, false);
         } else {
             return false;
         }
         try {
             String expectedAddress = eip712Tag.getWalletAddress();
-            log.info("event-id:{}, structDataJson1:{}, event1:{}", event.getId(), structuredDataJson, event);
+            log.info("eip712-event-id:{}, structDataJson1:{}, event1:{}", event.getId(), structuredDataJson, event);
             StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
             byte[] messageHash = encoder.hashStructuredData();
-            log.info("event-id:{}, structDataJson:{}, hash:{}, event:{}", event.getId(), structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash), event);
+            log.info("eip712-event-id:{}, structDataJson:{}, hash:{}, event:{}", event.getId(), structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash), event);
+            return verifySignature(messageHash, signature, expectedAddress);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static boolean verifyPermit2(PostIntentEvent postIntentEvent) {
+        Permit2Tag permit2Tag = postIntentEvent.getPermit2Tag();
+        String signature = permit2Tag.getSignature();
+        String structuredDataJson = createPostStructuredDataJson(postIntentEvent, true);
+        try {
+            String expectedAddress = permit2Tag.getWalletAddress();
+            log.info("permit2-event-id:{}, structDataJson1:{}, event1:{}", postIntentEvent.getId(), structuredDataJson, postIntentEvent);
+            StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
+            byte[] messageHash = encoder.hashStructuredData();
+            log.info("permit2-event-id:{}, structDataJson:{}, hash:{}, event:{}", postIntentEvent.getId(), structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash), postIntentEvent);
             return verifySignature(messageHash, signature, expectedAddress);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -121,8 +144,11 @@ public class EIP712Signer {
         return typeMap;
     }
 
-    private static String createPostStructuredDataJson(PostIntentEvent event) {
+    private static String createPostStructuredDataJson(PostIntentEvent event, boolean isPermit2) {
         IntentType intentType = event.getSideTag().getIntentType();
+        if(intentType.equals(IntentType.BULK_SELL) && isPermit2) {
+            return getPermit2StructuredData(event);
+        }
         switch (intentType) {
             case BUYER_INTENT, BULK_SELL -> {
                 return getBuyerIntentStructuredData(event);
@@ -132,6 +158,46 @@ public class EIP712Signer {
             }
         }
         return null;
+    }
+
+    private static String getPermit2StructuredData(PostIntentEvent event) {
+        Map<String, Object> structuredData = new LinkedHashMap<>();
+        // 1. 定义所有类型（包括嵌套结构）
+        Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
+        Permit2Tag permit2Tag = event.getPermit2Tag();
+        TokenTag tokenTag = event.getTokenTag();
+
+        List<Map<String, String>> domainType = createNoVDomainTypes();
+        types.put("EIP712Domain", domainType);
+
+        List<Map<String, String>> permitDetailsType = getPermitDetailsType();
+        types.put("PermitDetails", permitDetailsType);
+
+        List<Map<String, String>> permitSingleType = getPermitSingleType();
+        types.put("PermitSingle", permitSingleType);
+
+        Map<String, Object> domainMap = new LinkedHashMap<>();
+        domainMap.put("name", permit2Tag.getDomainAppName());
+        domainMap.put("chainId", tokenTag.getChainId());
+        domainMap.put("verifyingContract", permit2Tag.getContractAddress());
+        structuredData.put("domain", domainMap);
+
+        Map<String, Object> permitDetailsMap = new LinkedHashMap<>();
+        permitDetailsMap.put("token", tokenTag.getAddress());
+        permitDetailsMap.put("amount", tokenTag.getAmount());
+        permitDetailsMap.put("expiration", tokenTag.getExpiryTime());
+        permitDetailsMap.put("nonce", permit2Tag.getNonce());
+
+        Map<String, Object> messageMap = new LinkedHashMap<>();
+        messageMap.put("details", permitDetailsMap);
+        messageMap.put("spender", permit2Tag.getSpender());
+        messageMap.put("sigDeadline", tokenTag.getExpiryTime());
+
+        structuredData.put("message", messageMap);
+        structuredData.put("primaryType", "PermitSingle");
+        structuredData.put("types", types);
+
+        return gson.toJson(structuredData);
     }
 
     private static String getSignatureSellStructuredData(PostIntentEvent event) {
@@ -280,6 +346,23 @@ public class EIP712Signer {
         return domainType;
     }
 
+    private static List<Map<String, String>> getPermitSingleType() {
+        List<Map<String, String>> permitSingleType = new ArrayList<>();
+        permitSingleType.add(createType("details", "PermitDetails"));
+        permitSingleType.add(createType("spender", "address"));
+        permitSingleType.add(createType("sigDeadline", "uint256"));
+        return permitSingleType;
+    }
+
+    private static List<Map<String, String>> getPermitDetailsType() {
+        List<Map<String, String>> permitDetailsType = new ArrayList<>();
+        permitDetailsType.add(createType("token", "address"));
+        permitDetailsType.add(createType("amount", "uint160"));
+        permitDetailsType.add(createType("expiration", "uint48"));
+        permitDetailsType.add(createType("nonce", "uint48"));
+        return permitDetailsType;
+    }
+
     private static List<Map<String, String>> getRangeType() {
         List<Map<String, String>> rangeType = new ArrayList<>();
         rangeType.add(createType("min", "uint256"));
@@ -395,8 +478,14 @@ public class EIP712Signer {
 
 
     public static void main(String[] args){
-        validateSignatureSell();
-        System.out.println("validateEscrowParams="+validateEscrowParams());
+        //validateSignatureSell();
+        //System.out.println("validateEscrowParams="+validateEscrowParams());
+        PostIntentEvent event = new PostIntentEvent();
+        TokenTag tokenTag = new TokenTag("", "", "", "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", BigDecimal.TEN, new BigInteger("11155111"), "1764829826", BigDecimal.TEN);
+        Permit2Tag permit2Tag = new Permit2Tag("11155111", "sdf", "", "0x53104d304898b00609dfad6c159513a430f80da6", "0x000000000022d473030f116ddee9f6b43ac78ba3", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2");
+        event.setPermit2Tag(permit2Tag);
+        event.setTokenTag(tokenTag);
+        System.out.println(getPermit2StructuredData(event));
     }
 
     private static boolean validateEscrowParams(){

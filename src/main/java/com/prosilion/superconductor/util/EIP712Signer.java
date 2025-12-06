@@ -122,21 +122,21 @@ public class EIP712Signer {
         return verifyEip712Signature(intentJson, intentSig, expectedIntentAddress, event);
     }
 
-    private static boolean verifyPermit2(PostIntentEvent postIntentEvent) {
-        Permit2Tag permit2Tag = postIntentEvent.getPermit2Tag();
-        String signature = permit2Tag.getSignature();
-        String structuredDataJson = createPostStructuredDataJson(postIntentEvent, true);
-        try {
-            String expectedAddress = permit2Tag.getWalletAddress();
-            log.info("permit2-event-id:{}, structDataJson1:{}, event1:{}", postIntentEvent.getId(), structuredDataJson, postIntentEvent);
-            StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
-            byte[] messageHash = encoder.hashStructuredData();
-            log.info("permit2-event-id:{}, structDataJson:{}, hash:{}, event:{}", postIntentEvent.getId(), structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash), postIntentEvent);
-            return verifySignature(messageHash, signature, expectedAddress);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    private static boolean verifyPermit2(PostIntentEvent postIntentEvent) {
+//        Permit2Tag permit2Tag = postIntentEvent.getPermit2Tag();
+//        String signature = permit2Tag.getSignature();
+//        String structuredDataJson = createPostStructuredDataJson(postIntentEvent, true);
+//        try {
+//            String expectedAddress = permit2Tag.getWalletAddress();
+//            log.info("permit2-event-id:{}, structDataJson1:{}, event1:{}", postIntentEvent.getId(), structuredDataJson, postIntentEvent);
+//            StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
+//            byte[] messageHash = encoder.hashStructuredData();
+//            log.info("permit2-event-id:{}, structDataJson:{}, hash:{}, event:{}", postIntentEvent.getId(), structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash), postIntentEvent);
+//            return verifySignature(messageHash, signature, expectedAddress);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     private static boolean verifyEip712Signature(String structuredDataJson, String signature, String expectedAddress, PostIntentEvent postIntentEvent) {
         try {
@@ -202,21 +202,21 @@ public class EIP712Signer {
         return typeMap;
     }
 
-    private static String createPostStructuredDataJson(PostIntentEvent event, boolean isPermit2) {
-        IntentType intentType = event.getSideTag().getIntentType();
-        if(intentType.equals(IntentType.BULK_SELL) && isPermit2) {
-            return getBulkSellPermit2StructuredData(event);
-        }
-        switch (intentType) {
-            case BUYER_INTENT, BULK_SELL -> {
-                return getIntentStructuredData(event);
-            }
-            case SIGNATURE_SELL -> {
-                return getSignatureSellStructuredData(event);
-            }
-        }
-        return null;
-    }
+//    private static String createPostStructuredDataJson(PostIntentEvent event, boolean isPermit2) {
+//        IntentType intentType = event.getSideTag().getIntentType();
+//        if(intentType.equals(IntentType.BULK_SELL) && isPermit2) {
+//            return getBulkSellPermit2StructuredData(event);
+//        }
+//        switch (intentType) {
+//            case BUYER_INTENT, BULK_SELL -> {
+//                return getIntentStructuredData(event);
+//            }
+//            case SIGNATURE_SELL -> {
+//                return getSignatureSellStructuredData(event);
+//            }
+//        }
+//        return null;
+//    }
 
     /**
      * bulk sell Permit2结构化数据
@@ -607,8 +607,8 @@ public class EIP712Signer {
 
 
     public static void main(String[] args){
-        //validateSignatureSell();
-        //System.out.println("validateEscrowParams="+validateEscrowParams());
+        validateSignatureSell();
+        System.out.println("validateEscrowParams="+validateEscrowParams());
         PostIntentEvent event = new PostIntentEvent();
         TokenTag tokenTag = new TokenTag("", "", "", "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", BigDecimal.TEN, new BigInteger("11155111"), "1764829826", BigDecimal.TEN);
         Permit2Tag permit2Tag = new Permit2Tag("11155111", "sdf", "", "0x53104d304898b00609dfad6c159513a430f80da6", "0x000000000022d473030f116ddee9f6b43ac78ba3", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2");

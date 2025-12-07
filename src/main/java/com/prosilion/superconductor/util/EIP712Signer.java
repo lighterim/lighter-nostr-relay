@@ -320,7 +320,7 @@ public class EIP712Signer {
 
         Map<String, Object> permitDetailsMap = new LinkedHashMap<>();
         permitDetailsMap.put("token", tokenTag.getAddress());
-        permitDetailsMap.put("amount", tokenTag.getAmount());
+        permitDetailsMap.put("amount", tokenTag.getAmount().toPlainString());
         permitDetailsMap.put("expiration", tokenTag.getExpiryTime());
         permitDetailsMap.put("nonce", permit2Tag.getNonce());
 

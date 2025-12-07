@@ -51,12 +51,11 @@ public class EIP712Signer {
         if(signerType.equals(SignerType.POST_EVENT)) {
             PostIntentEvent postIntentEvent = (PostIntentEvent)event;
             IntentType intentType = postIntentEvent.getSideTag().getIntentType();
-            boolean result =  switch(intentType) {
+            return switch(intentType) {
                 case BULK_SELL -> verifyBulkSellIntent(postIntentEvent);
                 case SIGNATURE_SELL -> verifySignatureSell(postIntentEvent);
                 case BUYER_INTENT -> verifyBuyerIntent(postIntentEvent);
             };
-            return result;
 //            if(intentType.equals(IntentType.BULK_SELL)) {
 //                boolean verifyPermit2 = verifyPermit2(postIntentEvent);
 //                if(!verifyPermit2) {
@@ -81,6 +80,11 @@ public class EIP712Signer {
 //        }
     }
 
+    /**
+     * buyer intent verify: intent
+     * @param postIntentEvent
+     * @return
+     */
     private static boolean verifyBuyerIntent(PostIntentEvent postIntentEvent) {
         EIP712Tag eip712Tag = postIntentEvent.getEip712Tag();
         String signature = eip712Tag.getSign();
@@ -89,6 +93,11 @@ public class EIP712Signer {
         return verifyEip712Signature(json, signature, expectedAddress, postIntentEvent);
     }
 
+    /**
+     * signature sell verify: permit2 & intent(witness)
+     * @param postIntentEvent
+     * @return
+     */
     private static boolean verifySignatureSell(PostIntentEvent postIntentEvent) {
         String signature = postIntentEvent.getPermit2Tag().getSignature();
         String json = getSignatureSellStructuredData(postIntentEvent);

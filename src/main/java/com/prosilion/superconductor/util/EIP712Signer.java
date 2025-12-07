@@ -48,9 +48,6 @@ public class EIP712Signer {
      * 3. buyer_intent: eip712(IntentParam)
      */
     public static boolean verifySignature(NIP77Event event, SignerType signerType) {
-        String structuredDataJson;
-        EIP712Tag eip712Tag;
-        String signature;
         if(signerType.equals(SignerType.POST_EVENT)) {
             PostIntentEvent postIntentEvent = (PostIntentEvent)event;
             IntentType intentType = postIntentEvent.getSideTag().getIntentType();
@@ -369,7 +366,7 @@ public class EIP712Signer {
 
         // 3. 域数据
         Map<String, Object> domainMap = new LinkedHashMap<>();
-        domainMap.put("name", eip712Tag.getDomainAppName());
+        domainMap.put("name", permit2Tag.getDomainAppName());
         domainMap.put("chainId", tokenTag.getChainId());
         domainMap.put("verifyingContract", eip712Tag.getContractAddress());
         structuredData.put("domain", domainMap);
@@ -674,13 +671,13 @@ public class EIP712Signer {
     private static void validateSignatureSell(){
         PublicKey pk = new PublicKey("107a920c39760225f1b2494121093ded75dae5363321d456f8922227f0539607");
         List<BaseTag> tags = List.of(
-            new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x000000000022D473030F116dDEE9F6B43aC78BA3", "Permit2", "", ""),
+            new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x000000000022D473030F116dDEE9F6B43aC78BA3", "MainUserTxn", "1", ""),
             //["token","WETH","ethereum",11155111,"Sepolia","0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14","1761237799",1000000000000000000]
             new TokenTag("USDT", "ethereum", "sepolia", "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0", new BigDecimal(1000000L), BigInteger.valueOf(11155111), "1761904920", new BigDecimal(5000L)),
             // ["quote","3.221E+21","USD","1E+18",""]
             new QuoteTag(new BigDecimal("1000000000000000000"), "USD", new BigDecimal("1000000000000000000"), new BigInteger("1761237799"), "", 0),
             new MakeTag(Side.SELL, "", pk.toString(), IntentType.SIGNATURE_SELL),
-            new Permit2Tag("270178257646664", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x1e4d58c5a97ab35c614a90ab04acc78711729f18", "", "", ""),
+            new Permit2Tag("270178257646664", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x1e4d58c5a97ab35c614a90ab04acc78711729f18", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2"),
             new LimitTag(BigDecimal.valueOf(1000000L), BigDecimal.valueOf(1000000L)),
             new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")
         );

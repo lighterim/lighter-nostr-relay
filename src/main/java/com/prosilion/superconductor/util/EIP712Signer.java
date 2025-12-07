@@ -616,11 +616,19 @@ public class EIP712Signer {
     public static void main(String[] args){
         validateSignatureSell();
         System.out.println("validateEscrowParams="+validateEscrowParams());
+
         PostIntentEvent event = new PostIntentEvent();
-        TokenTag tokenTag = new TokenTag("", "", "", "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", BigDecimal.TEN, new BigInteger("11155111"), "1764829826", BigDecimal.TEN);
-        Permit2Tag permit2Tag = new Permit2Tag("11155111", "sdf", "", "0x53104d304898b00609dfad6c159513a430f80da6", "0x000000000022d473030f116ddee9f6b43ac78ba3", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2");
+        TokenTag tokenTag = new TokenTag("USDC", "11155111", "sepolia", "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", BigDecimal.TEN, new BigInteger("11155111"), "1764829826", BigDecimal.TEN);
+        LimitTag limitTag = new LimitTag(BigDecimal.valueOf(1000000L), BigDecimal.valueOf(1000000L));
+        Permit2Tag permit2Tag = new Permit2Tag("11155111", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x53104d304898b00609dfad6c159513a430f80da6", "0x000000000022d473030f116ddee9f6b43ac78ba3", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2");
+        EIP712Tag eip712Tag = new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0xd5379dca1bf8c1d204121374b3f8d8fbf7c6605e", "MainUserTxn", "1", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b");
+        event.setEip712Tag(eip712Tag);
         event.setPermit2Tag(permit2Tag);
         event.setTokenTag(tokenTag);
+        event.setLimitTag(limitTag);
+        event.setPaymentTags(List.of(new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")));
+        event.setQuoteTag(new QuoteTag(new BigDecimal("1000000000000000000"), "USD", new BigDecimal("1000000000000000000"), new BigInteger("1761237799"), "", 0));
+        System.out.println(getIntentStructuredData(event));
         System.out.println(getBulkSellPermit2StructuredData(event));
     }
 
@@ -681,7 +689,7 @@ public class EIP712Signer {
     private static void validateSignatureSell(){
         PublicKey pk = new PublicKey("107a920c39760225f1b2494121093ded75dae5363321d456f8922227f0539607");
         List<BaseTag> tags = List.of(
-            new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x000000000022D473030F116dDEE9F6B43aC78BA3", "MainUserTxn", "1", ""),
+            new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0xd5379dca1bf8c1d204121374b3f8d8fbf7c6605e", "MainUserTxn", "1", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b"),
             //["token","WETH","ethereum",11155111,"Sepolia","0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14","1761237799",1000000000000000000]
             new TokenTag("USDT", "ethereum", "sepolia", "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0", new BigDecimal(1000000L), BigInteger.valueOf(11155111), "1761904920", new BigDecimal(5000L)),
             // ["quote","3.221E+21","USD","1E+18",""]

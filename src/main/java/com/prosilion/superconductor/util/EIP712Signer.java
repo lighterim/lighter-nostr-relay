@@ -99,9 +99,10 @@ public class EIP712Signer {
      * @return
      */
     private static boolean verifySignatureSell(PostIntentEvent postIntentEvent) {
-        String signature = postIntentEvent.getPermit2Tag().getSignature();
+        Permit2Tag permit2Tag = postIntentEvent.getPermit2Tag();
+        String signature = permit2Tag.getSignature();
         String json = getSignatureSellStructuredData(postIntentEvent);
-        String expectedAddress = postIntentEvent.getPermit2Tag().getWalletAddress();
+        String expectedAddress = permit2Tag.getWalletAddress();
         return verifyEip712Signature(json, signature, expectedAddress, postIntentEvent);
     }
 
@@ -377,7 +378,7 @@ public class EIP712Signer {
         Map<String, Object> domainMap = new LinkedHashMap<>();
         domainMap.put("name", permit2Tag.getDomainAppName());
         domainMap.put("chainId", tokenTag.getChainId());
-        domainMap.put("verifyingContract", eip712Tag.getContractAddress());
+        domainMap.put("verifyingContract", permit2Tag.getContractAddress());
         structuredData.put("domain", domainMap);
 
         Map<String, Object> rangeMap = new LinkedHashMap<>();

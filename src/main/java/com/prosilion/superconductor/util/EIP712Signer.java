@@ -348,6 +348,19 @@ public class EIP712Signer {
         return gson.toJson(structuredData);
     }
 
+    /**
+     * PermitTransferFrom(
+     *  TokenPermissions permitted,
+     *  address spender,
+     *  uint256 nonce,
+     *  uint256 deadline
+     *  )TokenPermissions(
+     *      address token,
+     *      uint256 amount
+     *   )
+     * @param event
+     * @return
+     */
     private static String getSignatureSellTakeStructuredData(TakeIntentEvent event) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
@@ -362,23 +375,18 @@ public class EIP712Signer {
         List<Map<String, String>> domainType = createNoVDomainTypes();
         types.put("EIP712Domain", domainType);
 
-        // IntentRange 类型定义
-        List<Map<String, String>> rangeType = getRangeType();
-
         List<Map<String, String>> tokenPermissionsType = new ArrayList<>();
         tokenPermissionsType.add(createType("token", "address"));
         tokenPermissionsType.add(createType("amount", "uint256"));
 
-        List<Map<String, String>> permitWitnessTransferFromType = new ArrayList<>();
-        permitWitnessTransferFromType.add(createType("permitted", "TokenPermissions"));
-        permitWitnessTransferFromType.add(createType("spender", "address"));
-        permitWitnessTransferFromType.add(createType("nonce", "uint256"));
-        permitWitnessTransferFromType.add(createType("deadline", "uint256"));
-        permitWitnessTransferFromType.add(createType("witness", "IntentParams"));
+        List<Map<String, String>> permitTransferFromType = new ArrayList<>();
+        permitTransferFromType.add(createType("permitted", "TokenPermissions"));
+        permitTransferFromType.add(createType("spender", "address"));
+        permitTransferFromType.add(createType("nonce", "uint256"));
+        permitTransferFromType.add(createType("deadline", "uint256"));
 
         types.put("TokenPermissions", tokenPermissionsType);
-        types.put("PermitWitnessTransferFrom", permitWitnessTransferFromType);
-        types.put("Range", rangeType);
+        types.put("PermitTransferFrom", permitTransferFromType);
 
         // 3. 域数据
         Map<String, Object> domainMap = new LinkedHashMap<>();
@@ -387,21 +395,17 @@ public class EIP712Signer {
         domainMap.put("verifyingContract", permit2Tag.getContractAddress());
         structuredData.put("domain", domainMap);
 
-        Map<String, Object> rangeMap = new LinkedHashMap<>();
-        rangeMap.put("min", limitTag.getLowLimit().toPlainString());
-        rangeMap.put("max", limitTag.getUpLimit().toPlainString());
-
         Map<String, Object> tokenPermissionsMap = new LinkedHashMap<>();
         tokenPermissionsMap.put("token", tokenTag.getAddress());
         tokenPermissionsMap.put("amount", takeTag.getVolume().toPlainString());
 
-        Map<String, Object> permitWitnessTransferFromMap = new LinkedHashMap<>();
-        permitWitnessTransferFromMap.put("permitted", tokenPermissionsMap);
-        permitWitnessTransferFromMap.put("spender", permit2Tag.getSpender());
-        permitWitnessTransferFromMap.put("nonce", permit2Tag.getNonce());
-        permitWitnessTransferFromMap.put("deadline", tokenTag.getExpiryTime());
+        Map<String, Object> permitTransferFromMap = new LinkedHashMap<>();
+        permitTransferFromMap.put("permitted", tokenPermissionsMap);
+        permitTransferFromMap.put("spender", permit2Tag.getSpender());
+        permitTransferFromMap.put("nonce", permit2Tag.getNonce());
+        permitTransferFromMap.put("deadline", tokenTag.getExpiryTime());
 
-        structuredData.put("message", permitWitnessTransferFromMap);
+        structuredData.put("message", permitTransferFromMap);
         structuredData.put("primaryType", "PermitWitnessTransferFrom");
         structuredData.put("types", types);
 

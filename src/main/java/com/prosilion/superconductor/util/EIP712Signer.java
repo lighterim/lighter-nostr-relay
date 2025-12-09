@@ -9,6 +9,7 @@ import nostr.event.IntentType;
 import nostr.event.NIP77Event;
 import nostr.event.Side;
 import nostr.event.impl.PostIntentEvent;
+import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
@@ -65,6 +66,8 @@ public class EIP712Signer {
 //            eip712Tag = postIntentEvent.getEip712Tag();
 //            signature = eip712Tag.getSign();
 //            structuredDataJson = createPostStructuredDataJson(postIntentEvent, false);
+        } else if(signerType.equals(SignerType.TAKE_EVENT)){
+            return verifyBuyerIntent(event);
         } else {
             return false;
         }
@@ -82,15 +85,22 @@ public class EIP712Signer {
 
     /**
      * buyer intent verify: intent
-     * @param postIntentEvent
+     * @param event
      * @return
      */
-    private static boolean verifyBuyerIntent(PostIntentEvent postIntentEvent) {
-        EIP712Tag eip712Tag = postIntentEvent.getEip712Tag();
+    private static boolean verifyBuyerIntent(NIP77Event event) {
+        EIP712Tag eip712Tag;
+        if(event instanceof PostIntentEvent postIntentEvent) {
+            eip712Tag = postIntentEvent.getEip712Tag();
+        } else if(event instanceof TakeIntentEvent takeIntentEvent) {
+            eip712Tag = takeIntentEvent.getEip712Tag();
+        } else {
+            return false;
+        }
         String signature = eip712Tag.getSign();
         String expectedAddress = eip712Tag.getWalletAddress();
-        String json = getIntentStructuredData(postIntentEvent);
-        return verifyEip712Signature(json, signature, expectedAddress, postIntentEvent);
+        String json = getIntentStructuredData(event);
+        return verifyEip712Signature(json, signature, expectedAddress, event);
     }
 
     /**
@@ -145,12 +155,12 @@ public class EIP712Signer {
 //        }
 //    }
 
-    private static boolean verifyEip712Signature(String structuredDataJson, String signature, String expectedAddress, PostIntentEvent postIntentEvent) {
+    private static boolean verifyEip712Signature(String structuredDataJson, String signature, String expectedAddress, NIP77Event event) {
         try {
-            log.info("permit2-event-id:{}, structDataJson1:{}, event1:{}", postIntentEvent.getId(), structuredDataJson, postIntentEvent);
+            log.info("permit2-event-id:{}, structDataJson1:{}, event1:{}", event.getId(), structuredDataJson, event);
             StructuredDataEncoder encoder = new StructuredDataEncoder(structuredDataJson);
             byte[] messageHash = encoder.hashStructuredData();
-            log.info("permit2-event-id:{}, structDataJson:{}, hash:{}, event:{}", postIntentEvent.getId(), structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash), postIntentEvent);
+            log.info("permit2-event-id:{}, structDataJson:{}, hash:{}, event:{}", event.getId(), structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash), event);
             return verifySignature(messageHash, signature, expectedAddress);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -412,16 +422,32 @@ public class EIP712Signer {
         return gson.toJson(structuredData);
     }
 
-    private static String getIntentStructuredData(PostIntentEvent event) {
+    private static String getIntentStructuredData(NIP77Event event) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
 
-        EIP712Tag eip712Tag = event.getEip712Tag();
-        TokenTag tokenTag = event.getTokenTag();
-        LimitTag limitTag = event.getLimitTag();
-        QuoteTag quoteTag = event.getQuoteTag();
-        PaymentTag paymentTag = event.getPaymentTags().get(0);
+        EIP712Tag eip712Tag;
+        TokenTag tokenTag;
+        LimitTag limitTag;
+        QuoteTag quoteTag;
+        PaymentTag paymentTag;
+
+        if(event instanceof PostIntentEvent postIntentEvent) {
+            eip712Tag = postIntentEvent.getEip712Tag();
+            tokenTag = postIntentEvent.getTokenTag();
+            limitTag = postIntentEvent.getLimitTag();
+            quoteTag = postIntentEvent.getQuoteTag();
+            paymentTag = postIntentEvent.getPaymentTags().get(0);
+        } else if(event instanceof TakeIntentEvent takeIntentEvent) {
+            eip712Tag = takeIntentEvent.getEip712Tag();
+            tokenTag = takeIntentEvent.getTokenTag();
+            limitTag = takeIntentEvent.getLimitTag();
+            quoteTag = takeIntentEvent.getQuoteTag();
+            paymentTag = takeIntentEvent.getPaymentTag();
+        } else {
+            return null;
+        }
 
         // EIP712Domain 类型定义
         List<Map<String, String>> domainType = createDomainTypes();

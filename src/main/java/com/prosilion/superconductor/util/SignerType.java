@@ -3,7 +3,10 @@ package com.prosilion.superconductor.util;
 public enum SignerType {
 
     POST_EVENT(1, "验证PostEvent"),
-    PRICE(2, "验证价格");
+
+    PRICE(2, "验证价格"),
+
+    TAKE_EVENT(3, "验证TakeEvent");
 
     private final int type;
 

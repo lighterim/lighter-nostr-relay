@@ -26,8 +26,11 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 
 @Slf4j
@@ -134,17 +137,6 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             // 3. make.intent & take.make
             String makeEventId = takeTag.getIntentEventId();
 
-            //校验实时价格
-            QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
-            if(StringUtils.hasText(quoteTag.getSignature())) {
-                TokenTag tokenTag = takeIntentEvent.getTokenTag();
-                String msg = String.format("%d%s%s%s", tokenTag.getChainId(), tokenTag.getAddress(), quoteTag.getTimestamp(), quoteTag.getNumber().toPlainString());
-                boolean verify = ED25519Signer.verify(msg, quoteTag.getSignature());
-                if(!verify) {
-                    throw new RuntimeException("Spot API price verify fail. msg: " + msg);
-                }
-            }
-
             GenericEvent event = redisCache.getEventEntityByEventId(Kind.POST_INTENT, makeEventId);
             if (isSkipCheckTake) {
                 return;
@@ -177,10 +169,10 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 }
 
                 //3.3 quote
-                QuoteTag quote = postIntentEvent.getQuoteTag();
-                QuoteTag takeQuote = takeIntentEvent.getQuoteTag();
-                if (!takeQuote.getCurrency().equals(quote.getCurrency()) || takeQuote.getNumber().compareTo(quote.getNumber()) < 0) {
-                    String msg = String.format("invalid intent quote: %s, %s, event id:%s", takeQuote.getNumber(), takeQuote.getCurrency(), makeEventId);
+                QuoteTag takeQuoteTag = takeIntentEvent.getQuoteTag();
+                QuoteTag postQuoteTag = postIntentEvent.getQuoteTag();
+                if (!takeQuoteTag.getCurrency().equals(postQuoteTag.getCurrency()) || takeQuoteTag.getNumber().compareTo(postQuoteTag.getNumber()) < 0) {
+                    String msg = String.format("invalid intent quote: %s, %s, event id:%s", takeQuoteTag.getNumber(), takeQuoteTag.getCurrency(), makeEventId);
                     log.warn(msg);
                     throw new RuntimeException(msg);
                 }
@@ -191,6 +183,18 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 List<String> methods = makePaymentTags.stream().map(PaymentTag::getMethod).toList();
                 if (!methods.contains(takePayment.getMethod())) {
                     String msg = String.format("take payment{%s} does not matches: %s", takePayment.getMethod(), methods);
+                    log.warn(msg);
+                    throw new RuntimeException(msg);
+                }
+
+                LimitTag limitTag = postIntentEvent.getLimitTag();
+
+                // volume limit
+                BigDecimal volume = takeTag.getVolume();
+                if(volume.compareTo(limitTag.getLowLimit()) < 0 || volume.compareTo(limitTag.getUpLimit()) > 0) {
+                    String msg = String.format("take volume:%.4f, does not matches. low:%.4f, up:%.4f. eventId: %s",
+                            volume, limitTag.getLowLimit(), limitTag.getUpLimit(), makeEventId
+                    );
                     log.warn(msg);
                     throw new RuntimeException(msg);
                 }
@@ -206,9 +210,35 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                         log.warn(msg);
                         throw new RuntimeException(msg);
                     }
-
+                    //设置成低的那个价格
+                    if(postQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0
+                            && takeQuoteTag.getNumber().compareTo(postQuoteTag.getNumber()) > 0) {
+                        takeQuoteTag.setNumber(postQuoteTag.getNumber());
+                    }
                     //4. seller permit2 TODO:
+                } else {
+                    validateEIP712(takeIntentEvent, SignerType.TAKE_EVENT);
+                    //设置成高的那个价格
+                    if(postQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0
+                            && takeQuoteTag.getNumber().compareTo(postQuoteTag.getNumber()) < 0) {
+                        takeQuoteTag.setNumber(postQuoteTag.getNumber());
+                    }
                 }
+
+                //校验实时价格
+                BigDecimal price = postQuoteTag.getNumber();
+                if(price.compareTo(BigDecimal.ZERO) == 0) {
+                    if(!StringUtils.hasText(takeQuoteTag.getSignature())) {
+                        throw new RuntimeException(String.format("QuoteTag signature is blank. eventId: %s", makeEventId));
+                    }
+                    TokenTag tokenTag = takeIntentEvent.getTokenTag();
+                    String msg = String.format("%d%s%s%s", tokenTag.getChainId(), tokenTag.getAddress(), takeQuoteTag.getTimestamp(), takeQuoteTag.getNumber().toPlainString());
+                    boolean verify = ED25519Signer.verify(msg, takeQuoteTag.getSignature());
+                    if(!verify) {
+                        throw new RuntimeException(String.format("Spot API price verify fail. msg: %s eventId: %s", msg, makeEventId));
+                    }
+                }
+
                 //well done
                 return;
             }

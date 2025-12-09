@@ -1,5 +1,6 @@
 package com.prosilion.superconductor.controller;
 
+import com.prosilion.superconductor.config.WebSocketExceptionHandler;
 import com.prosilion.superconductor.service.clientresponse.ClientResponse;
 import com.prosilion.superconductor.service.message.MessageService;
 import com.prosilion.superconductor.service.message.RelayInfoDocService;
@@ -17,6 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
@@ -41,6 +43,9 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
 
     @Value("${superconductor.auth.active}")
     private boolean authActive;
+
+    @Autowired
+    private WebSocketExceptionHandler exceptionHandler;
 
     @Autowired
     public NostrEventController(
@@ -106,8 +111,9 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
         try {
             T message = (T) new BaseMessageDecoder<>().decode(baseMessage.getPayload());
             messageServiceMap.get(message.getCommand()).processIncoming(message, session.getId());
-        } catch (Throwable ex) {
+        } catch (Exception ex) {
             log.error("handleTextMessage: {}, {}", baseMessage, baseMessage.getPayload(), ex);
+            exceptionHandler.handleException(ex, session);
         }
     }
 
@@ -140,6 +146,14 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
         }
         closeSession(sessionId);
         log.info("CLOSE response to\nclient:\n\t{}\npayload:\n\t{}", sessionId, response.getPayload());
+    }
+
+    /**
+     * 处理传输错误
+     */
+    @Override
+    public void handleTransportError(WebSocketSession session, Throwable exception) {
+        exceptionHandler.handleException(exception, session);
     }
 
     private void broadcast(String sessionId, TextMessage message) {

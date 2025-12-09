@@ -6,9 +6,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.prosilion.superconductor.service.request.NotifierService;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
-import com.prosilion.superconductor.util.ED25519Signer;
-import com.prosilion.superconductor.util.EIP712Signer;
-import com.prosilion.superconductor.util.SignerType;
+import com.prosilion.superconductor.util.*;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
@@ -147,13 +145,13 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 if (takeTag.getSide() == make.getSide()) {
                     String msg = String.format("invalid intent.side: %s, and take.side:%s.", make.getSide(), takeTag.getSide());
                     log.warn(msg);
-                    throw new RuntimeException(msg);
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
                 }
                 // 3.1 nip05, pubkey
                 if (!takeTag.getMakerNip05().equals(make.getMakerNip05()) || !takeTag.getMakerPubkey().equals(make.getMakerPubkey())) {
                     String msg = String.format("invalid intent.make nip05:%s, pubkey:%s, event id:%s", takeTag.getMakerNip05(), takeTag.getMakerPubkey(), makeEventId);
                     log.warn(msg);
-                    throw new RuntimeException(msg);
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
                 }
 
                 //3.2 token
@@ -165,7 +163,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                         || !takeToken.getAddress().equals(token.getAddress())) {
                     String msg = String.format("invalid intent token: %s, %s, %s, %s, event id:%s", takeToken.getSymbol(), takeToken.getChain(), takeToken.getNetwork(), takeToken.getAddress(), makeEventId);
                     log.warn(msg);
-                    throw new RuntimeException(msg);
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
                 }
 
                 //3.3 quote
@@ -174,7 +172,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 if (!takeQuoteTag.getCurrency().equals(postQuoteTag.getCurrency())) {
                     String msg = String.format("invalid intent quote: %s, event id:%s", takeQuoteTag.getCurrency(), makeEventId);
                     log.warn(msg);
-                    throw new RuntimeException(msg);
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
                 }
 
                 //3.4 payment
@@ -184,7 +182,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 if (!methods.contains(takePayment.getMethod())) {
                     String msg = String.format("take payment{%s} does not matches: %s", takePayment.getMethod(), methods);
                     log.warn(msg);
-                    throw new RuntimeException(msg);
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
                 }
 
                 LimitTag limitTag = postIntentEvent.getLimitTag();
@@ -196,7 +194,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                             volume, limitTag.getLowLimit(), limitTag.getUpLimit(), makeEventId
                     );
                     log.warn(msg);
-                    throw new RuntimeException(msg);
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
                 }
 
                 if (takeTag.getSide() == Side.BUY) {
@@ -208,7 +206,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                                 takePayment.getAccount(), takePayment.getQrCode(), accounts, qrCodes
                         );
                         log.warn(msg);
-                        throw new RuntimeException(msg);
+                        throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
                     }
                     //设置成低的那个价格
                     if(postQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0
@@ -229,16 +227,16 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 BigDecimal price = postQuoteTag.getNumber();
                 if(price.compareTo(BigDecimal.ZERO) == 0) {
                     if(!StringUtils.hasText(takeQuoteTag.getSignature())) {
-                        throw new RuntimeException(String.format("QuoteTag signature is blank. eventId: %s", makeEventId));
+                        throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("QuoteTag signature is blank. eventId: %s", makeEventId));
                     }
                     if(takeQuoteTag.getTimestamp().longValue() < (System.currentTimeMillis() / 1000)) {
-                        throw new RuntimeException(String.format("QuoteTag price timestamp has expired. eventId: %s", makeEventId));
+                        throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("QuoteTag price timestamp has expired. eventId: %s", makeEventId));
                     }
                     TokenTag postTokenTag = postIntentEvent.getTokenTag();
                     String msg = String.format("%d%s%s%s%d", postTokenTag.getChainId(), postTokenTag.getAddress(), takeQuoteTag.getTimestamp(), takeQuoteTag.getNumber().toPlainString(), postQuoteTag.getSlippageBP());
                     boolean verify = ED25519Signer.verify(msg, takeQuoteTag.getSignature());
                     if(!verify) {
-                        throw new RuntimeException(String.format("Spot API price verify fail. msg: %s eventId: %s", msg, makeEventId));
+                        throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("Spot API price verify fail. msg: %s eventId: %s", msg, makeEventId));
                     }
                 }
 
@@ -246,10 +244,10 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 return;
             }
             log.warn("unknown event id: {}", makeEventId);
-            throw new RuntimeException(String.format("unknown event id: %s", makeEventId));
+            throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("unknown event id: %s", makeEventId));
         } catch (Throwable e) {
             log.warn("exception on validate:" + e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, e.getMessage());
         }
 
     }
@@ -261,7 +259,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             return Boolean.TRUE;
         } catch (Exception ex) {
             log.warn(String.format("%s: %s, %s", ex.getMessage(), nip05, pubkey), ex);
-            throw new RuntimeException(ex.getMessage(), ex);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }
 
@@ -280,20 +278,20 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             MakeTag make = postIntentEvent.getSideTag();
             if (!isValidNip05(make.getMakerNip05(), make.getMakerPubkey())) {
                 log.warn("invalid nip05: {}, {}", make.getMakerNip05(), make.getMakerPubkey());
-                throw new RuntimeException(String.format("invalid nip05: %s, %s", make.getMakerNip05(), make.getMakerPubkey()));
+                throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("invalid nip05: %s, %s", make.getMakerNip05(), make.getMakerPubkey()));
             }
 
             List<PaymentTag> paymentTags = postIntentEvent.getPaymentTags();
             if (!paymentTags.stream().allMatch(p -> StringUtils.hasText(p.getAccount()) && StringUtils.hasText(p.getQrCode()))) {
                 String msg = String.format("invalid paymentTags: %s", paymentTags);
                 log.warn(msg);
-                throw new RuntimeException(msg);
+                throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
             }
 
             //well done
         } catch (Throwable ex) {
             log.warn("unknown validate post intent error: {}", ex.getMessage(), ex);
-            throw new RuntimeException(String.format("validate intent event error:%s", ex.getMessage()));
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("validate intent event error:%s", ex.getMessage()));
         }
     }
 }

@@ -171,8 +171,8 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 //3.3 quote
                 QuoteTag takeQuoteTag = takeIntentEvent.getQuoteTag();
                 QuoteTag postQuoteTag = postIntentEvent.getQuoteTag();
-                if (!takeQuoteTag.getCurrency().equals(postQuoteTag.getCurrency()) || takeQuoteTag.getNumber().compareTo(postQuoteTag.getNumber()) < 0) {
-                    String msg = String.format("invalid intent quote: %s, %s, event id:%s", takeQuoteTag.getNumber(), takeQuoteTag.getCurrency(), makeEventId);
+                if (!takeQuoteTag.getCurrency().equals(postQuoteTag.getCurrency())) {
+                    String msg = String.format("invalid intent quote: %s, event id:%s", takeQuoteTag.getCurrency(), makeEventId);
                     log.warn(msg);
                     throw new RuntimeException(msg);
                 }
@@ -231,8 +231,11 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                     if(!StringUtils.hasText(takeQuoteTag.getSignature())) {
                         throw new RuntimeException(String.format("QuoteTag signature is blank. eventId: %s", makeEventId));
                     }
-                    TokenTag tokenTag = takeIntentEvent.getTokenTag();
-                    String msg = String.format("%d%s%s%s", tokenTag.getChainId(), tokenTag.getAddress(), takeQuoteTag.getTimestamp(), takeQuoteTag.getNumber().toPlainString());
+                    if(takeQuoteTag.getTimestamp().longValue() < (System.currentTimeMillis() / 1000)) {
+                        throw new RuntimeException(String.format("QuoteTag price timestamp has expired. eventId: %s", makeEventId));
+                    }
+                    TokenTag postTokenTag = postIntentEvent.getTokenTag();
+                    String msg = String.format("%d%s%s%s%d", postTokenTag.getChainId(), postTokenTag.getAddress(), takeQuoteTag.getTimestamp(), takeQuoteTag.getNumber().toPlainString(), postQuoteTag.getSlippageBP());
                     boolean verify = ED25519Signer.verify(msg, takeQuoteTag.getSignature());
                     if(!verify) {
                         throw new RuntimeException(String.format("Spot API price verify fail. msg: %s eventId: %s", msg, makeEventId));

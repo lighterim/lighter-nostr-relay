@@ -67,7 +67,8 @@ public class EIP712Signer {
 //            signature = eip712Tag.getSign();
 //            structuredDataJson = createPostStructuredDataJson(postIntentEvent, false);
         } else if(signerType.equals(SignerType.TAKE_EVENT)){
-            return verifyBuyerIntent(event);
+            TakeIntentEvent takeIntentEvent = (TakeIntentEvent)event;
+            return verifySellerTakeIntent(takeIntentEvent);
         } else {
             return false;
         }
@@ -85,22 +86,23 @@ public class EIP712Signer {
 
     /**
      * buyer intent verify: intent
-     * @param event
+     * @param postIntentEvent
      * @return
      */
-    private static boolean verifyBuyerIntent(NIP77Event event) {
-        EIP712Tag eip712Tag;
-        if(event instanceof PostIntentEvent postIntentEvent) {
-            eip712Tag = postIntentEvent.getEip712Tag();
-        } else if(event instanceof TakeIntentEvent takeIntentEvent) {
-            eip712Tag = takeIntentEvent.getEip712Tag();
-        } else {
-            return false;
-        }
+    private static boolean verifyBuyerIntent(PostIntentEvent postIntentEvent) {
+        EIP712Tag eip712Tag = postIntentEvent.getEip712Tag();
         String signature = eip712Tag.getSign();
         String expectedAddress = eip712Tag.getWalletAddress();
-        String json = getIntentStructuredData(event);
-        return verifyEip712Signature(json, signature, expectedAddress, event);
+        String json = getIntentStructuredData(postIntentEvent);
+        return verifyEip712Signature(json, signature, expectedAddress, postIntentEvent);
+    }
+
+    private static boolean verifySellerTakeIntent(TakeIntentEvent takeIntentEvent) {
+        Permit2Tag permit2Tag = takeIntentEvent.getPermit2Tag();
+        String signature = permit2Tag.getSignature();
+        String expectedAddress = permit2Tag.getWalletAddress();
+        String json = getSignatureSellTakeStructuredData(takeIntentEvent);
+        return verifyEip712Signature(json, signature, expectedAddress, takeIntentEvent);
     }
 
     /**
@@ -346,12 +348,71 @@ public class EIP712Signer {
         return gson.toJson(structuredData);
     }
 
+    private static String getSignatureSellTakeStructuredData(TakeIntentEvent event) {
+        Map<String, Object> structuredData = new LinkedHashMap<>();
+        // 1. 定义所有类型（包括嵌套结构）
+        Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
+
+        TokenTag tokenTag = event.getTokenTag();
+        LimitTag limitTag = event.getLimitTag();
+        Permit2Tag permit2Tag = event.getPermit2Tag();
+        TakeTag takeTag = event.getTakeTag();
+
+        // EIP712Domain 类型定义
+        List<Map<String, String>> domainType = createNoVDomainTypes();
+        types.put("EIP712Domain", domainType);
+
+        // IntentRange 类型定义
+        List<Map<String, String>> rangeType = getRangeType();
+
+        List<Map<String, String>> tokenPermissionsType = new ArrayList<>();
+        tokenPermissionsType.add(createType("token", "address"));
+        tokenPermissionsType.add(createType("amount", "uint256"));
+
+        List<Map<String, String>> permitWitnessTransferFromType = new ArrayList<>();
+        permitWitnessTransferFromType.add(createType("permitted", "TokenPermissions"));
+        permitWitnessTransferFromType.add(createType("spender", "address"));
+        permitWitnessTransferFromType.add(createType("nonce", "uint256"));
+        permitWitnessTransferFromType.add(createType("deadline", "uint256"));
+        permitWitnessTransferFromType.add(createType("witness", "IntentParams"));
+
+        types.put("TokenPermissions", tokenPermissionsType);
+        types.put("PermitWitnessTransferFrom", permitWitnessTransferFromType);
+        types.put("Range", rangeType);
+
+        // 3. 域数据
+        Map<String, Object> domainMap = new LinkedHashMap<>();
+        domainMap.put("name", permit2Tag.getDomainAppName());
+        domainMap.put("chainId", tokenTag.getChainId());
+        domainMap.put("verifyingContract", permit2Tag.getContractAddress());
+        structuredData.put("domain", domainMap);
+
+        Map<String, Object> rangeMap = new LinkedHashMap<>();
+        rangeMap.put("min", limitTag.getLowLimit().toPlainString());
+        rangeMap.put("max", limitTag.getUpLimit().toPlainString());
+
+        Map<String, Object> tokenPermissionsMap = new LinkedHashMap<>();
+        tokenPermissionsMap.put("token", tokenTag.getAddress());
+        tokenPermissionsMap.put("amount", takeTag.getVolume().toPlainString());
+
+        Map<String, Object> permitWitnessTransferFromMap = new LinkedHashMap<>();
+        permitWitnessTransferFromMap.put("permitted", tokenPermissionsMap);
+        permitWitnessTransferFromMap.put("spender", permit2Tag.getSpender());
+        permitWitnessTransferFromMap.put("nonce", permit2Tag.getNonce());
+        permitWitnessTransferFromMap.put("deadline", tokenTag.getExpiryTime());
+
+        structuredData.put("message", permitWitnessTransferFromMap);
+        structuredData.put("primaryType", "PermitWitnessTransferFrom");
+        structuredData.put("types", types);
+
+        return gson.toJson(structuredData);
+    }
+
     private static String getSignatureSellStructuredData(PostIntentEvent event) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
 
-        EIP712Tag eip712Tag = event.getEip712Tag();
         TokenTag tokenTag = event.getTokenTag();
         LimitTag limitTag = event.getLimitTag();
         Permit2Tag permit2Tag = event.getPermit2Tag();
@@ -422,32 +483,16 @@ public class EIP712Signer {
         return gson.toJson(structuredData);
     }
 
-    private static String getIntentStructuredData(NIP77Event event) {
+    private static String getIntentStructuredData(PostIntentEvent postIntentEvent) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
 
-        EIP712Tag eip712Tag;
-        TokenTag tokenTag;
-        LimitTag limitTag;
-        QuoteTag quoteTag;
-        PaymentTag paymentTag;
-
-        if(event instanceof PostIntentEvent postIntentEvent) {
-            eip712Tag = postIntentEvent.getEip712Tag();
-            tokenTag = postIntentEvent.getTokenTag();
-            limitTag = postIntentEvent.getLimitTag();
-            quoteTag = postIntentEvent.getQuoteTag();
-            paymentTag = postIntentEvent.getPaymentTags().get(0);
-        } else if(event instanceof TakeIntentEvent takeIntentEvent) {
-            eip712Tag = takeIntentEvent.getEip712Tag();
-            tokenTag = takeIntentEvent.getTokenTag();
-            limitTag = takeIntentEvent.getLimitTag();
-            quoteTag = takeIntentEvent.getQuoteTag();
-            paymentTag = takeIntentEvent.getPaymentTag();
-        } else {
-            return null;
-        }
+        EIP712Tag eip712Tag = postIntentEvent.getEip712Tag();
+        TokenTag tokenTag = postIntentEvent.getTokenTag();
+        LimitTag limitTag = postIntentEvent.getLimitTag();
+        QuoteTag quoteTag = postIntentEvent.getQuoteTag();
+        PaymentTag paymentTag = postIntentEvent.getPaymentTags().get(0);
 
         // EIP712Domain 类型定义
         List<Map<String, String>> domainType = createDomainTypes();

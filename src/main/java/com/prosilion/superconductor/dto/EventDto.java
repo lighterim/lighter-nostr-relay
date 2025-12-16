@@ -159,7 +159,7 @@ public class EventDto extends NIP01Event {
                 event.getCreatedAt(),
                 limitTag.getLowLimit(), limitTag.getUpLimit(),
                 eip712Tag.getWalletAddress(), eip712Tag.getDomainVersion(), eip712Tag.getDomainAppName(), eip712Tag.getContractAddress(), eip712Tag.getSign(),
-                permit2Tag.getNonce(), permit2Tag.getSignature(), permit2Tag.getSpender(), permit2Tag.getWalletAddress(), permit2Tag.getContractAddress(), permit2Tag.getDomainAppName()
+                permit2Tag.getNonce(), permit2Tag.getSignature(), permit2Tag.getSpender(), permit2Tag.getWalletAddress(), permit2Tag.getContractAddress(), permit2Tag.getDomainAppName(), ""
         );
     }
 

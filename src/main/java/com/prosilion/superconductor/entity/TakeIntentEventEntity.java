@@ -103,6 +103,8 @@ public class TakeIntentEventEntity {
     private String signature;
     private Long createAt;
 
+    private String escrowSignature;
+
     /** other tag list. I.E. relays **/
     @Transient
     private List<BaseTag> tags;
@@ -159,7 +161,8 @@ public class TakeIntentEventEntity {
             String spender,
             String permit2WalletAddress,
             String permit2ContractAddress,
-            String permit2DomainAppName
+            String permit2DomainAppName,
+            String escrowSignature
             ){
         this.takeSide = takeSide;
         this.makeIntentEventId = makeIntentEventId;
@@ -221,6 +224,7 @@ public class TakeIntentEventEntity {
         this.content = content;
         this.signature = signature;
         this.createAt = createAt;
+        this.escrowSignature = escrowSignature;
     }
 
     public <T extends GenericEvent> T convertEntityToDto(){
@@ -243,7 +247,8 @@ public class TakeIntentEventEntity {
                             new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
                             new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature),
                             new Permit2Tag(nonce, permit2Sign, payer, spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
-                            new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey)
+                            new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey),
+                            new EscrowTag(id, tokenAddr, volume, price, usdRate, payer, seller, sellerFeeRate, paymentMethod, currency, paymentAccount+paymentQrCode+paymentMemo, buyer, buyerFeeRate, escrowSignature)
                     ),
                     eventIdString,
                     content,
@@ -262,7 +267,8 @@ public class TakeIntentEventEntity {
                             new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
                             new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature),
                             new Permit2Tag(nonce, permit2Sign, payer, spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
-                            new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey)
+                            new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey),
+                            new EscrowTag(id, tokenAddr, volume, price, usdRate, payer, seller, sellerFeeRate, paymentMethod, currency, paymentAccount+paymentQrCode+paymentMemo, buyer, buyerFeeRate, escrowSignature)
                     ),
                     eventIdString,
                     content,

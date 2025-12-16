@@ -7,14 +7,14 @@ import nostr.event.Kind;
 import nostr.event.Side;
 import nostr.event.TradeStatus;
 import nostr.event.impl.*;
-import nostr.event.tag.TakeTag;
-import nostr.event.tag.TradeKeyTag;
+import nostr.event.tag.*;
 import nostr.id.Identity;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -177,6 +177,11 @@ public class RedisCache<T extends GenericEvent> {
                     tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
                     takeIntentEvent.setTradeId(tradeId);
                     postEventEntityService.updateIntentStatus(takeIntentEvent);
+
+                    EscrowTag escrowTag = tradeEntityService.getEscrowTag(takeIntentEvent);
+                    takeIntentEvent.setEscrowTag(escrowTag);
+                    tradeEntityService.updateEscrowSign(tradeId, escrowTag.getSignature());
+
                 }
 //                //when taker take Intent( of maker), retrieve original(maker) intent.
 //                PostIntentEvent makerIntentEvent = (PostIntentEvent)getEventEntityByEventId(Kind.POST_INTENT, takeIntentEvent.getTakeTag().getIntentEventId());

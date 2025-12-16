@@ -77,7 +77,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         this.concreteTagEntitiesService = concreteTagEntitiesService;
         this.genericTagEntitiesService = genericTagEntitiesService;
         this.takeEventEntityRepository = takeEventEntityRepository;
-        this.eventFieldNames = new HashSet<>(List.of(TAKE_TAG_CODE, TOKEN_TAG_CODE, PAYMENT_TAG_CODE, QUOTE_TAG_CODE, LIMIT_TAG_CODE, EIP712_TAG_CODE, PERMIT2_TAG_CODE));
+        this.eventFieldNames = new HashSet<>(List.of(TAKE_TAG_CODE, TOKEN_TAG_CODE, PAYMENT_TAG_CODE, QUOTE_TAG_CODE, LIMIT_TAG_CODE, EIP712_TAG_CODE, PERMIT2_TAG_CODE, ESCROW_TAG_CODE));
     }
 
     @Override
@@ -86,7 +86,6 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
     }
 
     public Long saveEventEntity(@NonNull TakeIntentEvent event) {
-        updateEscrowPriceSign(event);
         if(!StringUtils.hasText(event.getContent()) && StringUtils.hasText(defaultContent)){
             event.setContent(defaultContent);
         }
@@ -98,18 +97,38 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         return savedEntity.getId();
     }
 
-    private void updateEscrowPriceSign(@NonNull TakeIntentEvent takeIntentEvent) {
+    public EscrowTag getEscrowTag(TakeIntentEvent takeIntentEvent) {
+        Permit2Tag permit2Tag = takeIntentEvent.getPermit2Tag();
+        TakeTag takeTag = takeIntentEvent.getTakeTag();
         QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
-        if(StringUtils.hasText(quoteTag.getSignature())) {
-            String escrowSign = getEscrowSign(takeIntentEvent);
-            if(!StringUtils.hasText(escrowSign)) {
-                throw new RuntimeException("Get escrow sign fail.");
-            }
-            quoteTag.setSignature(escrowSign);
+        PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
+        String buyer;
+        String seller;
+
+        if (takeTag.getSide() == Side.BUY) {
+            buyer = takeTag.getTakerNip05();
+            seller = takeTag.getMakerNip05();
+        } else {
+            buyer = takeTag.getMakerNip05();
+            seller = takeTag.getTakerNip05();
         }
+        return new EscrowTag(takeIntentEvent.getTradeId(),
+                takeIntentEvent.getTokenTag().getAddress(),
+                takeTag.getVolume(),
+                quoteTag.getNumber(),
+                quoteTag.getUsdRate(),
+                permit2Tag.getPayer(),
+                seller,
+                takeTag.getSellerFeeRate(),
+                paymentTag.getMethod(),
+                quoteTag.getCurrency(),
+                paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo(),
+                buyer,
+                takeTag.getBuyerFeeRate(),
+                getEscrowSign(takeIntentEvent, seller, buyer));
     }
-    private String getEscrowSign(TakeIntentEvent takeIntentEvent) {
-        String data = getSignEscrowData(takeIntentEvent);
+    private String getEscrowSign(TakeIntentEvent takeIntentEvent, String seller, String buyer) {
+        String data = getSignEscrowData(takeIntentEvent, seller, buyer);
 
         RestClient restClient = new RestClient("https://api.lighter.im");
         HttpResponse<String> response = restClient.post("/signature/escrow", data).join();
@@ -125,7 +144,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         return null;
     }
 
-    private String getSignEscrowData(TakeIntentEvent takeIntentEvent) {
+    private String getSignEscrowData(TakeIntentEvent takeIntentEvent, String seller, String buyer) {
         TokenTag tokenTag = takeIntentEvent.getTokenTag();
         TakeTag takeTag = takeIntentEvent.getTakeTag();
         QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
@@ -134,15 +153,6 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
 
         List<List<String>> tags = new ArrayList<>();
 
-        String buyer;
-        String seller;
-        if (takeTag.getSide() == Side.BUY) {
-            buyer = takeTag.getTakerNip05();
-            seller = takeTag.getMakerNip05();
-        } else {
-            buyer = takeTag.getMakerNip05();
-            seller = takeTag.getTakerNip05();
-        }
         List<String> escrowParam = new ArrayList<>();
         escrowParam.add("escrow_param");
         escrowParam.add(String.valueOf(takeIntentEvent.getTradeId()));
@@ -218,6 +228,18 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         }
         TakeIntentEventEntity entity = opt.get();
         entity.setStatus(tradeStatus.getValue());
+        entityManager.merge(entity);
+    }
+
+    @Transactional
+    public void updateEscrowSign(long tradeId, String sign) {
+        Optional<TakeIntentEventEntity> opt  = takeEventEntityRepository.findById(tradeId);
+        if(opt.isEmpty()){
+            log.warn("updateEscrowSign tradeId: {}, entity not exists!", tradeId);
+            return;
+        }
+        TakeIntentEventEntity entity = opt.get();
+        entity.setEscrowSignature(sign);
         entityManager.merge(entity);
     }
 }

@@ -69,6 +69,9 @@ public class EIP712Signer {
         } else if(signerType.equals(SignerType.TAKE_EVENT)){
             TakeIntentEvent takeIntentEvent = (TakeIntentEvent)event;
             return verifySellerTakeIntent(takeIntentEvent);
+        } else if(signerType.equals(SignerType.TRADE_EVENT)){
+            TakeIntentEvent takeIntentEvent = (TakeIntentEvent)event;
+            return verifyTradeIntent(takeIntentEvent);
         } else {
             return false;
         }
@@ -95,6 +98,45 @@ public class EIP712Signer {
         String expectedAddress = eip712Tag.getWalletAddress();
         String json = getIntentStructuredData(postIntentEvent);
         return verifyEip712Signature(json, signature, expectedAddress, postIntentEvent);
+    }
+
+    private static boolean verifyTradeIntent(TakeIntentEvent takeIntentEvent) {
+        EIP712Tag eip712Tag = takeIntentEvent.getEip712Tag();
+        String signature = eip712Tag.getSign();
+        String expectedAddress = eip712Tag.getWalletAddress();
+        TokenTag tokenTag = takeIntentEvent.getTokenTag();
+        QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
+        TakeTag takeTag = takeIntentEvent.getTakeTag();
+        PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
+        String seller;
+        String buyer;
+        if (takeTag.getSide() == Side.BUY) {
+            buyer = takeTag.getTakerNip05();
+            seller = takeTag.getMakerNip05();
+        } else {
+            buyer = takeTag.getMakerNip05();
+            seller = takeTag.getTakerNip05();
+        }
+        String structuredDataJson = getEscrowParamsEip712Struct(eip712Tag.getDomainAppName(),
+                eip712Tag.getDomainVersion(),
+                tokenTag.getChainId().intValue(),
+                eip712Tag.getContractAddress(),
+                takeIntentEvent.getTradeId(),
+                tokenTag.getAddress(),
+                tokenTag.getAmount(),
+                quoteTag.getNumber(),
+                quoteTag.getUsdRate(),
+                seller,
+                takeTag.getPayer(),
+                takeTag.getSellerFeeRate().stripTrailingZeros().toPlainString(),
+                paymentTag.getMethod(),
+                quoteTag.getCurrency(),
+                buyer,
+                takeTag.getBuyerFeeRate().stripTrailingZeros().toPlainString(),
+                paymentTag.getAccount(),
+                paymentTag.getQrCode(),
+                paymentTag.getMemo());
+        return verifyEip712Signature(structuredDataJson, signature, expectedAddress, takeIntentEvent);
     }
 
     private static boolean verifySellerTakeIntent(TakeIntentEvent takeIntentEvent) {
@@ -367,7 +409,6 @@ public class EIP712Signer {
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
 
         TokenTag tokenTag = event.getTokenTag();
-        LimitTag limitTag = event.getLimitTag();
         Permit2Tag permit2Tag = event.getPermit2Tag();
         TakeTag takeTag = event.getTakeTag();
 
@@ -750,7 +791,7 @@ public class EIP712Signer {
                 account,
                 qrCode,
                 memo);
-        StructuredDataEncoder encoder = null;
+        StructuredDataEncoder encoder;
         try {
             encoder = new StructuredDataEncoder(structuredDataJson);
             byte[] messageHash = encoder.hashStructuredData();
@@ -783,7 +824,7 @@ public class EIP712Signer {
             String domainVersion,
             int chainId,
             String verifyContract,
-            int tradeId,
+            long tradeId,
             String tokenAddr,
             BigDecimal volume,
             BigDecimal price,

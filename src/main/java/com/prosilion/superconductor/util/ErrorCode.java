@@ -13,6 +13,7 @@ public enum ErrorCode {
     BUSINESS_ERROR(1000, "业务错误"),
     COMMON_ERROR(1001, "未知错误"),
     PARAM_ERROR(1002, "参数错误"),
+    TRADE_ID_NOT_FOUND(1003, "TradeId不存在"),
     ;
 
     private final int code;

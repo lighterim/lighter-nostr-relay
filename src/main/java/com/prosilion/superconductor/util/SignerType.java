@@ -6,7 +6,10 @@ public enum SignerType {
 
     PRICE(2, "验证价格"),
 
-    TAKE_EVENT(3, "验证TakeEvent");
+    TAKE_EVENT(3, "验证TakeEvent"),
+
+    TRADE_EVENT(4, "验证TradeEvent"),
+    ;
 
     private final int type;
 

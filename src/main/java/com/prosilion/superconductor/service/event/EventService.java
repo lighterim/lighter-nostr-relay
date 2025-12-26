@@ -113,12 +113,24 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             throw new RuntimeException(String.format("invalid nip05: %s, %s", createdBy.getNip05(), createdBy.getPubkey()));
         }
         LedgerTag ledger = tradeMessageEvent.getLedgerTag();
+        TakeIntentEvent takeIntent = null;
         if (ledger != null && createdBy.getPubkey().equals(noticePusherPubkey) && !StringUtils.hasText(createdBy.getTakeIntentEventId()) && createdBy.getTradeId() > 0L) {
-            TakeIntentEvent takeIntent = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, createdBy.getTradeId());
+            takeIntent = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, createdBy.getTradeId());
             tradeMessageEvent.setCreatedByTag(
                     CreatedByTag.builder().takeIntentEventId(takeIntent.getId()).nip05(createdBy.getNip05()).pubkey(createdBy.getPubkey())
                             .tradeId(createdBy.getTradeId()).build()
             );
+        }
+        EIP712Tag eip712Tag = tradeMessageEvent.getEip712Tag();
+        if(eip712Tag!=null) {
+            if(takeIntent==null) {
+                takeIntent = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, createdBy.getTradeId());
+                if(takeIntent==null) {
+                    throw new BusinessException(ErrorCode.TRADE_ID_NOT_FOUND, String.format("invalid tradeId: %d",  createdBy.getTradeId()));
+                }
+            }
+            takeIntent.setEip712Tag(eip712Tag);
+            validateEIP712(takeIntent, SignerType.TRADE_EVENT);
         }
     }
 

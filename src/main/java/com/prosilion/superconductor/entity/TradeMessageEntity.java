@@ -38,11 +38,12 @@ public class TradeMessageEntity {
     private String content;
     private String signature;
     private Long createAt;
+    private String eipSignature;
 
     @Transient
     private List<BaseTag> tags;
 
-    public TradeMessageEntity(Integer nip, Integer kind, String eventIdString, String takeIntentEventId, String nip05, String pubKey, String content, String signature, Long createAt){
+    public TradeMessageEntity(Integer nip, Integer kind, String eventIdString, String takeIntentEventId, String nip05, String pubKey, String content, String signature, String eipSignature, Long createAt){
         this.nip = nip;
         this.kind = kind;
         this.eventIdString = eventIdString;
@@ -51,6 +52,7 @@ public class TradeMessageEntity {
         this.pubKey = pubKey;
         this.content = content;
         this.signature = signature;
+        this.eipSignature = eipSignature;
         this.createAt = createAt;
     }
 

@@ -31,6 +31,7 @@ public class EventMessageService<T extends EventMessage> implements MessageServi
   public void processIncoming(@NonNull T eventMessage, @NonNull String sessionId) {
     try {
       eventService.processIncomingEvent(eventMessage);
+      processOkClientResponse(eventMessage, sessionId);
     } catch(Exception exception) {
       ErrorCode errorCode;
       String errorMsg = null;

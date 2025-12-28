@@ -1,6 +1,5 @@
 package com.prosilion.superconductor.controller;
 
-import com.prosilion.superconductor.config.WebSocketExceptionHandler;
 import com.prosilion.superconductor.service.clientresponse.ClientResponse;
 import com.prosilion.superconductor.service.message.MessageService;
 import com.prosilion.superconductor.service.message.RelayInfoDocService;
@@ -43,9 +42,6 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
 
     @Value("${superconductor.auth.active}")
     private boolean authActive;
-
-    @Autowired
-    private WebSocketExceptionHandler exceptionHandler;
 
     @Autowired
     public NostrEventController(
@@ -113,7 +109,6 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
             messageServiceMap.get(message.getCommand()).processIncoming(message, session.getId());
         } catch (Exception ex) {
             log.error("handleTextMessage: {}, {}", baseMessage, baseMessage.getPayload(), ex);
-            exceptionHandler.handleException(ex, session);
         }
     }
 
@@ -146,14 +141,6 @@ public class NostrEventController<T extends BaseMessage> extends TextWebSocketHa
         }
         closeSession(sessionId);
         log.info("CLOSE response to\nclient:\n\t{}\npayload:\n\t{}", sessionId, response.getPayload());
-    }
-
-    /**
-     * 处理传输错误
-     */
-    @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) {
-        exceptionHandler.handleException(exception, session);
     }
 
     private void broadcast(String sessionId, TextMessage message) {

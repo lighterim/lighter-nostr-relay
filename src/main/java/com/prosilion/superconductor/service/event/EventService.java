@@ -271,7 +271,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     }
 
     private void validateEIP712(NIP77Event event, SignerType signerType) {
-        boolean isValid = true;//EIP712Signer.verifySignature(event, signerType);
+        boolean isValid = EIP712Signer.verifySignature(event, signerType);
         if(!isValid) {
             log.warn("event-id:{}, verify sign fail", event.getId());
             //TDOD: onlyTest

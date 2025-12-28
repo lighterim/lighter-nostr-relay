@@ -206,8 +206,9 @@ public class EIP712Signer {
             byte[] messageHash = encoder.hashStructuredData();
             log.info("permit2-event-id:{}, structDataJson:{}, hash:{}, event:{}", event.getId(), structuredDataJson, org.web3j.utils.Numeric.toHexString(messageHash), event);
             return verifySignature(messageHash, signature, expectedAddress);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (Throwable e) {
+            log.warn(e.getMessage(), e);
+            return false;
         }
     }
 

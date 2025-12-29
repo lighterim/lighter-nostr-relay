@@ -22,7 +22,7 @@ public class ClientOkResponse implements ClientResponse {
   public ClientOkResponse(@NonNull String sessionId, @NonNull GenericEvent event, boolean valid, @NonNull String message) throws JsonProcessingException {
     this.valid = valid;
     this.sessionId = sessionId;
-    if(event instanceof TakeIntentEvent) {
+    if(event instanceof TakeIntentEvent && valid) {
       this.textMessage = new TextMessage(
               new NIP01Impl.EventMessageFactory(event).create().encode()
       );

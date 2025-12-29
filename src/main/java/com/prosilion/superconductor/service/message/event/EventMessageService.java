@@ -29,29 +29,7 @@ public class EventMessageService<T extends EventMessage> implements MessageServi
   }
 
   public void processIncoming(@NonNull T eventMessage, @NonNull String sessionId) {
-    try {
       eventService.processIncomingEvent(eventMessage);
-      processOkClientResponse(eventMessage, sessionId);
-    } catch(Exception exception) {
-      ErrorCode errorCode;
-      String errorMsg = null;
-      if (exception instanceof BusinessException bizException) {
-        // 自定义异常
-        errorCode = bizException.getCode();
-        errorMsg = bizException.getMessage();
-      } else if (exception instanceof IllegalArgumentException) {
-        // 参数异常
-        errorCode = ErrorCode.INVALID_MESSAGE;
-      } else {
-        errorCode = ErrorCode.INTERNAL_ERROR;
-        // 生产环境隐藏详细错误信息
-        if (!isProduction()) {
-          errorMsg = String.format("%s: %s", exception.getClass().getName(), exception.getMessage());
-        }
-      }
-      String errorMessage = String.format("%d: %s", errorCode.getCode(), errorMsg == null ? errorCode.getMessage() : errorMsg);
-      clientResponseService.processNotOkClientResponse(sessionId, new EventMessage(eventMessage.getEvent()), errorMessage);
-    }
   }
 
   protected void processOkClientResponse(@NonNull T eventMessage, @NonNull String sessionId) {
@@ -60,10 +38,5 @@ public class EventMessageService<T extends EventMessage> implements MessageServi
 
   protected void processNotOkClientResponse(@NonNull T eventMessage, @NonNull String sessionId, @NonNull String errorMessage) {
     clientResponseService.processNotOkClientResponse(sessionId, new EventMessage(eventMessage.getEvent()), errorMessage);
-  }
-
-  private boolean isProduction() {
-    String env = System.getProperty("spring.profiles.active", "");
-    return "prod".equals(env) || "production".equals(env);
   }
 }

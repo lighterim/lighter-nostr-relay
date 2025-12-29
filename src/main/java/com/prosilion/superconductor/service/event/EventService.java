@@ -141,7 +141,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
 
     private void validateTakeIntentEvent(TakeIntentEvent takeIntentEvent) {
         // 1. event properties
-        takeIntentEvent.validate();
+         takeIntentEvent.validate();
 
         TakeTag takeTag = takeIntentEvent.getTakeTag();
 

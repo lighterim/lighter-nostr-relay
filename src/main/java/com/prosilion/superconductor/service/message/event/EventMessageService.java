@@ -49,6 +49,7 @@ public class EventMessageService<T extends EventMessage> implements MessageServi
           errorMsg = String.format("%s: %s", exception.getClass().getName(), exception.getMessage());
         }
       }
+      log.warn(errorMsg, exception);
       String errorMessage = String.format("%d: %s", errorCode.getCode(), errorMsg == null ? errorCode.getMessage() : errorMsg);
       clientResponseService.processNotOkClientResponse(sessionId, new EventMessage(eventMessage.getEvent()), errorMessage);
     }

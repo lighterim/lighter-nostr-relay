@@ -10,6 +10,7 @@ import com.prosilion.superconductor.util.*;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
+import nostr.event.IntentType;
 import nostr.event.Kind;
 import nostr.event.NIP77Event;
 import nostr.event.Side;
@@ -141,7 +142,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
 
     private void validateTakeIntentEvent(TakeIntentEvent takeIntentEvent) {
         // 1. event properties
-         takeIntentEvent.validate();
+        takeIntentEvent.validate();
 
         TakeTag takeTag = takeIntentEvent.getTakeTag();
 
@@ -228,7 +229,12 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 }
                 //4. the maker is seller.
                 //TODO: reset EIP712Tag & Permit2Tag with postIntentEvent(maker.intent)
-
+                IntentType intentType = postIntentEvent.getSideTag().getIntentType();
+                if(IntentType.SIGNATURE_SELL.equals(intentType)) {
+                    takeIntentEvent.setPermit2Tag(postIntentEvent.getPermit2Tag());
+                } else if(IntentType.BUYER_INTENT.equals(intentType) || IntentType.BULK_SELL.equals(intentType)) {
+                    takeIntentEvent.setEip712Tag(postIntentEvent.getEip712Tag());
+                }
 
             } else {
                 validateEIP712(takeIntentEvent, SignerType.TAKE_EVENT);

@@ -226,7 +226,10 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                         && takeQuoteTag.getNumber().compareTo(postQuoteTag.getNumber()) > 0) {
                     takeQuoteTag.setNumber(postQuoteTag.getNumber());
                 }
-                //4. seller permit2 TODO:
+                //4. the maker is seller.
+                //TODO: reset EIP712Tag & Permit2Tag with postIntentEvent(maker.intent)
+
+
             } else {
                 validateEIP712(takeIntentEvent, SignerType.TAKE_EVENT);
                 //设置成高的那个价格

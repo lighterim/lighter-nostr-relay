@@ -14,6 +14,7 @@ import com.prosilion.superconductor.repository.TakeEventEntityRepository;
 import com.prosilion.superconductor.repository.join.EventEntityAbstractTagEntityRepository;
 import com.prosilion.superconductor.service.event.join.generic.GenericTagEntitiesService;
 import com.prosilion.superconductor.util.ED25519Signer;
+import com.prosilion.superconductor.util.EIP712Signer;
 import com.prosilion.superconductor.util.RestClient;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -120,9 +121,9 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
                 permit2Tag.getPayer(),
                 seller,
                 takeTag.getSellerFeeRate(),
-                paymentTag.getMethod(),
-                quoteTag.getCurrency(),
-                paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo(),
+                EIP712Signer.keccak256(paymentTag.getMethod()),
+                EIP712Signer.keccak256(quoteTag.getCurrency()),
+                EIP712Signer.keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()),
                 buyer,
                 takeTag.getBuyerFeeRate(),
                 getEscrowSign(takeIntentEvent, seller, buyer));

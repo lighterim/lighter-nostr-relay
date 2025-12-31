@@ -137,6 +137,7 @@ public class EventDto extends NIP01Event {
             sellerPubKey = takeTag.getTakerPubkey();
         }
 
+        // takeSellerIntent, eip712Tag = null; takeBulkSell, permit2Tag = null;
         return new TakeIntentEventEntity(
                 event.getNip(),
                 event.getKind(),
@@ -158,8 +159,8 @@ public class EventDto extends NIP01Event {
                 event.getSignature().toString(),
                 event.getCreatedAt(),
                 limitTag.getLowLimit(), limitTag.getUpLimit(),
-                eip712Tag.getWalletAddress(), eip712Tag.getDomainVersion(), eip712Tag.getDomainAppName(), eip712Tag.getContractAddress(), eip712Tag.getSign(),
-                permit2Tag.getNonce(), permit2Tag.getSignature(), permit2Tag.getSpender(), permit2Tag.getWalletAddress(), permit2Tag.getContractAddress(), permit2Tag.getDomainAppName(), ""
+                eip712Tag==null?"":eip712Tag.getWalletAddress(), eip712Tag==null?"":eip712Tag.getDomainVersion(), eip712Tag==null?"":eip712Tag.getDomainAppName(), eip712Tag==null?"":eip712Tag.getContractAddress(), eip712Tag==null?"":eip712Tag.getSign(),
+                permit2Tag==null?"":permit2Tag.getNonce(), permit2Tag==null?"":permit2Tag.getSignature(), permit2Tag==null?"":permit2Tag.getSpender(), permit2Tag==null?"":permit2Tag.getWalletAddress(), permit2Tag==null?"":permit2Tag.getContractAddress(), permit2Tag==null?"":permit2Tag.getDomainAppName(), ""
         );
     }
 

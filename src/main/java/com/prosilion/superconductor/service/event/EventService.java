@@ -232,11 +232,11 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 IntentType intentType = postIntentEvent.getSideTag().getIntentType();
                 if(IntentType.SIGNATURE_SELL.equals(intentType)) {
                     takeIntentEvent.setPermit2Tag(postIntentEvent.getPermit2Tag());
-                } else if(IntentType.BUYER_INTENT.equals(intentType) || IntentType.BULK_SELL.equals(intentType)) {
+                } else if(IntentType.BULK_SELL.equals(intentType)) {
                     takeIntentEvent.setEip712Tag(postIntentEvent.getEip712Tag());
                 }
-
             } else {
+                takeIntentEvent.setEip712Tag(postIntentEvent.getEip712Tag());
                 validateEIP712(takeIntentEvent, SignerType.TAKE_EVENT);
                 //设置成高的那个价格
                 if(postQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0

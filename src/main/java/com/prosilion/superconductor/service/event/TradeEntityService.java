@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.prosilion.superconductor.config.TokenConfig;
 import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.dto.generic.ElementAttributeDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
@@ -16,6 +17,7 @@ import com.prosilion.superconductor.service.event.join.generic.GenericTagEntitie
 import com.prosilion.superconductor.util.ED25519Signer;
 import com.prosilion.superconductor.util.EIP712Signer;
 import com.prosilion.superconductor.util.RestClient;
+import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
@@ -64,6 +66,11 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
 
     @Value("${take.event.default.content:be leaved with empty.}")
     private String defaultContent;
+
+    @Resource
+    private TokenConfig tokenConfig;
+
+    public static final int PRICE_DECIMALS = 18;
 
     @Autowired
     public TradeEntityService(
@@ -152,22 +159,28 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
         EIP712Tag eip712Tag = takeIntentEvent.getEip712Tag();
 
+        String chainId = String.valueOf(tokenTag.getChainId());
+        int tokenDecimals = tokenConfig.getDecimals(chainId, tokenTag.getSymbol());
+        if(tokenDecimals==0) {
+            log.warn("takeIntentEvent:{}, token: {},{}, decimals:0", takeIntentEvent.getId(), tokenTag.getSymbol(), tokenTag.getAddress());
+        }
+
         List<List<String>> tags = new ArrayList<>();
 
         List<String> escrowParam = new ArrayList<>();
         escrowParam.add("escrow_param");
         escrowParam.add(String.valueOf(takeIntentEvent.getTradeId()));
         escrowParam.add(tokenTag.getAddress());
-        escrowParam.add(takeTag.getVolume().multiply(BigDecimal.TEN.pow(18)).stripTrailingZeros().toPlainString());
-        escrowParam.add(quoteTag.getNumber().multiply(BigDecimal.TEN.pow(18)).stripTrailingZeros().toPlainString());
-        escrowParam.add(quoteTag.getUsdRate().multiply(BigDecimal.TEN.pow(18)).stripTrailingZeros().toPlainString());
+        escrowParam.add(takeTag.getVolume().multiply(BigDecimal.TEN.pow(tokenDecimals)).stripTrailingZeros().toPlainString());
+        escrowParam.add(quoteTag.getNumber().multiply(BigDecimal.TEN.pow(PRICE_DECIMALS)).stripTrailingZeros().toPlainString());
+        escrowParam.add(quoteTag.getUsdRate().multiply(BigDecimal.TEN.pow(PRICE_DECIMALS)).stripTrailingZeros().toPlainString());
         escrowParam.add(takeTag.getPayer());
         escrowParam.add(seller);
-        escrowParam.add(takeTag.getSellerFeeRate().multiply(BigDecimal.TEN.pow(18)).stripTrailingZeros().toPlainString());
+        escrowParam.add(takeTag.getSellerFeeRate().stripTrailingZeros().toPlainString());
         escrowParam.add(paymentTag.getMethod());
         escrowParam.add(quoteTag.getCurrency());
         escrowParam.add(buyer);
-        escrowParam.add(takeTag.getBuyerFeeRate().multiply(BigDecimal.TEN.pow(18)).stripTrailingZeros().toPlainString());
+        escrowParam.add(takeTag.getBuyerFeeRate().stripTrailingZeros().toPlainString());
         escrowParam.add(paymentTag.getAccount());
         escrowParam.add(paymentTag.getQrCode());
         escrowParam.add(paymentTag.getMemo());
@@ -176,7 +189,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         eip712Param.add("eip712");
         eip712Param.add(eip712Tag.getDomainAppName());
         eip712Param.add(eip712Tag.getDomainVersion());
-        eip712Param.add(String.valueOf(tokenTag.getChainId()));
+        eip712Param.add(chainId);
         eip712Param.add(eip712Tag.getContractAddress());
 
         tags.add(escrowParam);

@@ -33,7 +33,7 @@ public class TakeIntentEventEntity {
     private String takeSide;
     private String makeIntentEventId;
     /** The volume means volume of trade symbol **/
-    @Column(precision = 36, scale = 0)
+    @Column(precision = 36, scale = 18)
     private BigDecimal volume;
     private String buyer;
     private String buyerPubKey;
@@ -51,19 +51,19 @@ public class TakeIntentEventEntity {
     private String expireTime;
 
     /** The price for trade symbol based currency */
-    @Column(precision = 36, scale = 4)
+    @Column(precision = 36, scale = 18)
     private BigDecimal price;
     private String currency;
     private BigInteger quoteDeadline;
     private String quoteSignature;
-    @Column(precision = 36, scale = 4)
+    @Column(precision = 36, scale = 18)
     private BigDecimal usdRate;
     private Integer slippageBP;
 
     /** limit **/
-    @Column(precision = 36, scale=0)
+    @Column(precision = 36, scale=18)
     private BigDecimal lowLimit;
-    @Column(precision = 36, scale=0)
+    @Column(precision = 36, scale=18)
     private BigDecimal upLimit;
 
     private String paymentMethod;
@@ -72,16 +72,16 @@ public class TakeIntentEventEntity {
     private String paymentMemo;
 
     /** eip712 **/
-    private String walletAddress;
-    private String domainVersion;
-    private String domainAppName;
-    private String contractAddress;
+    private String eip712WalletAddress;
+    private String eip712DomainVersion;
+    private String eip712DomainAppName;
+    private String eip712ContractAddress;
     private String eip712Signature;
 
     /** permit2 **/
-    private String nonce;
+    private String permit2Nonce;
     private String permit2Sign;
-    private String spender;
+    private String permit2Spender;
     private String permit2WalletAddress;
     private String permit2ContractAddress;
     private String permit2DomainAppName;
@@ -123,7 +123,6 @@ public class TakeIntentEventEntity {
          BigDecimal sellerFeeRate,
          BigDecimal buyerFeeRate,
          String payer,
-         Integer visibleStatus,
          String tokenAddr,
          String symbol,
          BigInteger chainId,
@@ -197,15 +196,15 @@ public class TakeIntentEventEntity {
         this.paymentQrCode = paymentQrCode;
         this.paymentMemo = paymentMemo;
 
-        this.walletAddress = walletAddress;
-        this.domainVersion = domainVersion;
-        this.domainAppName = domainAppName;
-        this.contractAddress = contractAddress;
+        this.eip712WalletAddress = walletAddress;
+        this.eip712DomainVersion = domainVersion;
+        this.eip712DomainAppName = domainAppName;
+        this.eip712ContractAddress = contractAddress;
         this.eip712Signature = eip712Signature;
 
-        this.nonce = nonce;
+        this.permit2Nonce = nonce;
         this.permit2Sign = permit2Sign;
-        this.spender = spender;
+        this.permit2Spender = spender;
         this.permit2ContractAddress = permit2ContractAddress;
         this.permit2DomainAppName = permit2DomainAppName;
         this.permit2WalletAddress = permit2WalletAddress;
@@ -245,8 +244,8 @@ public class TakeIntentEventEntity {
                             new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), quoteDeadline, quoteSignature, slippageBP),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
                             new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
-                            new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature),
-                            new Permit2Tag(nonce, permit2Sign, payer, spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
+                            new EIP712Tag(eip712WalletAddress, eip712DomainVersion, eip712DomainAppName, eip712ContractAddress, eip712Signature),
+                            new Permit2Tag(permit2Nonce, permit2Sign, payer, permit2Spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey),
                             new EscrowTag(id, tokenAddr, volume, price, usdRate, payer, seller, sellerFeeRate, paymentMethod, currency, paymentAccount+paymentQrCode+paymentMemo, buyer, buyerFeeRate, escrowSignature)
                     ),
@@ -265,8 +264,8 @@ public class TakeIntentEventEntity {
                             new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), quoteDeadline, quoteSignature, slippageBP),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
                             new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
-                            new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature),
-                            new Permit2Tag(nonce, permit2Sign, payer, spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
+                            new EIP712Tag(eip712WalletAddress, eip712DomainVersion, eip712DomainAppName, eip712ContractAddress, eip712Signature),
+                            new Permit2Tag(permit2Nonce, permit2Sign, payer, permit2Spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey),
                             new EscrowTag(id, tokenAddr, volume, price, usdRate, payer, seller, sellerFeeRate, paymentMethod, currency, paymentAccount+paymentQrCode+paymentMemo, buyer, buyerFeeRate, escrowSignature)
                     ),

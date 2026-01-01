@@ -149,7 +149,7 @@ public class EventDto extends NIP01Event {
                 buyerPubKey,
                 sellerId,
                 sellerPubKey,
-                takeTag.getSellerFeeRate(), takeTag.getBuyerFeeRate(), takeTag.getPayer(), takeTag.getVisibleStatus(),
+                takeTag.getSellerFeeRate(), takeTag.getBuyerFeeRate(), takeTag.getPayer(),
                 tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChainId(), tokenTag.getExpiryTime(), tokenTag.getChain(), tokenTag.getNetwork(),
                 quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(), quoteTag.getSlippageBP(), quoteTag.getTimestamp(), quoteTag.getSignature(),
                 paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
@@ -160,7 +160,8 @@ public class EventDto extends NIP01Event {
                 event.getCreatedAt(),
                 limitTag.getLowLimit(), limitTag.getUpLimit(),
                 eip712Tag==null?"":eip712Tag.getWalletAddress(), eip712Tag==null?"":eip712Tag.getDomainVersion(), eip712Tag==null?"":eip712Tag.getDomainAppName(), eip712Tag==null?"":eip712Tag.getContractAddress(), eip712Tag==null?"":eip712Tag.getSign(),
-                permit2Tag==null?"":permit2Tag.getNonce(), permit2Tag==null?"":permit2Tag.getSignature(), permit2Tag==null?"":permit2Tag.getSpender(), permit2Tag==null?"":permit2Tag.getWalletAddress(), permit2Tag==null?"":permit2Tag.getContractAddress(), permit2Tag==null?"":permit2Tag.getDomainAppName(), ""
+                permit2Tag==null?"":permit2Tag.getNonce(), permit2Tag==null?"":permit2Tag.getSignature(), permit2Tag==null?"":permit2Tag.getSpender(), permit2Tag==null?"":permit2Tag.getWalletAddress(), permit2Tag==null?"":permit2Tag.getContractAddress(), permit2Tag==null?"":permit2Tag.getDomainAppName(),
+                ""
         );
     }
 

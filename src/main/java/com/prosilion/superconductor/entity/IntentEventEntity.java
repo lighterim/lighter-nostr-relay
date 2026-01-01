@@ -14,7 +14,6 @@ import nostr.event.impl.GenericEvent;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.tag.*;
 import nostr.util.NostrUtil;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -29,7 +28,7 @@ import java.util.List;
         @Index(name="IX_INTENT_EVENT_ID_STRING", columnList = "eventIdString", unique = true),
         @Index(name="IX_INTENT_SYMBOL", columnList = "symbol" ),
         @Index(name="IX_INTENT_SIDE", columnList = "side"),
-        @Index(name="IX_INTENT_CURRENCY", columnList = "currency")
+        @Index(name="IX_INTENT_CURRENCY", columnList = "quoteCurrency")
 })
 public class IntentEventEntity {
 
@@ -48,38 +47,39 @@ public class IntentEventEntity {
     private String chain;
     private String network;
     private String tokenAddress;
-    @Column(precision = 36, scale=0)
+    @Column(precision = 36, scale=18)
     private BigDecimal amount;
     private BigInteger chainId;
     private String expireTime;
 
     /** quote **/
-    @Column(precision = 36, scale=0)
+    @Column(precision = 36, scale=18)
     private BigDecimal price;
-    private String currency;
+    private String quoteCurrency;
     private BigInteger quoteDeadline;
     private String quoteSignature;
-    private BigDecimal usdRate;
-    private Integer slippageBP;
+    @Column(precision = 36, scale=18)
+    private BigDecimal quoteUsdRate;
+    private Integer quoteSlippageBP;
 
     /** limit **/
-    @Column(precision = 36, scale=0)
+    @Column(precision = 36, scale=18)
     private BigDecimal lowLimit;
-    @Column(precision = 36, scale=0)
+    @Column(precision = 36, scale=18)
     private BigDecimal upLimit;
 
     /** eip712 **/
-    private String walletAddress;
-    private String domainVersion;
-    private String domainAppName;
-    private String contractAddress;
+    private String eip712WalletAddress;
+    private String eip712DomainVersion;
+    private String eip712DomainAppName;
+    private String eip712ContractAddress;
     private String eip712Signature;
 
     /** permit2 **/
-    private String nonce;
+    private String permit2Nonce;
     private String permit2Sign;
     private String payer;
-    private String spender;
+    private String permit2Spender;
     private String permit2WalletAddress;
     private String permit2DomainAppName;
     private String permit2ContractAddress;
@@ -92,7 +92,7 @@ public class IntentEventEntity {
     private Integer nip;
     private Long createdAt;
 
-    @Column(precision = 36, scale=0)
+    @Column(precision = 36, scale=18)
     private BigDecimal tradedAmount; //只针对bulk_sell
 
     /** relays **/
@@ -124,26 +124,29 @@ public class IntentEventEntity {
         this.chainId = chainId;
         this.expireTime = expireTime;
 
-        this.walletAddress = walletAddress;
-        this.domainVersion = domainVersion;
-        this.domainAppName = domainAppName;
-        this.contractAddress = contractAddress;
+        this.eip712WalletAddress = walletAddress;
+        this.eip712DomainVersion = domainVersion;
+        this.eip712DomainAppName = domainAppName;
+        this.eip712ContractAddress = contractAddress;
         this.eip712Signature = eip712Signature;
 
         this.price = price;
-        this.currency = currency;
+        this.quoteCurrency = currency;
         this.quoteDeadline = quoteDeadline;
         this.quoteSignature = quoteSignature;
-        this.usdRate = usdRate;
-        this.slippageBP = slippageBP;
+        this.quoteUsdRate = usdRate;
+        this.quoteSlippageBP = slippageBP;
 
         this.lowLimit = lowLimit;
         this.upLimit = upLimit;
 
-        this.nonce = nonce;
+        this.permit2Nonce = nonce;
         this.permit2Sign = permit2Sign;
         this.payer = payer;
-        this.spender = spender;
+        this.permit2Spender = spender;
+        this.permit2WalletAddress = permit2WalletAddress;
+        this.permit2DomainAppName = permit2DomainAppName;
+        this.permit2ContractAddress = permit2ContractAddress;
 
         this.signature = signature;
         this.eventIdString = eventId;
@@ -173,10 +176,10 @@ public class IntentEventEntity {
         List<BaseTag> tagList = new ArrayList<>(tags);
         MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType);
         TokenTag token = new TokenTag(symbol, chain, network, tokenAddress, amount.stripTrailingZeros(), chainId, expireTime, tradedAmount);
-        QuoteTag quote = new QuoteTag(price, currency, usdRate, quoteDeadline, quoteSignature, slippageBP);
-        EIP712Tag eip712Tag = new EIP712Tag(walletAddress, domainVersion, domainAppName, contractAddress, eip712Signature);
+        QuoteTag quote = new QuoteTag(price, quoteCurrency, quoteUsdRate, quoteDeadline, quoteSignature, quoteSlippageBP);
+        EIP712Tag eip712Tag = new EIP712Tag(eip712WalletAddress, eip712DomainVersion, eip712DomainAppName, eip712ContractAddress, eip712Signature);
         LimitTag limit = new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros());
-        Permit2Tag permit2Tag = new Permit2Tag(nonce, permit2Sign, payer, spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName);
+        Permit2Tag permit2Tag = new Permit2Tag(permit2Nonce, permit2Sign, payer, permit2Spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName);
 
         tagList.add(make);
         tagList.add(token);

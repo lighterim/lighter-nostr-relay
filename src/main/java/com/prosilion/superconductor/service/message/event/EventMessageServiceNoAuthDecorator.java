@@ -30,7 +30,7 @@ public class EventMessageServiceNoAuthDecorator<T extends EventMessage> implemen
     log.info("EVENT message type: {}", eventMessage.getEvent());
     try {
       eventMessageService.processIncoming(eventMessage, sessionId);
-      eventMessageService.processOkClientResponse(eventMessage, sessionId);
+//      eventMessageService.processOkClientResponse(eventMessage, sessionId);
     } catch(Exception exception) {
       ErrorCode errorCode;
       String errorMsg = null;

@@ -176,7 +176,7 @@ public class EventDto extends NIP01Event {
                 createdByTag.getPubkey(),
                 event.getContent(),
                 event.getSignature().toString(),
-                event.getEip712Tag().getSign(),
+                event.getEip712Tag() == null ? "" : event.getEip712Tag().getSign(),
                 event.getCreatedAt()
         );
     }

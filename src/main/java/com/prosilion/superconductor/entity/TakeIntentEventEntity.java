@@ -1,5 +1,6 @@
 package com.prosilion.superconductor.entity;
 
+import com.prosilion.superconductor.util.EIP712Signer;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,8 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+
+import static com.prosilion.superconductor.util.EIP712Signer.keccak256;
 
 @Setter
 @Getter
@@ -233,21 +236,28 @@ public class TakeIntentEventEntity {
 
         Side side = Side.valueOf(this.takeSide.toUpperCase());
         TakeIntentEvent takeEvent = null;
+        final BigDecimal volume_ = volume.stripTrailingZeros();
+        final BigDecimal price_ = price.stripTrailingZeros();
+        final BigDecimal usdRate_ = usdRate.stripTrailingZeros();
+        final BigDecimal sellerFeeRate_ = sellerFeeRate.stripTrailingZeros();
+        final BigDecimal buyerFeeRate_ = buyerFeeRate.stripTrailingZeros();
+        final BigDecimal upLimit_ = upLimit.stripTrailingZeros();
+        final BigDecimal lowLimit_ = lowLimit.stripTrailingZeros();
         switch (side){
             case BUY -> takeEvent = new TakeIntentEvent(
                     id,
                     new PublicKey(buyerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, seller, sellerPubKey, volume.stripTrailingZeros(), buyer, buyerPubKey, sellerFeeRate, buyerFeeRate, payer, 1),
-                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime, null),
-                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), quoteDeadline, quoteSignature, slippageBP),
+                            new TakeTag(side, makeIntentEventId, seller, sellerPubKey, volume_, buyer, buyerPubKey, sellerFeeRate_, buyerFeeRate_, payer, 1),
+                            new TokenTag(symbol, chain, network, tokenAddr, max(lowLimit, upLimit).stripTrailingZeros(), chainId, expireTime, null),
+                            new QuoteTag(price_, currency, usdRate_, quoteDeadline, quoteSignature, slippageBP),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
-                            new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
+                            new LimitTag(lowLimit_, upLimit_),
                             new EIP712Tag(eip712WalletAddress, eip712DomainVersion, eip712DomainAppName, eip712ContractAddress, eip712Signature),
                             new Permit2Tag(permit2Nonce, permit2Sign, payer, permit2Spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey),
-                            new EscrowTag(id, tokenAddr, volume, price, usdRate, payer, seller, sellerFeeRate, paymentMethod, currency, paymentAccount+paymentQrCode+paymentMemo, buyer, buyerFeeRate, escrowSignature)
+                            new EscrowTag(id, tokenAddr, volume_, price_, usdRate_, payer, seller, sellerFeeRate_, keccak256(paymentMethod), keccak256(currency), keccak256(paymentAccount+paymentQrCode+paymentMemo), buyer, buyerFeeRate_, escrowSignature)
                     ),
                     eventIdString,
                     content,
@@ -259,15 +269,15 @@ public class TakeIntentEventEntity {
                     new PublicKey(sellerPubKey),
                     nip,
                     List.of(
-                            new TakeTag(side, makeIntentEventId, buyer, buyerPubKey, volume.stripTrailingZeros(), seller, sellerPubKey, sellerFeeRate, buyerFeeRate, payer, 1),
-                            new TokenTag(symbol, chain, network, tokenAddr, BigDecimal.ZERO.stripTrailingZeros(), chainId, expireTime, null),
-                            new QuoteTag(price.stripTrailingZeros(), currency, usdRate.stripTrailingZeros(), quoteDeadline, quoteSignature, slippageBP),
+                            new TakeTag(side, makeIntentEventId, buyer, buyerPubKey, volume_, seller, sellerPubKey, sellerFeeRate_, buyerFeeRate_, payer, 1),
+                            new TokenTag(symbol, chain, network, tokenAddr, max(lowLimit, upLimit).stripTrailingZeros(), chainId, expireTime, null),
+                            new QuoteTag(price_, currency, usdRate_, quoteDeadline, quoteSignature, slippageBP),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
-                            new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros()),
+                            new LimitTag(lowLimit_, upLimit_),
                             new EIP712Tag(eip712WalletAddress, eip712DomainVersion, eip712DomainAppName, eip712ContractAddress, eip712Signature),
                             new Permit2Tag(permit2Nonce, permit2Sign, payer, permit2Spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey),
-                            new EscrowTag(id, tokenAddr, volume, price, usdRate, payer, seller, sellerFeeRate, paymentMethod, currency, paymentAccount+paymentQrCode+paymentMemo, buyer, buyerFeeRate, escrowSignature)
+                            new EscrowTag(id, tokenAddr, volume_, price_, usdRate_, payer, seller, sellerFeeRate_, keccak256(paymentMethod), keccak256(currency), keccak256(paymentAccount+paymentQrCode+paymentMemo), buyer, buyerFeeRate_, escrowSignature)
                     ),
                     eventIdString,
                     content,
@@ -277,5 +287,18 @@ public class TakeIntentEventEntity {
         }
 
         return (T)takeEvent;
+    }
+
+    static BigDecimal max(BigDecimal a, BigDecimal b) {
+        if(a == null && b == null) {
+            return null;
+        }
+        if(a == null) {
+            return b;
+        }
+        if(b == null) {
+            return a;
+        }
+        return a.compareTo(b) > 0 ? a : b;
     }
 }

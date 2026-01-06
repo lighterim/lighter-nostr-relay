@@ -254,7 +254,7 @@ public class TakeIntentEventEntity {
                             new QuoteTag(price_, currency, usdRate_, quoteDeadline, quoteSignature, slippageBP),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
                             new LimitTag(lowLimit_, upLimit_),
-                            new EIP712Tag(eip712WalletAddress, eip712DomainVersion, eip712DomainAppName, eip712ContractAddress, eip712Signature),
+                            new EIP712Tag(eip712WalletAddress, eip712ContractAddress, eip712DomainAppName, eip712DomainVersion, eip712Signature),
                             new Permit2Tag(permit2Nonce, permit2Sign, payer, permit2Spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey),
                             new EscrowTag(id, tokenAddr, volume_, price_, usdRate_, payer, seller, sellerFeeRate_, keccak256(paymentMethod), keccak256(currency), keccak256(paymentAccount+paymentQrCode+paymentMemo), buyer, buyerFeeRate_, escrowSignature)
@@ -274,7 +274,7 @@ public class TakeIntentEventEntity {
                             new QuoteTag(price_, currency, usdRate_, quoteDeadline, quoteSignature, slippageBP),
                             new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
                             new LimitTag(lowLimit_, upLimit_),
-                            new EIP712Tag(eip712WalletAddress, eip712DomainVersion, eip712DomainAppName, eip712ContractAddress, eip712Signature),
+                            new EIP712Tag(eip712WalletAddress, eip712ContractAddress, eip712DomainAppName, eip712DomainVersion, eip712Signature),
                             new Permit2Tag(permit2Nonce, permit2Sign, payer, permit2Spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),
                             new TradeKeyTag(keyForBuyer, keyForSeller, keyForWitness, keyForSomeone, tradePubKey),
                             new EscrowTag(id, tokenAddr, volume_, price_, usdRate_, payer, seller, sellerFeeRate_, keccak256(paymentMethod), keccak256(currency), keccak256(paymentAccount+paymentQrCode+paymentMemo), buyer, buyerFeeRate_, escrowSignature)

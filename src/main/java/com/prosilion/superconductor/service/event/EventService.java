@@ -4,9 +4,11 @@ package com.prosilion.superconductor.service.event;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.prosilion.superconductor.config.TokenConfig;
 import com.prosilion.superconductor.service.request.NotifierService;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
 import com.prosilion.superconductor.util.*;
+import jakarta.annotation.Resource;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
@@ -48,6 +50,8 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     private String noticePusherPubkey;
     @Value("${check.take:true}")
     private boolean isSkipCheckTake;
+    @Resource
+    private TokenConfig tokenConfig;
 
     @Autowired
     public EventService(NotifierService<GenericEvent> notifierService, RedisCache<GenericEvent> redisCache) {
@@ -98,7 +102,8 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     private void validateEventForwarding(GenericEvent event) {
         if (event instanceof PostIntentEvent postIntentEvent) {
             validatePostIntentEvent(postIntentEvent);
-            validateEIP712(postIntentEvent, SignerType.POST_EVENT);
+            TokenTag tokenTag = postIntentEvent.getTokenTag();
+            validateEIP712(postIntentEvent, SignerType.POST_EVENT, tokenConfig.getDecimals(tokenTag.getChainId().toString(), tokenTag.getSymbol()));
         } else if (event instanceof TakeIntentEvent takeIntentEvent) {
             validateTakeIntentEvent(takeIntentEvent);
         } else if (event instanceof TradeMessageEvent tradeMessageEvent) {
@@ -131,7 +136,9 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 }
             }
             takeIntent.setEip712Tag(eip712Tag);
-            validateEIP712(takeIntent, SignerType.TRADE_EVENT);
+            TokenTag tokenTag = takeIntent.getTokenTag();
+            int tokenDecimals = tokenConfig.getDecimals(tokenTag.getChainId().toString(), tokenTag.getSymbol());
+            validateEIP712(takeIntent, SignerType.TRADE_EVENT, tokenDecimals);
         }
     }
 
@@ -237,7 +244,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 }
             } else {
                 takeIntentEvent.setEip712Tag(postIntentEvent.getEip712Tag());
-                validateEIP712(takeIntentEvent, SignerType.TAKE_EVENT);
+                validateEIP712(takeIntentEvent, SignerType.TAKE_EVENT, tokenConfig.getDecimals(token.getChainId().toString(), token.getSymbol()));
                 //设置成高的那个价格
                 if(postQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0
                         && takeQuoteTag.getNumber().compareTo(postQuoteTag.getNumber()) < 0) {
@@ -279,12 +286,15 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         }
     }
 
-    private void validateEIP712(NIP77Event event, SignerType signerType) {
-        boolean isValid = EIP712Signer.verifySignature(event, signerType);
+    private void validateEIP712(NIP77Event event, SignerType signerType, int tokenDecimals) {
+        boolean isValid = EIP712Signer.verifySignature(event, signerType, tokenDecimals);
         if(!isValid) {
             log.warn("event-id:{}, verify sign fail", event.getId());
             //TDOD: onlyTest
 //            throw new RuntimeException("verify sign fail");
+        }
+        else{
+            log.info("event-id:{}, verify sign success", event.getId());
         }
     }
 

@@ -16,6 +16,8 @@ public class TokenConfig {
      */
     private Map<String, Map<String, TokenDetail>> networks;
 
+    public static final int PRICE_DECIMALS = 18;
+
     @Data
     public static class TokenDetail {
         private String address;

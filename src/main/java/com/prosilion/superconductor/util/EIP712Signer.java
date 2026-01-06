@@ -2,6 +2,7 @@ package com.prosilion.superconductor.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.prosilion.superconductor.config.TokenConfig;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
 import nostr.event.BaseTag;
@@ -48,14 +49,14 @@ public class EIP712Signer {
      * 2. signature_sell: permit2(witness: intentParams)
      * 3. buyer_intent: eip712(IntentParam)
      */
-    public static boolean verifySignature(NIP77Event event, SignerType signerType) {
+    public static boolean verifySignature(NIP77Event event, SignerType signerType, int tokenDecimals) {
         if(signerType.equals(SignerType.POST_EVENT)) {
             PostIntentEvent postIntentEvent = (PostIntentEvent)event;
             IntentType intentType = postIntentEvent.getSideTag().getIntentType();
             return switch(intentType) {
-                case BULK_SELL -> verifyBulkSellIntent(postIntentEvent);
-                case SIGNATURE_SELL -> verifySignatureSell(postIntentEvent);
-                case BUYER_INTENT -> verifyBuyerIntent(postIntentEvent);
+                case BULK_SELL -> verifyBulkSellIntent(postIntentEvent, tokenDecimals);
+                case SIGNATURE_SELL -> verifySignatureSell(postIntentEvent, tokenDecimals);
+                case BUYER_INTENT -> verifyBuyerIntent(postIntentEvent, tokenDecimals);
             };
 //            if(intentType.equals(IntentType.BULK_SELL)) {
 //                boolean verifyPermit2 = verifyPermit2(postIntentEvent);
@@ -68,10 +69,10 @@ public class EIP712Signer {
 //            structuredDataJson = createPostStructuredDataJson(postIntentEvent, false);
         } else if(signerType.equals(SignerType.TAKE_EVENT)){
             TakeIntentEvent takeIntentEvent = (TakeIntentEvent)event;
-            return verifySellerTakeIntent(takeIntentEvent);
+            return verifySellerTakeIntent(takeIntentEvent, tokenDecimals);
         } else if(signerType.equals(SignerType.TRADE_EVENT)){
             TakeIntentEvent takeIntentEvent = (TakeIntentEvent)event;
-            return verifyTradeIntent(takeIntentEvent);
+            return verifyTradeIntent(takeIntentEvent, tokenDecimals);
         } else {
             return false;
         }
@@ -92,15 +93,15 @@ public class EIP712Signer {
      * @param postIntentEvent
      * @return
      */
-    private static boolean verifyBuyerIntent(PostIntentEvent postIntentEvent) {
+    private static boolean verifyBuyerIntent(PostIntentEvent postIntentEvent, int tokenDecimals) {
         EIP712Tag eip712Tag = postIntentEvent.getEip712Tag();
         String signature = eip712Tag.getSign();
         String expectedAddress = eip712Tag.getWalletAddress();
-        String json = getIntentStructuredData(postIntentEvent);
+        String json = getIntentStructuredData(postIntentEvent, tokenDecimals);
         return verifyEip712Signature(json, signature, expectedAddress, postIntentEvent);
     }
 
-    private static boolean verifyTradeIntent(TakeIntentEvent takeIntentEvent) {
+    private static boolean verifyTradeIntent(TakeIntentEvent takeIntentEvent, int tokenDecimals) {
         EIP712Tag eip712Tag = takeIntentEvent.getEip712Tag();
         String signature = eip712Tag.getSign();
         String expectedAddress = eip712Tag.getWalletAddress();
@@ -108,6 +109,7 @@ public class EIP712Signer {
         QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
         TakeTag takeTag = takeIntentEvent.getTakeTag();
         PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
+
         String seller;
         String buyer;
         if (takeTag.getSide() == Side.BUY) {
@@ -123,9 +125,9 @@ public class EIP712Signer {
                 eip712Tag.getContractAddress(),
                 takeIntentEvent.getTradeId(),
                 tokenTag.getAddress(),
-                tokenTag.getAmount(),
-                quoteTag.getNumber(),
-                quoteTag.getUsdRate(),
+                tokenTag.getAmount().multiply(BigDecimal.TEN.pow(tokenDecimals)),
+                quoteTag.getNumber().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)),
+                quoteTag.getUsdRate().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)),
                 seller,
                 takeTag.getPayer(),
                 takeTag.getSellerFeeRate().stripTrailingZeros().toPlainString(),
@@ -139,11 +141,11 @@ public class EIP712Signer {
         return verifyEip712Signature(structuredDataJson, signature, expectedAddress, takeIntentEvent);
     }
 
-    private static boolean verifySellerTakeIntent(TakeIntentEvent takeIntentEvent) {
+    private static boolean verifySellerTakeIntent(TakeIntentEvent takeIntentEvent, int tokenDecimals) {
         Permit2Tag permit2Tag = takeIntentEvent.getPermit2Tag();
         String signature = permit2Tag.getSignature();
         String expectedAddress = permit2Tag.getWalletAddress();
-        String json = getSignatureSellTakeStructuredData(takeIntentEvent);
+        String json = getSignatureSellTakeStructuredData(takeIntentEvent, tokenDecimals);
         return verifyEip712Signature(json, signature, expectedAddress, takeIntentEvent);
     }
 
@@ -152,10 +154,10 @@ public class EIP712Signer {
      * @param postIntentEvent
      * @return
      */
-    private static boolean verifySignatureSell(PostIntentEvent postIntentEvent) {
+    private static boolean verifySignatureSell(PostIntentEvent postIntentEvent, int tokenDecimals) {
         Permit2Tag permit2Tag = postIntentEvent.getPermit2Tag();
         String signature = permit2Tag.getSignature();
-        String json = getSignatureSellStructuredData(postIntentEvent);
+        String json = getSignatureSellStructuredData(postIntentEvent, tokenDecimals);
         String expectedAddress = permit2Tag.getWalletAddress();
         return verifyEip712Signature(json, signature, expectedAddress, postIntentEvent);
     }
@@ -167,10 +169,10 @@ public class EIP712Signer {
      * @param event
      * @return
      */
-    private static boolean verifyBulkSellIntent(PostIntentEvent event){
+    private static boolean verifyBulkSellIntent(PostIntentEvent event, int tokenDecimals) {
         Permit2Tag permit2Tag = event.getPermit2Tag();
         String permit2Signature = permit2Tag.getSignature();
-        String permit2Json = getBulkSellPermit2StructuredData(event);
+        String permit2Json = getBulkSellPermit2StructuredData(event, tokenDecimals);
         String expectedPermit2Address = permit2Tag.getWalletAddress();
         if(!verifyEip712Signature(permit2Json, permit2Signature, expectedPermit2Address, event)){
             return false;
@@ -178,7 +180,7 @@ public class EIP712Signer {
 
         EIP712Tag eip712Tag = event.getEip712Tag();
         String intentSig = eip712Tag.getSign();
-        String intentJson = getIntentStructuredData(event);
+        String intentJson = getIntentStructuredData(event, tokenDecimals);
         String expectedIntentAddress = eip712Tag.getWalletAddress();
         return verifyEip712Signature(intentJson, intentSig, expectedIntentAddress, event);
     }
@@ -351,7 +353,7 @@ public class EIP712Signer {
      * @param event
      * @return
      */
-    private static String getBulkSellPermit2StructuredData(PostIntentEvent event) {
+    private static String getBulkSellPermit2StructuredData(PostIntentEvent event, int tokenDecimals) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
@@ -375,7 +377,7 @@ public class EIP712Signer {
 
         Map<String, Object> permitDetailsMap = new LinkedHashMap<>();
         permitDetailsMap.put("token", tokenTag.getAddress());
-        permitDetailsMap.put("amount", tokenTag.getAmount().toPlainString());
+        permitDetailsMap.put("amount", tokenTag.getAmount().multiply(BigDecimal.TEN.pow(tokenDecimals)).toPlainString());
         permitDetailsMap.put("expiration", tokenTag.getExpiryTime());
         permitDetailsMap.put("nonce", permit2Tag.getNonce());
 
@@ -404,7 +406,7 @@ public class EIP712Signer {
      * @param event
      * @return
      */
-    private static String getSignatureSellTakeStructuredData(TakeIntentEvent event) {
+    private static String getSignatureSellTakeStructuredData(TakeIntentEvent event, int tokenDecimals) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
@@ -439,7 +441,7 @@ public class EIP712Signer {
 
         Map<String, Object> tokenPermissionsMap = new LinkedHashMap<>();
         tokenPermissionsMap.put("token", tokenTag.getAddress());
-        tokenPermissionsMap.put("amount", takeTag.getVolume().toPlainString());
+        tokenPermissionsMap.put("amount", takeTag.getVolume().multiply(BigDecimal.TEN.pow(tokenDecimals)).toPlainString());
 
         Map<String, Object> permitTransferFromMap = new LinkedHashMap<>();
         permitTransferFromMap.put("permitted", tokenPermissionsMap);
@@ -448,13 +450,13 @@ public class EIP712Signer {
         permitTransferFromMap.put("deadline", tokenTag.getExpiryTime());
 
         structuredData.put("message", permitTransferFromMap);
-        structuredData.put("primaryType", "PermitWitnessTransferFrom");
+        structuredData.put("primaryType", "PermitTransferFrom");
         structuredData.put("types", types);
 
         return gson.toJson(structuredData);
     }
 
-    private static String getSignatureSellStructuredData(PostIntentEvent event) {
+    private static String getSignatureSellStructuredData(PostIntentEvent event,  int tokenDecimals) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
@@ -464,6 +466,7 @@ public class EIP712Signer {
         Permit2Tag permit2Tag = event.getPermit2Tag();
         QuoteTag quoteTag = event.getQuoteTag();
         PaymentTag paymentTag = event.getPaymentTags().get(0);
+        BigDecimal baseUnit = BigDecimal.TEN.pow(tokenDecimals);
 
         // EIP712Domain 类型定义
         List<Map<String, String>> domainType = createNoVDomainTypes();
@@ -499,12 +502,12 @@ public class EIP712Signer {
         structuredData.put("domain", domainMap);
 
         Map<String, Object> rangeMap = new LinkedHashMap<>();
-        rangeMap.put("min", limitTag.getLowLimit().toPlainString());
-        rangeMap.put("max", limitTag.getUpLimit().toPlainString());
+        rangeMap.put("min", limitTag.getLowLimit().multiply(baseUnit).stripTrailingZeros().toPlainString());
+        rangeMap.put("max", limitTag.getUpLimit().multiply(baseUnit).stripTrailingZeros().toPlainString());
 
         Map<String, Object> tokenPermissionsMap = new LinkedHashMap<>();
         tokenPermissionsMap.put("token", tokenTag.getAddress());
-        tokenPermissionsMap.put("amount", tokenTag.getAmount().toPlainString());
+        tokenPermissionsMap.put("amount", tokenTag.getAmount().multiply(baseUnit).stripTrailingZeros().toPlainString());
 
         Map<String, Object> intentParamsMap = new LinkedHashMap<>();
         intentParamsMap.put("token", tokenTag.getAddress());
@@ -513,7 +516,7 @@ public class EIP712Signer {
         intentParamsMap.put("currency", keccak256(quoteTag.getCurrency()));
         intentParamsMap.put("paymentMethod", keccak256(paymentTag.getMethod()));
         intentParamsMap.put("payeeDetails", keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()));
-        intentParamsMap.put("price", quoteTag.getNumber().toPlainString());
+        intentParamsMap.put("price", quoteTag.getNumber().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)).stripTrailingZeros().toPlainString());
 
         Map<String, Object> permitWitnessTransferFromMap = new LinkedHashMap<>();
         permitWitnessTransferFromMap.put("permitted", tokenPermissionsMap);
@@ -529,7 +532,7 @@ public class EIP712Signer {
         return gson.toJson(structuredData);
     }
 
-    private static String getIntentStructuredData(PostIntentEvent postIntentEvent) {
+    private static String getIntentStructuredData(PostIntentEvent postIntentEvent, int tokenDecimals) {
         Map<String, Object> structuredData = new LinkedHashMap<>();
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
@@ -539,6 +542,7 @@ public class EIP712Signer {
         LimitTag limitTag = postIntentEvent.getLimitTag();
         QuoteTag quoteTag = postIntentEvent.getQuoteTag();
         PaymentTag paymentTag = postIntentEvent.getPaymentTags().get(0);
+        BigDecimal baseUnit = BigDecimal.TEN.pow(tokenDecimals);
 
         // EIP712Domain 类型定义
         List<Map<String, String>> domainType = createDomainTypes();
@@ -562,8 +566,8 @@ public class EIP712Signer {
         structuredData.put("domain", domainMap);
 
         Map<String, Object> rangeMap = new LinkedHashMap<>();
-        rangeMap.put("min", limitTag.getLowLimit().toPlainString());
-        rangeMap.put("max", limitTag.getUpLimit().toPlainString());
+        rangeMap.put("min", limitTag.getLowLimit().multiply(baseUnit).stripTrailingZeros().toPlainString());
+        rangeMap.put("max", limitTag.getUpLimit().multiply(baseUnit).stripTrailingZeros().toPlainString());
 
         // 4. 消息数据
         Map<String, Object> messageMap = new LinkedHashMap<>();
@@ -573,7 +577,7 @@ public class EIP712Signer {
         messageMap.put("currency", keccak256(quoteTag.getCurrency()));
         messageMap.put("paymentMethod", keccak256(paymentTag.getMethod()));
         messageMap.put("payeeDetails", keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()));
-        messageMap.put("price", quoteTag.getNumber().toPlainString());
+        messageMap.put("price", quoteTag.getNumber().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)).stripTrailingZeros().toPlainString());
 
         structuredData.put("message", messageMap);
         structuredData.put("primaryType", "IntentParams");
@@ -736,7 +740,7 @@ public class EIP712Signer {
 
         PostIntentEvent event = new PostIntentEvent();
         TokenTag tokenTag = new TokenTag("USDC", "11155111", "sepolia", "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", BigDecimal.TEN, new BigInteger("11155111"), "1764829826", BigDecimal.TEN);
-        LimitTag limitTag = new LimitTag(BigDecimal.valueOf(1000000L), BigDecimal.valueOf(1000000L));
+        LimitTag limitTag = new LimitTag(BigDecimal.TEN, BigDecimal.TEN);
         Permit2Tag permit2Tag = new Permit2Tag("11155111", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x53104d304898b00609dfad6c159513a430f80da6", "0x000000000022d473030f116ddee9f6b43ac78ba3", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2");
         EIP712Tag eip712Tag = new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0xd5379dca1bf8c1d204121374b3f8d8fbf7c6605e", "MainUserTxn", "1", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b");
         event.setEip712Tag(eip712Tag);
@@ -744,9 +748,9 @@ public class EIP712Signer {
         event.setTokenTag(tokenTag);
         event.setLimitTag(limitTag);
         event.setPaymentTags(List.of(new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")));
-        event.setQuoteTag(new QuoteTag(new BigDecimal("1000000000000000000"), "USD", new BigDecimal("1000000000000000000"), new BigInteger("1761237799"), "", 0));
-        System.out.println(getIntentStructuredData(event));
-        System.out.println(getBulkSellPermit2StructuredData(event));
+        event.setQuoteTag(new QuoteTag(new BigDecimal("1"), "USD", new BigDecimal("1"), new BigInteger("1761237799"), "", 0));
+//        System.out.println(getIntentStructuredData(event));
+//        System.out.println(getBulkSellPermit2StructuredData(event));
     }
 
     private static boolean validateEscrowParams(){
@@ -808,16 +812,16 @@ public class EIP712Signer {
         List<BaseTag> tags = List.of(
             new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0xd5379dca1bf8c1d204121374b3f8d8fbf7c6605e", "MainUserTxn", "1", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b"),
             //["token","WETH","ethereum",11155111,"Sepolia","0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14","1761237799",1000000000000000000]
-            new TokenTag("USDT", "ethereum", "sepolia", "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0", new BigDecimal(1000000L), BigInteger.valueOf(11155111), "1761904920", new BigDecimal(5000L)),
+            new TokenTag("USDT", "ethereum", "sepolia", "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0", new BigDecimal(1), BigInteger.valueOf(11155111), "1761904920", new BigDecimal(0)),
             // ["quote","3.221E+21","USD","1E+18",""]
-            new QuoteTag(new BigDecimal("1000000000000000000"), "USD", new BigDecimal("1000000000000000000"), new BigInteger("1761237799"), "", 0),
+            new QuoteTag(new BigDecimal("1"), "USD", new BigDecimal("1"), new BigInteger("1761237799"), "", 0),
             new MakeTag(Side.SELL, "", pk.toString(), IntentType.SIGNATURE_SELL),
             new Permit2Tag("270178257646664", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x1e4d58c5a97ab35c614a90ab04acc78711729f18", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2"),
-            new LimitTag(BigDecimal.valueOf(1000000L), BigDecimal.valueOf(1000000L)),
+            new LimitTag(BigDecimal.valueOf(1), BigDecimal.valueOf(1)),
             new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")
         );
         PostIntentEvent e = new PostIntentEvent(pk, tags, "ccc");
-        System.out.println(verifySignature(e, SignerType.POST_EVENT));
+        System.out.println(verifySignature(e, SignerType.POST_EVENT, 6));
     }
 
     private static String getEscrowParamsEip712Struct(

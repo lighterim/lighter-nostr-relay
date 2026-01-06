@@ -43,6 +43,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.prosilion.superconductor.config.TokenConfig.PRICE_DECIMALS;
 import static nostr.event.NIP77Event.*;
 
 @Slf4j
@@ -69,8 +70,6 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
 
     @Resource
     private TokenConfig tokenConfig;
-
-    public static final int PRICE_DECIMALS = 18;
 
     @Autowired
     public TradeEntityService(

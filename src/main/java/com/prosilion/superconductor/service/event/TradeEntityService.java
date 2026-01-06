@@ -111,6 +111,8 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
         String buyer;
         String seller;
+        //the permit2Tag maybe is null when a buyer take bulk sell intent.
+        String payer = permit2Tag == null ? takeTag.getPayer() : permit2Tag.getPayer();
 
         if (takeTag.getSide() == Side.BUY) {
             buyer = takeTag.getTakerNip05();
@@ -124,7 +126,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
                 takeTag.getVolume(),
                 quoteTag.getNumber(),
                 quoteTag.getUsdRate(),
-                permit2Tag.getPayer(),
+                payer,
                 seller,
                 takeTag.getSellerFeeRate(),
                 EIP712Signer.keccak256(paymentTag.getMethod()),

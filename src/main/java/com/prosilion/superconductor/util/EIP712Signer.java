@@ -18,8 +18,11 @@ import org.web3j.utils.Numeric;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Pattern;
+
 @Slf4j
 public class EIP712Signer {
 
@@ -125,7 +128,7 @@ public class EIP712Signer {
                 eip712Tag.getContractAddress(),
                 takeIntentEvent.getTradeId(),
                 tokenTag.getAddress(),
-                tokenTag.getAmount().multiply(BigDecimal.TEN.pow(tokenDecimals)),
+                getAmountByFee(tokenTag.getAmount(), takeTag.getSellerFeeRate()).multiply(BigDecimal.TEN.pow(tokenDecimals)),
                 quoteTag.getNumber().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)),
                 quoteTag.getUsdRate().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)),
                 seller,
@@ -139,6 +142,67 @@ public class EIP712Signer {
                 paymentTag.getQrCode(),
                 paymentTag.getMemo());
         return verifyEip712Signature(structuredDataJson, signature, expectedAddress, takeIntentEvent);
+    }
+
+    private static BigDecimal getAmountByFee(BigDecimal amount, BigDecimal sellerFeeRate) {
+        // 校验参数
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount cannot be negative");
+        }
+        if (sellerFeeRate.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Seller fee rate cannot be negative");
+        }
+        try {
+            BigDecimal feeDecimal = sellerFeeRate
+                    .divide(new BigDecimal("10000"), 8, RoundingMode.HALF_UP);
+
+            BigDecimal feeFactor = BigDecimal.ONE.add(feeDecimal);
+
+            BigDecimal result = amount.multiply(feeFactor);
+
+            return ceilAmount(result.setScale(amount.scale(), RoundingMode.HALF_UP), 6);
+
+        } catch (ArithmeticException e) {
+            throw new RuntimeException("Error calculating amount fee", e);
+        }
+    }
+
+    private static BigDecimal ceilAmount(BigDecimal amount, int decimals) {
+        // 标准化输入
+        String amountString = amount.stripTrailingZeros().toPlainString();
+        String normalized = amountString.trim();
+        if (normalized.isEmpty() || normalized.equals("0")) {
+            return BigDecimal.ZERO;
+        }
+
+        // 拆分整数和小数部分
+        String[] parts = normalized.split("\\.");
+        String intPart = parts[0];
+        String fracPart = parts.length > 1 ? parts[1] : "";
+
+        // 如果没有小数部分，或小数位 <= 代币精度，直接返回精确值
+        if (fracPart.length() <= decimals) {
+            // 补齐小数位到代币精度
+            StringBuilder paddedFrac = new StringBuilder(fracPart);
+            while (paddedFrac.length() < decimals) {
+                paddedFrac.append('0');
+            }
+            String fullString = intPart + paddedFrac;
+            return new BigDecimal(fullString);
+        }
+
+        // 小数位 > 代币精度，需要向上取整
+        // 1. 截取到代币精度
+        String truncatedFrac = fracPart.substring(0, decimals);
+        // 2. 检查被截断的部分是否有非零数字
+        String remainingFrac = fracPart.substring(decimals);
+        boolean hasRemainder = Pattern.compile("[1-9]").matcher(remainingFrac).find();
+
+        String fullString = intPart + truncatedFrac;
+        BigDecimal baseValue = new BigDecimal(fullString);
+
+        // 如果有剩余部分，向上进位（+1）
+        return hasRemainder ? baseValue.add(BigDecimal.ONE) : baseValue;
     }
 
     private static boolean verifySellerTakeIntent(TakeIntentEvent takeIntentEvent, int tokenDecimals) {

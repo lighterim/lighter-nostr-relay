@@ -128,7 +128,7 @@ public class EIP712Signer {
                 eip712Tag.getContractAddress(),
                 takeIntentEvent.getTradeId(),
                 tokenTag.getAddress(),
-                getAmountByFee(tokenTag.getAmount(), takeTag.getSellerFeeRate()).multiply(BigDecimal.TEN.pow(tokenDecimals)),
+                ceilAmount(getAmountByFee(tokenTag.getAmount(), takeTag.getSellerFeeRate()), tokenDecimals),
                 quoteTag.getNumber().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)),
                 quoteTag.getUsdRate().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)),
                 seller,
@@ -158,9 +158,7 @@ public class EIP712Signer {
 
             BigDecimal feeFactor = BigDecimal.ONE.add(feeDecimal);
 
-            BigDecimal result = amount.multiply(feeFactor);
-
-            return ceilAmount(result.setScale(amount.scale(), RoundingMode.HALF_UP), 6);
+            return amount.multiply(feeFactor);
 
         } catch (ArithmeticException e) {
             throw new RuntimeException("Error calculating amount fee", e);
@@ -799,20 +797,25 @@ public class EIP712Signer {
 
 
     public static void main(String[] args){
-        validateSignatureSell();
-        System.out.println("validateEscrowParams="+validateEscrowParams());
-
-        PostIntentEvent event = new PostIntentEvent();
-        TokenTag tokenTag = new TokenTag("USDC", "11155111", "sepolia", "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", BigDecimal.TEN, new BigInteger("11155111"), "1764829826", BigDecimal.TEN);
-        LimitTag limitTag = new LimitTag(BigDecimal.TEN, BigDecimal.TEN);
-        Permit2Tag permit2Tag = new Permit2Tag("11155111", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x53104d304898b00609dfad6c159513a430f80da6", "0x000000000022d473030f116ddee9f6b43ac78ba3", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2");
-        EIP712Tag eip712Tag = new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0xd5379dca1bf8c1d204121374b3f8d8fbf7c6605e", "MainUserTxn", "1", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b");
-        event.setEip712Tag(eip712Tag);
-        event.setPermit2Tag(permit2Tag);
-        event.setTokenTag(tokenTag);
-        event.setLimitTag(limitTag);
-        event.setPaymentTags(List.of(new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")));
-        event.setQuoteTag(new QuoteTag(new BigDecimal("1"), "USD", new BigDecimal("1"), new BigInteger("1761237799"), "", 0));
+        BigDecimal amount = new BigDecimal("1.234567");
+        BigDecimal sellerFeeRate = new BigDecimal("20");
+        BigDecimal result = getAmountByFee(amount, sellerFeeRate);
+        System.out.println(result);
+        System.out.println(ceilAmount(result, 6));
+//        validateSignatureSell();
+//        System.out.println("validateEscrowParams="+validateEscrowParams());
+//
+//        PostIntentEvent event = new PostIntentEvent();
+//        TokenTag tokenTag = new TokenTag("USDC", "11155111", "sepolia", "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", BigDecimal.TEN, new BigInteger("11155111"), "1764829826", BigDecimal.TEN);
+//        LimitTag limitTag = new LimitTag(BigDecimal.TEN, BigDecimal.TEN);
+//        Permit2Tag permit2Tag = new Permit2Tag("11155111", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x53104d304898b00609dfad6c159513a430f80da6", "0x000000000022d473030f116ddee9f6b43ac78ba3", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2");
+//        EIP712Tag eip712Tag = new EIP712Tag("0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0xd5379dca1bf8c1d204121374b3f8d8fbf7c6605e", "MainUserTxn", "1", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b");
+//        event.setEip712Tag(eip712Tag);
+//        event.setPermit2Tag(permit2Tag);
+//        event.setTokenTag(tokenTag);
+//        event.setLimitTag(limitTag);
+//        event.setPaymentTags(List.of(new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")));
+//        event.setQuoteTag(new QuoteTag(new BigDecimal("1"), "USD", new BigDecimal("1"), new BigInteger("1761237799"), "", 0));
 //        System.out.println(getIntentStructuredData(event));
 //        System.out.println(getBulkSellPermit2StructuredData(event));
     }

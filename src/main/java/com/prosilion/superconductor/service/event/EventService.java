@@ -243,6 +243,10 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                     takeIntentEvent.setEip712Tag(postIntentEvent.getEip712Tag());
                 }
             } else {
+                PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
+                if(!StringUtils.hasText(paymentTag.getAccount()) && !StringUtils.hasText(paymentTag.getQrCode())) {
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, "The payment account and QR code is empty.");
+                }
                 takeIntentEvent.setEip712Tag(postIntentEvent.getEip712Tag());
                 validateEIP712(takeIntentEvent, SignerType.TAKE_EVENT, tokenConfig.getDecimals(token.getChainId().toString(), token.getSymbol()));
                 //设置成高的那个价格

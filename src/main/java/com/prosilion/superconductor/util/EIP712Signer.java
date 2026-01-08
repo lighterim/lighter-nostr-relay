@@ -18,15 +18,15 @@ import org.web3j.utils.Numeric;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.regex.Pattern;
 
 @Slf4j
 public class EIP712Signer {
 
     private static final Gson gson = new GsonBuilder().create();
+
+    private static BigDecimal bp = new BigDecimal("10000");
 
     /**
      * 使用私钥进行 EIP-712 签名
@@ -128,7 +128,7 @@ public class EIP712Signer {
                 eip712Tag.getContractAddress(),
                 takeIntentEvent.getTradeId(),
                 tokenTag.getAddress(),
-                ceilAmount(getAmountByFee(tokenTag.getAmount(), takeTag.getSellerFeeRate()), tokenDecimals),
+                getAmountByFee(tokenTag.getAmount(), takeTag.getSellerFeeRate(), tokenDecimals),
                 quoteTag.getNumber().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)),
                 quoteTag.getUsdRate().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)),
                 seller,
@@ -144,7 +144,7 @@ public class EIP712Signer {
         return verifyEip712Signature(structuredDataJson, signature, expectedAddress, takeIntentEvent);
     }
 
-    private static BigDecimal getAmountByFee(BigDecimal amount, BigDecimal sellerFeeRate) {
+    private static BigDecimal getAmountByFee(BigDecimal amount, BigDecimal sellerFeeRate, int decimals) {
         // 校验参数
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount cannot be negative");
@@ -152,55 +152,10 @@ public class EIP712Signer {
         if (sellerFeeRate.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Seller fee rate cannot be negative");
         }
-        try {
-            BigDecimal feeDecimal = sellerFeeRate
-                    .divide(new BigDecimal("10000"), 8, RoundingMode.HALF_UP);
-
-            BigDecimal feeFactor = BigDecimal.ONE.add(feeDecimal);
-
-            return amount.multiply(feeFactor);
-
-        } catch (ArithmeticException e) {
-            throw new RuntimeException("Error calculating amount fee", e);
-        }
-    }
-
-    private static BigDecimal ceilAmount(BigDecimal amount, int decimals) {
-        // 标准化输入
-        String amountString = amount.stripTrailingZeros().toPlainString();
-        String normalized = amountString.trim();
-        if (normalized.isEmpty() || normalized.equals("0")) {
-            return BigDecimal.ZERO;
-        }
-
-        // 拆分整数和小数部分
-        String[] parts = normalized.split("\\.");
-        String intPart = parts[0];
-        String fracPart = parts.length > 1 ? parts[1] : "";
-
-        // 如果没有小数部分，或小数位 <= 代币精度，直接返回精确值
-        if (fracPart.length() <= decimals) {
-            // 补齐小数位到代币精度
-            StringBuilder paddedFrac = new StringBuilder(fracPart);
-            while (paddedFrac.length() < decimals) {
-                paddedFrac.append('0');
-            }
-            String fullString = intPart + paddedFrac;
-            return new BigDecimal(fullString);
-        }
-
-        // 小数位 > 代币精度，需要向上取整
-        // 1. 截取到代币精度
-        String truncatedFrac = fracPart.substring(0, decimals);
-        // 2. 检查被截断的部分是否有非零数字
-        String remainingFrac = fracPart.substring(decimals);
-        boolean hasRemainder = Pattern.compile("[1-9]").matcher(remainingFrac).find();
-
-        String fullString = intPart + truncatedFrac;
-        BigDecimal baseValue = new BigDecimal(fullString);
-
-        // 如果有剩余部分，向上进位（+1）
-        return hasRemainder ? baseValue.add(BigDecimal.ONE) : baseValue;
+        amount = amount.multiply(BigDecimal.TEN.pow(decimals));
+        BigDecimal numerator = amount.multiply(bp.add(sellerFeeRate))
+                .add(bp.subtract(BigDecimal.ONE));
+        return numerator.divideToIntegralValue(bp);
     }
 
     private static boolean verifySellerTakeIntent(TakeIntentEvent takeIntentEvent, int tokenDecimals) {
@@ -503,7 +458,7 @@ public class EIP712Signer {
 
         Map<String, Object> tokenPermissionsMap = new LinkedHashMap<>();
         tokenPermissionsMap.put("token", tokenTag.getAddress());
-        tokenPermissionsMap.put("amount", takeTag.getVolume().multiply(BigDecimal.TEN.pow(tokenDecimals)).toPlainString());
+        tokenPermissionsMap.put("amount", getAmountByFee(takeTag.getVolume(), takeTag.getSellerFeeRate(), tokenDecimals).toPlainString());
 
         Map<String, Object> permitTransferFromMap = new LinkedHashMap<>();
         permitTransferFromMap.put("permitted", tokenPermissionsMap);
@@ -799,9 +754,8 @@ public class EIP712Signer {
     public static void main(String[] args){
         BigDecimal amount = new BigDecimal("1.234567");
         BigDecimal sellerFeeRate = new BigDecimal("20");
-        BigDecimal result = getAmountByFee(amount, sellerFeeRate);
+        BigDecimal result = getAmountByFee(amount, sellerFeeRate,6);
         System.out.println(result);
-        System.out.println(ceilAmount(result, 6));
 //        validateSignatureSell();
 //        System.out.println("validateEscrowParams="+validateEscrowParams());
 //

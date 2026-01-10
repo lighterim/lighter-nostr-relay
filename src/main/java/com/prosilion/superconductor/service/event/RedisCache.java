@@ -199,6 +199,14 @@ public class RedisCache<T extends GenericEvent> {
         if (isNoticePusher && event.getLedgerTag() != null) {
             setEncryptContentForNoticePusher(event);
         }
+        if(TradeStatus.CreateEscrowEvent.equals(event.getLedgerTag().getTradeStatus())) {
+            TakeIntentEvent takeIntentEvent = tradeEntityService.getEventById(event.getCreatedByTag().getTradeId());
+            if (takeIntentEvent != null) {
+                PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
+                String paymentInfo = String.format("\nPayment Method: %s\nPayment Qrcode: %s\nPayment Account: %s\nPayment Memo: %s", paymentTag.getMethod(), paymentTag.getQrCode(), paymentTag.getAccount(), paymentTag.getMemo());
+                event.setContent(event.getContent() + paymentInfo);
+            }
+        }
         Long id = tradeMessageEntityService.saveEventEntity(event);
         if (isNoticePusher && event.getLedgerTag() != null && event.getLedgerTag().getTradeStatus() != null) {
             long tradeId = event.getCreatedByTag().getTradeId();

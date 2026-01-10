@@ -98,66 +98,8 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         textNoteEvent.setSignature(event.getSignature());
 
         Long id = redisCache.saveEventEntity(event);
-        if(event.getKind() == Kind.TAKE_INTENT.getValue()) {
-            //发送trade支付消息
-            sendPaymentMsg((TakeIntentEvent)event);
-        }
         notifierService.nostrEventHandler(new AddNostrEvent<>(event));
 
-    }
-
-    @Async
-    public void sendPaymentMsg(TakeIntentEvent takeIntentEvent) {
-        PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
-        JsonArray tags = new JsonArray();
-        JsonArray relayTag = new JsonArray();
-        JsonArray createdByTag = new JsonArray();
-        JsonArray ledgerTag = new JsonArray();
-        String pubkey = "aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984";
-
-        relayTag.add("relays");
-        relayTag.add("wss://nostr-relay.lighter.im");
-        tags.add(relayTag);
-
-        createdByTag.add("created_by");
-        createdByTag.add("");
-        createdByTag.add("notice@lighter.im");
-        createdByTag.add(pubkey);
-        createdByTag.add(0);
-        tags.add(createdByTag);
-
-        ledgerTag.add("ledger");
-        ledgerTag.add("Ethereum");
-        ledgerTag.add("");
-        ledgerTag.add("");
-        ledgerTag.add("");
-        ledgerTag.add("CreateEscrowEvent");
-        tags.add(ledgerTag);
-
-        long createdAt = System.currentTimeMillis() / 1000;
-        int kind = 30079;
-        String content = String.format("Method: %s \n Qrcode: %s \n Account: %s \n Memo: %s", paymentTag.getMethod(), paymentTag.getQrCode(), paymentTag.getAccount(), paymentTag.getMemo());
-        String eventId = NostrSigner.getEventId(pubkey, createdAt, kind, tags, content);
-
-        JsonObject event = new JsonObject();
-        event.addProperty("id", eventId);
-        event.addProperty("pubkey", pubkey);
-        event.addProperty("created_at", createdAt);
-        event.addProperty("kind", kind);
-        event.add("tags", tags);
-        event.addProperty("sig", NostrSigner.getEventSig(eventId));
-        event.addProperty("content", content);
-
-        JsonArray data = new JsonArray();
-        data.add("EVENT");
-        data.add(event);
-
-        RestClient restClient = new RestClient("https://nostr-relay.lighter.im");
-        HttpResponse<String> response = restClient.post("/lighter/pushTradeMessage", new Gson().toJson(data)).join();
-        if (response.statusCode() != 200) {
-            log.error("sendPaymentMsg error: {}", response.body());
-        }
-        log.info("sendPaymentMsg resp: {}", response.body());
     }
 
     private void validateEventForwarding(GenericEvent event) {

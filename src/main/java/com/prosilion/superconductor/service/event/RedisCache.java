@@ -13,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -196,10 +195,6 @@ public class RedisCache<T extends GenericEvent> {
     }
 
     private Long saveTradeMessageEntity(TradeMessageEvent event) {
-        LedgerTag ledgerTag = event.getLedgerTag();
-        if(!StringUtils.hasText(ledgerTag.getTxId())) {
-            return null;
-        }
         boolean isNoticePusher = noticePusherPubkey.equals(event.getCreatedByTag().getPubkey());
         if (isNoticePusher && event.getLedgerTag() != null) {
             setEncryptContentForNoticePusher(event);

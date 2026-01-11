@@ -161,7 +161,7 @@ public class EventDto extends NIP01Event {
                 limitTag.getLowLimit(), limitTag.getUpLimit(),
                 eip712Tag==null?"":eip712Tag.getWalletAddress(), eip712Tag==null?"":eip712Tag.getDomainVersion(), eip712Tag==null?"":eip712Tag.getDomainAppName(), eip712Tag==null?"":eip712Tag.getContractAddress(), eip712Tag==null?"":eip712Tag.getSign(),
                 permit2Tag==null?"":permit2Tag.getNonce(), permit2Tag==null?"":permit2Tag.getSignature(), permit2Tag==null?"":permit2Tag.getSpender(), permit2Tag==null?"":permit2Tag.getWalletAddress(), permit2Tag==null?"":permit2Tag.getContractAddress(), permit2Tag==null?"":permit2Tag.getDomainAppName(),
-                ""
+                "", ""
         );
     }
 

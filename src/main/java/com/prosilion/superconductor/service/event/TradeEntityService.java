@@ -247,6 +247,18 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
     }
 
     @Transactional
+    public void updateTradeEscrowHash(long tradeId, String escrowHash) {
+        Optional<TakeIntentEventEntity> opt  = takeEventEntityRepository.findById(tradeId);
+        if(opt.isEmpty()){
+            log.warn("tradeId: {}, entity not exists!: escrowHash:{}", tradeId, escrowHash);
+            return;
+        }
+        TakeIntentEventEntity entity = opt.get();
+        entity.setEscrowHash(escrowHash);
+        entityManager.merge(entity);
+    }
+
+    @Transactional
     public void updateEscrowSign(long tradeId, String sign) {
         Optional<TakeIntentEventEntity> opt  = takeEventEntityRepository.findById(tradeId);
         if(opt.isEmpty()){

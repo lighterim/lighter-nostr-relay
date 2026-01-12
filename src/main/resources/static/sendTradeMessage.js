@@ -28,7 +28,9 @@ function replaceHash(id_hash) {
                 'kind': parseInt($("#kind").val(), 10),
                 'content': $("#content").val(),
                 'tags': [
-                    ['created_by', $("#eventId").val(), $("#userId").val(), $("#pubkey").val()]
+                    ['relays', 'wss://nostr-relay.lighter.im'],
+                    ['ledger', 'Ethereum','', 'aaa', '', 'CreateEscrowEvent', 'testhash'],
+                    ['created_by', $("#eventId").val(), $("#userId").val(), $("#pubkey").val(),1]
                 ],
                 'pubkey': $("#pubkey").val(),
                 'created_at': Date.now(),

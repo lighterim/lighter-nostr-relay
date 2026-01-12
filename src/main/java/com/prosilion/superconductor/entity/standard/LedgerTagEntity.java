@@ -29,6 +29,7 @@ public class LedgerTagEntity extends AbstractTagEntity {
     private String txId;
     private String txUrl;
     private String tradeStatus;
+    private String escrowHash;
 
     public LedgerTagEntity(@NonNull LedgerTag tag){
         this.chain = tag.getChain();
@@ -36,6 +37,7 @@ public class LedgerTagEntity extends AbstractTagEntity {
         this.txId = tag.getTxId();
         this.txUrl = tag.getTxUrl();
         this.tradeStatus = tag.getTradeStatus().name();
+        this.escrowHash = tag.getEscrowHash();
     }
 
     @Override
@@ -45,12 +47,12 @@ public class LedgerTagEntity extends AbstractTagEntity {
 
     @Override
     public AbstractTagDto convertEntityToDto() {
-        return new LedgerTagDto(new LedgerTag(chain, network, txId, txUrl, TradeStatus.valueOf(tradeStatus)));
+        return new LedgerTagDto(new LedgerTag(chain, network, txId, txUrl, TradeStatus.valueOf(tradeStatus), escrowHash));
     }
 
     @Override
     public BaseTag getAsBaseTag() {
-        return new LedgerTag(chain, network, txId, txUrl, TradeStatus.valueOf(tradeStatus));
+        return new LedgerTag(chain, network, txId, txUrl, TradeStatus.valueOf(tradeStatus), escrowHash);
     }
 
     @Override
@@ -58,11 +60,11 @@ public class LedgerTagEntity extends AbstractTagEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LedgerTagEntity that = (LedgerTagEntity) o;
-        return Objects.equals(chain, that.chain) && Objects.equals(network, that.network) && Objects.equals(txId, that.txId) && Objects.equals(txUrl, that.txUrl) && Objects.equals(tradeStatus, that.tradeStatus);
+        return Objects.equals(chain, that.chain) && Objects.equals(network, that.network) && Objects.equals(txId, that.txId) && Objects.equals(txUrl, that.txUrl) && Objects.equals(tradeStatus, that.tradeStatus) && Objects.equals(escrowHash, that.escrowHash);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(chain, network, txId, txUrl, tradeStatus);
+        return Objects.hash(chain, network, txId, txUrl, tradeStatus, escrowHash);
     }
 }

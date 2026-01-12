@@ -13,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -196,17 +195,22 @@ public class RedisCache<T extends GenericEvent> {
     }
 
     private Long saveTradeMessageEntity(TradeMessageEvent event) {
-        LedgerTag ledgerTag = event.getLedgerTag();
-        if(!StringUtils.hasText(ledgerTag.getTxId())) {
-            return null;
-        }
         boolean isNoticePusher = noticePusherPubkey.equals(event.getCreatedByTag().getPubkey());
         if (isNoticePusher && event.getLedgerTag() != null) {
             setEncryptContentForNoticePusher(event);
         }
+        long tradeId = event.getCreatedByTag().getTradeId();
+        if(TradeStatus.CreateEscrowEvent.equals(event.getLedgerTag().getTradeStatus())) {
+            TakeIntentEvent takeIntentEvent = tradeEntityService.getEventById(event.getCreatedByTag().getTradeId());
+            if (takeIntentEvent != null) {
+                PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
+                String paymentInfo = String.format("\nPayment Method: %s\nPayment Qrcode: %s\nPayment Account: %s\nPayment Memo: %s", paymentTag.getMethod(), paymentTag.getQrCode(), paymentTag.getAccount(), paymentTag.getMemo());
+                event.setContent(event.getContent() + paymentInfo);
+            }
+            tradeEntityService.updateTradeEscrowHash(tradeId, event.getLedgerTag().getEscrowHash());
+        }
         Long id = tradeMessageEntityService.saveEventEntity(event);
         if (isNoticePusher && event.getLedgerTag() != null && event.getLedgerTag().getTradeStatus() != null) {
-            long tradeId = event.getCreatedByTag().getTradeId();
             tradeEntityService.updateTradeStatus(tradeId, event.getLedgerTag().getTradeStatus());
         }
         return id;

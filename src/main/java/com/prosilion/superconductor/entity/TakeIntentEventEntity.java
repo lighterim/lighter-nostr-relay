@@ -107,6 +107,7 @@ public class TakeIntentEventEntity {
     private Long createAt;
 
     private String escrowSignature;
+    private String escrowHash;
 
     /** other tag list. I.E. relays **/
     @Transient
@@ -164,7 +165,8 @@ public class TakeIntentEventEntity {
             String permit2WalletAddress,
             String permit2ContractAddress,
             String permit2DomainAppName,
-            String escrowSignature
+            String escrowSignature,
+            String escrowHash
             ){
         this.takeSide = takeSide;
         this.makeIntentEventId = makeIntentEventId;
@@ -227,6 +229,7 @@ public class TakeIntentEventEntity {
         this.signature = signature;
         this.createAt = createAt;
         this.escrowSignature = escrowSignature;
+        this.escrowHash = escrowHash;
     }
 
     public <T extends GenericEvent> T convertEntityToDto(){

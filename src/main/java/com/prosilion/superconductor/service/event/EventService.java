@@ -121,8 +121,10 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             log.warn("invalid nip05: {}, {}", createdBy.getNip05(), createdBy.getPubkey());
             throw new RuntimeException(String.format("invalid nip05: %s, %s", createdBy.getNip05(), createdBy.getPubkey()));
         }
+
         LedgerTag ledger = tradeMessageEvent.getLedgerTag();
         TakeIntentEvent takeIntent = null;
+        //push service/notice@lighter.im
         if (ledger != null && createdBy.getPubkey().equals(noticePusherPubkey) && !StringUtils.hasText(createdBy.getTakeIntentEventId()) && createdBy.getTradeId() > 0L) {
             takeIntent = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, createdBy.getTradeId());
             tradeMessageEvent.setCreatedByTag(
@@ -133,10 +135,17 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         EIP712Tag eip712Tag = tradeMessageEvent.getEip712Tag();
         if(eip712Tag!=null) {
             if(takeIntent==null) {
-                takeIntent = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, createdBy.getTradeId());
+                // eventStringId, tradeId, escrowHash
+                if(createdBy.getTradeId() > 0) {
+                    takeIntent = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, createdBy.getTradeId());
+                }
+                else{
+                    takeIntent = (TakeIntentEvent)  redisCache.getEventEntityByEventId(Kind.TAKE_INTENT, createdBy.getTakeIntentEventId());
+                }
                 if(takeIntent==null) {
                     throw new BusinessException(ErrorCode.TRADE_ID_NOT_FOUND, String.format("invalid tradeId: %d",  createdBy.getTradeId()));
                 }
+                // tradeId-->TakeIntentEvent-->EscrowParams---(escrow/signature)--->signature(63b)
             }
             takeIntent.setEip712Tag(eip712Tag);
             TokenTag tokenTag = takeIntent.getTokenTag();

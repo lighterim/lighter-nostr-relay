@@ -7,14 +7,16 @@ import nostr.event.Kind;
 import nostr.event.Side;
 import nostr.event.TradeStatus;
 import nostr.event.impl.*;
-import nostr.event.tag.*;
+import nostr.event.tag.EscrowTag;
+import nostr.event.tag.PaymentTag;
+import nostr.event.tag.TakeTag;
+import nostr.event.tag.TradeKeyTag;
 import nostr.id.Identity;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

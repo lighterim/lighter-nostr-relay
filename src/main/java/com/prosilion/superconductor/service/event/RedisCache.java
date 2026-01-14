@@ -178,10 +178,9 @@ public class RedisCache<T extends GenericEvent> {
                     takeIntentEvent.setTradeId(tradeId);
                     postEventEntityService.updateIntentStatus(takeIntentEvent);
 
-                    EscrowTag escrowTag = tradeEntityService.getEscrowTag(takeIntentEvent);
+                    EscrowTag escrowTag = getEscrowTag(takeIntentEvent);
                     takeIntentEvent.setEscrowTag(escrowTag);
                     tradeEntityService.updateEscrowSign(tradeId, escrowTag.getSignature());
-
                 }
 //                //when taker take Intent( of maker), retrieve original(maker) intent.
 //                PostIntentEvent makerIntentEvent = (PostIntentEvent)getEventEntityByEventId(Kind.POST_INTENT, takeIntentEvent.getTakeTag().getIntentEventId());
@@ -194,6 +193,10 @@ public class RedisCache<T extends GenericEvent> {
         return id;
     }
 
+    public EscrowTag getEscrowTag(TakeIntentEvent takeIntentEvent) {
+        return tradeEntityService.getEscrowTag(takeIntentEvent);
+    }
+
     private Long saveTradeMessageEntity(TradeMessageEvent event) {
         boolean isNoticePusher = noticePusherPubkey.equals(event.getCreatedByTag().getPubkey());
         if (isNoticePusher && event.getLedgerTag() != null) {
@@ -201,7 +204,7 @@ public class RedisCache<T extends GenericEvent> {
         }
         long tradeId = event.getCreatedByTag().getTradeId();
         if(TradeStatus.CreateEscrowEvent.equals(event.getLedgerTag().getTradeStatus())) {
-            TakeIntentEvent takeIntentEvent = tradeEntityService.getEventById(event.getCreatedByTag().getTradeId());
+            TakeIntentEvent takeIntentEvent = tradeEntityService.getEventById(tradeId);
             if (takeIntentEvent != null) {
                 PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
                 String paymentInfo = String.format("\nPayment Method: %s\nPayment Qrcode: %s\nPayment Account: %s\nPayment Memo: %s", paymentTag.getMethod(), paymentTag.getQrCode(), paymentTag.getAccount(), paymentTag.getMemo());

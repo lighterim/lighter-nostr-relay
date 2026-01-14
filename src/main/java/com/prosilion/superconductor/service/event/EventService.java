@@ -16,10 +16,7 @@ import jakarta.annotation.Resource;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
-import nostr.event.IntentType;
-import nostr.event.Kind;
-import nostr.event.NIP77Event;
-import nostr.event.Side;
+import nostr.event.*;
 import nostr.event.impl.*;
 import nostr.event.message.EventMessage;
 import nostr.event.tag.*;
@@ -138,10 +135,16 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                     throw new BusinessException(ErrorCode.TRADE_ID_NOT_FOUND, String.format("invalid tradeId: %d",  createdBy.getTradeId()));
                 }
             }
-            takeIntent.setEip712Tag(eip712Tag);
-            TokenTag tokenTag = takeIntent.getTokenTag();
-            int tokenDecimals = tokenConfig.getDecimals(tokenTag.getChainId().toString(), tokenTag.getSymbol());
-            validateEIP712(takeIntent, SignerType.TRADE_EVENT, tokenDecimals);
+            if(TradeStatus.CreateEscrowEvent.equals(tradeMessageEvent.getLedgerTag().getTradeStatus())) {
+                EscrowTag escrowTag = redisCache.getEscrowTag(takeIntent);
+                EIP712Tag dealEip712Tag = new EIP712Tag(eip712Tag.getWalletAddress(), eip712Tag.getContractAddress(),
+                        eip712Tag.getDomainAppName(), eip712Tag.getDomainVersion(), escrowTag.getSignature());
+                tradeMessageEvent.setEip712Tag(dealEip712Tag);
+            }
+            //仲裁消息&对手对仲裁结果验证
+            //TokenTag tokenTag = takeIntent.getTokenTag();
+            //int tokenDecimals = tokenConfig.getDecimals(tokenTag.getChainId().toString(), tokenTag.getSymbol());
+            //validateEIP712(takeIntent, SignerType.TRADE_EVENT, tokenDecimals);
         }
     }
 

@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.prosilion.superconductor.config.TokenConfig.PRICE_DECIMALS;
+import static com.prosilion.superconductor.util.EIP712Signer.getEscrowSign;
 import static nostr.event.NIP77Event.*;
 
 @Slf4j
@@ -109,99 +110,38 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         TakeTag takeTag = takeIntentEvent.getTakeTag();
         QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
         PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
-        String buyer;
-        String seller;
-        //the permit2Tag maybe is null when a buyer take bulk sell intent.
-        String payer = permit2Tag == null ? takeTag.getPayer() : permit2Tag.getPayer();
-
-        if (takeTag.getSide() == Side.BUY) {
-            buyer = takeTag.getTakerNip05();
-            seller = takeTag.getMakerNip05();
-        } else {
-            buyer = takeTag.getMakerNip05();
-            seller = takeTag.getTakerNip05();
-        }
-        return new EscrowTag(takeIntentEvent.getTradeId(),
-                takeIntentEvent.getTokenTag().getAddress(),
-                takeTag.getVolume(),
-                quoteTag.getNumber(),
-                quoteTag.getUsdRate(),
-                payer,
-                seller,
-                takeTag.getSellerFeeRate(),
-                EIP712Signer.keccak256(paymentTag.getMethod()),
-                EIP712Signer.keccak256(quoteTag.getCurrency()),
-                EIP712Signer.keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()),
-                buyer,
-                takeTag.getBuyerFeeRate(),
-                getEscrowSign(takeIntentEvent, seller, buyer));
-    }
-    private String getEscrowSign(TakeIntentEvent takeIntentEvent, String seller, String buyer) {
-        String data = getSignEscrowData(takeIntentEvent, seller, buyer);
-
-        RestClient restClient = new RestClient("https://api.lighter.im");
-        HttpResponse<String> response = restClient.post("/signature/escrow", data).join();
-        if (response.statusCode() == 200) {
-            String responseBody = response.body();
-            JsonObject spotObj = JsonParser.parseString(responseBody).getAsJsonObject();
-            int code = spotObj.get("code").getAsInt();
-            if(code!=0) {
-                return null;
-            }
-            return spotObj.get("data").getAsString();
-        }
-        return null;
-    }
-
-    private String getSignEscrowData(TakeIntentEvent takeIntentEvent, String seller, String buyer) {
         TokenTag tokenTag = takeIntentEvent.getTokenTag();
-        TakeTag takeTag = takeIntentEvent.getTakeTag();
-        QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
-        PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
         EIP712Tag eip712Tag = takeIntentEvent.getEip712Tag();
-
-        String chainId = String.valueOf(tokenTag.getChainId());
-        int tokenDecimals = tokenConfig.getDecimals(chainId, tokenTag.getSymbol());
-        if(tokenDecimals==0) {
-            log.warn("takeIntentEvent:{}, token: {},{}, decimals:0", takeIntentEvent.getId(), tokenTag.getSymbol(), tokenTag.getAddress());
-        }
-
-        List<List<String>> tags = new ArrayList<>();
-
-        List<String> escrowParam = new ArrayList<>();
-        escrowParam.add("escrow_param");
-        escrowParam.add(String.valueOf(takeIntentEvent.getTradeId()));
-        escrowParam.add(tokenTag.getAddress());
-        escrowParam.add(takeTag.getVolume().multiply(BigDecimal.TEN.pow(tokenDecimals)).stripTrailingZeros().toPlainString());
-        escrowParam.add(quoteTag.getNumber().multiply(BigDecimal.TEN.pow(PRICE_DECIMALS)).stripTrailingZeros().toPlainString());
-        escrowParam.add(quoteTag.getUsdRate().multiply(BigDecimal.TEN.pow(PRICE_DECIMALS)).stripTrailingZeros().toPlainString());
-        escrowParam.add(takeTag.getPayer());
-        escrowParam.add(seller);
-        escrowParam.add(takeTag.getSellerFeeRate().stripTrailingZeros().toPlainString());
-        escrowParam.add(paymentTag.getMethod());
-        escrowParam.add(quoteTag.getCurrency());
-        escrowParam.add(buyer);
-        escrowParam.add(takeTag.getBuyerFeeRate().stripTrailingZeros().toPlainString());
-        escrowParam.add(paymentTag.getAccount());
-        escrowParam.add(paymentTag.getQrCode());
-        escrowParam.add(paymentTag.getMemo());
-
-        List<String> eip712Param = new ArrayList<>();
-        eip712Param.add("eip712");
-        eip712Param.add(eip712Tag.getDomainAppName());
-        eip712Param.add(eip712Tag.getDomainVersion());
-        eip712Param.add(chainId);
-        eip712Param.add(eip712Tag.getContractAddress());
-
-        tags.add(escrowParam);
-        tags.add(eip712Param);
-
-        Map<String, Object> jsonData = new HashMap<>();
-        jsonData.put("tags", tags);
-
-        Gson gson = new GsonBuilder().create();
-        return gson.toJson(jsonData);
+        return EIP712Signer.getSignedEscrowTag(tokenTag, takeTag, quoteTag, permit2Tag, paymentTag, eip712Tag,
+                tokenConfig, takeIntentEvent.getTradeId());
+//        String buyer;
+//        String seller;
+//        //the permit2Tag maybe is null when a buyer take bulk sell intent.
+//        String payer = permit2Tag == null ? takeTag.getPayer() : permit2Tag.getPayer();
+//
+//        if (takeTag.getSide() == Side.BUY) {
+//            buyer = takeTag.getTakerNip05();
+//            seller = takeTag.getMakerNip05();
+//        } else {
+//            buyer = takeTag.getMakerNip05();
+//            seller = takeTag.getTakerNip05();
+//        }
+//        return new EscrowTag(takeIntentEvent.getTradeId(),
+//                takeIntentEvent.getTokenTag().getAddress(),
+//                takeTag.getVolume(),
+//                quoteTag.getNumber(),
+//                quoteTag.getUsdRate(),
+//                payer,
+//                seller,
+//                takeTag.getSellerFeeRate(),
+//                EIP712Signer.keccak256(paymentTag.getMethod()),
+//                EIP712Signer.keccak256(quoteTag.getCurrency()),
+//                EIP712Signer.keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()),
+//                buyer,
+//                takeTag.getBuyerFeeRate(),
+//                getEscrowSign(takeIntentEvent, seller, buyer, tokenConfig));
     }
+
 
     private @NotNull TakeIntentEventEntity populateEventEntity(TakeIntentEventEntity eventEntity) {
         List<BaseTag> concreteTags = concreteTagEntitiesService.getTags(

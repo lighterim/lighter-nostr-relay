@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -222,7 +221,8 @@ public class RedisCache<T extends GenericEvent> {
         if(!StringUtils.hasText(event.getCreatedByTag().getTakeIntentEventId())) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "CreatedByTag.TakeIntentEventId is null");
         }
-        if(TradeStatus.CreateEscrowEvent.equals(event.getLedgerTag().getTradeStatus())) {
+        // 请求签名的30079消息，ledgerTag可能为空。
+        if(event.getLedgerTag() != null && TradeStatus.CreateEscrowEvent.equals(event.getLedgerTag().getTradeStatus())) {
             if (takeIntentEvent != null) {
                 PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
                 String paymentInfo = String.format("\nPayment Method: %s\nPayment Qrcode: %s\nPayment Account: %s\nPayment Memo: %s", paymentTag.getMethod(), paymentTag.getQrCode(), paymentTag.getAccount(), paymentTag.getMemo());

@@ -2,6 +2,8 @@ package com.prosilion.superconductor.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.prosilion.superconductor.config.TokenConfig;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
@@ -18,8 +20,12 @@ import org.web3j.utils.Numeric;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+
+import static com.prosilion.superconductor.config.TokenConfig.PRICE_DECIMALS;
+
 @Slf4j
 public class EIP712Signer {
 
@@ -41,6 +47,188 @@ public class EIP712Signer {
     public static String keccak256(String msg) {
         byte[] hash = Hash.sha3(msg.getBytes(StandardCharsets.UTF_8));
         return org.web3j.utils.Numeric.toHexString(hash);
+    }
+
+
+    public static EscrowTag getSignedEscrowTag(
+            TokenTag tokenTag, TakeTag takeTag, QuoteTag quoteTag, Permit2Tag permit2Tag,
+            PaymentTag paymentTag, EIP712Tag eip712Tag, TokenConfig tokenConfig,
+            long tradeId) {
+
+        BigInteger chainId = tokenTag.getChainId();
+        String buyer;
+        String seller;
+        //the permit2Tag maybe is null when a buyer take bulk sell intent.
+        String payer = permit2Tag == null ? takeTag.getPayer() : permit2Tag.getPayer();
+
+        if (takeTag.getSide() == Side.BUY) {
+            buyer = takeTag.getTakerNip05();
+            seller = takeTag.getMakerNip05();
+        } else {
+            buyer = takeTag.getMakerNip05();
+            seller = takeTag.getTakerNip05();
+        }
+
+
+        int tokenDecimals = tokenConfig.getDecimals(String.valueOf(chainId), tokenTag.getSymbol());
+
+        String data = getSignEscrowData(
+                tradeId,
+                tokenTag.getAddress(),
+                takeTag.getVolume(),
+                quoteTag.getNumber(),
+                quoteTag.getUsdRate(),
+                payer,
+                seller,
+                takeTag.getSellerFeeRate(),
+                paymentTag.getMethod(),
+                quoteTag.getCurrency(),
+                paymentTag.getAccount(),
+                paymentTag.getQrCode(),
+                paymentTag.getMemo(),
+                buyer,
+                takeTag.getBuyerFeeRate(),
+                chainId,
+                eip712Tag.getDomainAppName(),
+                eip712Tag.getDomainVersion(),
+                eip712Tag.getContractAddress(),
+                tokenDecimals,
+                tokenTag.getSymbol()
+        );
+
+        String sign = getRelayerSignature(data);
+        return new EscrowTag(tradeId,
+                tokenTag.getAddress(),
+                takeTag.getVolume(),
+                quoteTag.getNumber(),
+                quoteTag.getUsdRate(),
+                payer,
+                seller,
+                takeTag.getSellerFeeRate(),
+                EIP712Signer.keccak256(paymentTag.getMethod()),
+                EIP712Signer.keccak256(quoteTag.getCurrency()),
+                EIP712Signer.keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()),
+                buyer,
+                takeTag.getBuyerFeeRate(),
+                sign);
+    }
+
+    public static String getEscrowSign(TakeIntentEvent takeIntentEvent, String seller, String buyer, TokenConfig tokenConfig) {
+        TokenTag tokenTag = takeIntentEvent.getTokenTag();
+        TakeTag takeTag = takeIntentEvent.getTakeTag();
+        QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
+        PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
+        EIP712Tag eip712Tag = takeIntentEvent.getEip712Tag();
+        BigInteger chainId = tokenTag.getChainId();
+
+        int tokenDecimals = tokenConfig.getDecimals(String.valueOf(chainId), tokenTag.getSymbol());
+
+        String data = getSignEscrowData(
+                takeIntentEvent.getTradeId(),
+                tokenTag.getAddress(),
+                takeTag.getVolume(),
+                quoteTag.getNumber(),
+                quoteTag.getUsdRate(),
+                takeTag.getPayer(),
+                seller,
+                takeTag.getSellerFeeRate(),
+                paymentTag.getMethod(),
+                quoteTag.getCurrency(),
+                paymentTag.getAccount(),
+                paymentTag.getQrCode(),
+                paymentTag.getMemo(),
+                buyer,
+                takeTag.getBuyerFeeRate(),
+                chainId,
+                eip712Tag.getDomainAppName(),
+                eip712Tag.getDomainVersion(),
+                eip712Tag.getContractAddress(),
+                tokenDecimals,
+                tokenTag.getSymbol()
+        );
+
+        return getRelayerSignature(data);
+    }
+
+    private static String getRelayerSignature(String data) {
+        RestClient restClient = new RestClient("https://api.lighter.im");
+        HttpResponse<String> response = restClient.post("/signature/escrow", data).join();
+        if (response.statusCode() == 200) {
+            String responseBody = response.body();
+            JsonObject spotObj = JsonParser.parseString(responseBody).getAsJsonObject();
+            int code = spotObj.get("code").getAsInt();
+            if(code!=0) {
+                throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("signature error code:%s", code));
+            }
+            return spotObj.get("data").getAsString();
+        }
+        throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("signature op error code:%s", response.statusCode()));
+    }
+
+    private static String getSignEscrowData(
+            long tradeId,
+            String tokenAddress,
+            BigDecimal volume,
+            BigDecimal price,
+            BigDecimal usdRate,
+            String payer,
+            String seller,
+            BigDecimal sellerFeeRate,
+            String bytes32PaymentMethod,
+            String bytes32Currency,
+            String account,
+            String qrCode,
+            String memo,
+            String buyer,
+            BigDecimal buyerFeeRate,
+            BigInteger intChainId,
+            String domainAppName,
+            String domainAppVersion,
+            String contractAddress,
+            int tokenDecimals,
+            String symbol
+            ) {
+
+        String chainId = String.valueOf(intChainId);
+        if(tokenDecimals==0) {
+            log.warn("takeIntentEvent:{}, token: {},{}, decimals:0", tradeId, symbol, contractAddress);
+        }
+
+        List<List<String>> tags = new ArrayList<>();
+
+        List<String> escrowParam = new ArrayList<>();
+        escrowParam.add("escrow_param");
+        escrowParam.add(String.valueOf(tradeId));
+        escrowParam.add(tokenAddress);
+        escrowParam.add(volume.multiply(BigDecimal.TEN.pow(tokenDecimals)).stripTrailingZeros().toPlainString());
+        escrowParam.add(price.multiply(BigDecimal.TEN.pow(PRICE_DECIMALS)).stripTrailingZeros().toPlainString());
+        escrowParam.add(usdRate.multiply(BigDecimal.TEN.pow(PRICE_DECIMALS)).stripTrailingZeros().toPlainString());
+        escrowParam.add(payer);
+        escrowParam.add(seller);
+        escrowParam.add(sellerFeeRate.stripTrailingZeros().toPlainString());
+        escrowParam.add(bytes32PaymentMethod);
+        escrowParam.add(bytes32Currency);
+        escrowParam.add(buyer);
+        escrowParam.add(buyerFeeRate.stripTrailingZeros().toPlainString());
+        escrowParam.add(account);
+        escrowParam.add(qrCode);
+        escrowParam.add(memo);
+
+        List<String> eip712Param = new ArrayList<>();
+        eip712Param.add("eip712");
+        eip712Param.add(domainAppName);
+        eip712Param.add(domainAppVersion);
+        eip712Param.add(chainId);
+        eip712Param.add(contractAddress);
+
+        tags.add(escrowParam);
+        tags.add(eip712Param);
+
+        Map<String, Object> jsonData = new HashMap<>();
+        jsonData.put("tags", tags);
+
+        Gson gson = new GsonBuilder().create();
+        return gson.toJson(jsonData);
     }
 
     /**

@@ -4,10 +4,6 @@ package com.prosilion.superconductor.service.event;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.prosilion.superconductor.config.TokenConfig;
 import com.prosilion.superconductor.service.request.NotifierService;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
@@ -21,22 +17,16 @@ import nostr.event.impl.*;
 import nostr.event.message.EventMessage;
 import nostr.event.tag.*;
 import nostr.event.util.Nip05Validator;
-import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.net.http.HttpResponse;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 
 @Slf4j
@@ -144,16 +134,25 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 }
                 // tradeId-->TakeIntentEvent-->EscrowParams---(escrow/signature)--->signature(63b)
             }
-            if(TradeStatus.CreateEscrowEvent.equals(tradeMessageEvent.getLedgerTag().getTradeStatus())) {
-                EscrowTag escrowTag = redisCache.getEscrowTag(takeIntent);
-                EIP712Tag dealEip712Tag = new EIP712Tag(eip712Tag.getWalletAddress(), eip712Tag.getContractAddress(),
-                        eip712Tag.getDomainAppName(), eip712Tag.getDomainVersion(), escrowTag.getSignature());
-                tradeMessageEvent.setEip712Tag(dealEip712Tag);
+
+            // 调用端希望签名。
+            if(!StringUtils.hasText(eip712Tag.getSign())) {
+                EscrowTag escrowTag = EIP712Signer.getSignedEscrowTag(
+                        takeIntent.getTokenTag(), takeIntent.getTakeTag(), takeIntent.getQuoteTag(),
+                        takeIntent.getPermit2Tag(), takeIntent.getPaymentTag(), eip712Tag, tokenConfig, createdBy.getTradeId());
+                tradeMessageEvent.setEip712Tag(
+                        EIP712Tag.builder().walletAddress(eip712Tag.getWalletAddress())
+                                .domainAppName(eip712Tag.getDomainAppName())
+                                .domainVersion(eip712Tag.getDomainVersion())
+                                .contractAddress(eip712Tag.getContractAddress())
+                                .sign(escrowTag.getSignature()).build());
+                tradeMessageEvent.setEscrowTag(escrowTag);
             }
-            //仲裁消息&对手对仲裁结果验证
-            //TokenTag tokenTag = takeIntent.getTokenTag();
-            //int tokenDecimals = tokenConfig.getDecimals(tokenTag.getChainId().toString(), tokenTag.getSymbol());
-            //validateEIP712(takeIntent, SignerType.TRADE_EVENT, tokenDecimals);
+            //TODO:  只有仲裁消息，对手同意仲裁消息需要eip712验证。
+//            TokenTag tokenTag = takeIntent.getTokenTag();
+//            int tokenDecimals = tokenConfig.getDecimals(tokenTag.getChainId().toString(), tokenTag.getSymbol());
+//            validateEIP712(takeIntent, SignerType.TRADE_EVENT, tokenDecimals);
+
         }
     }
 

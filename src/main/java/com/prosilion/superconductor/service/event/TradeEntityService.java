@@ -234,28 +234,36 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         return populateEventEntity(takeEventEntityRepository.findByEventIdString(eventIdString).orElseThrow(NoResultException::new)).convertEntityToDto();
     }
 
-    @Transactional
-    public void updateTradeStatus(long tradeId, TradeStatus tradeStatus) {
+    public TakeIntentEvent getTakeIntentEventByEntity(TakeIntentEventEntity entity) {
+        if(entity!=null) {
+            return populateEventEntity(entity).convertEntityToDto();
+        }
+        return null;
+    }
+
+    public TakeIntentEventEntity getTakeIntentEventEntityById(long tradeId) {
         Optional<TakeIntentEventEntity> opt  = takeEventEntityRepository.findById(tradeId);
         if(opt.isEmpty()){
-            log.warn("tradeId: {}, entity not exists!: tradeStatus:{}", tradeId, tradeStatus);
-            return;
+            log.warn("getTakeIntentEventEntityById tradeId: {}, entity not exists!", tradeId);
+            return null;
         }
-        TakeIntentEventEntity entity = opt.get();
-        entity.setStatus(tradeStatus.getValue());
-        entityManager.merge(entity);
+        return opt.get();
     }
 
     @Transactional
-    public void updateTradeEscrowHash(long tradeId, String escrowHash) {
-        Optional<TakeIntentEventEntity> opt  = takeEventEntityRepository.findById(tradeId);
-        if(opt.isEmpty()){
-            log.warn("tradeId: {}, entity not exists!: escrowHash:{}", tradeId, escrowHash);
-            return;
+    public void updateTradeStatus(TakeIntentEventEntity takeIntentEventEntity, TradeStatus tradeStatus) {
+        if(takeIntentEventEntity!=null) {
+            takeIntentEventEntity.setStatus(tradeStatus.getValue());
+            entityManager.merge(takeIntentEventEntity);
         }
-        TakeIntentEventEntity entity = opt.get();
-        entity.setEscrowHash(escrowHash);
-        entityManager.merge(entity);
+    }
+
+    @Transactional
+    public void updateTradeEscrowHash(TakeIntentEventEntity takeIntentEventEntity, String escrowHash) {
+        if(takeIntentEventEntity!=null) {
+            takeIntentEventEntity.setEscrowHash(escrowHash);
+            entityManager.merge(takeIntentEventEntity);
+        }
     }
 
     @Transactional

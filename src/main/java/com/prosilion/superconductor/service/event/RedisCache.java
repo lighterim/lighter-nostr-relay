@@ -202,7 +202,8 @@ public class RedisCache<T extends GenericEvent> {
             setEncryptContentForNoticePusher(event);
         }
         long tradeId = event.getCreatedByTag().getTradeId();
-        if(TradeStatus.CreateEscrowEvent.equals(event.getLedgerTag().getTradeStatus())) {
+        // 请求签名的30079消息，ledgerTag可能为空。
+        if(event.getLedgerTag() != null && TradeStatus.CreateEscrowEvent.equals(event.getLedgerTag().getTradeStatus())) {
             TakeIntentEvent takeIntentEvent = tradeEntityService.getEventById(event.getCreatedByTag().getTradeId());
             if (takeIntentEvent != null) {
                 PaymentTag paymentTag = takeIntentEvent.getPaymentTag();

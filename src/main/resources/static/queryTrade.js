@@ -41,7 +41,7 @@ function replaceHash(id_hash) {
         + "\"REQ\","
         + "\"" + id_hash + "\","
         + JSON.stringify(
-            {"compositionQuery":{"kind":30078,"anyMatchList":[{"pubkey":["287af4fd16ae51fbca1cb2f01825de8108b40b0b958b1718033c83577a7331ef"]},{"nip05":["dust222@lighter.im"]}]}}
+            {"compositionQuery":{"kind":30078,"anyMatchList":[{"pubkey":["aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984"]},{"nip05":["0x846eFbf0F3d91C8896B557Ff27b7E53D76637AF1"]}]}}
         ) + "," +JSON.stringify(
             {"compositionQuery":{"kind":30077,"anyMatchList":[{"side":["sell","buy"]},{"currency":["CNY","USD"]},{"symbol":["xrd","usdt"]},{"paymentMethod":["alipay","wechat","bank","cash"]}]}}
         )

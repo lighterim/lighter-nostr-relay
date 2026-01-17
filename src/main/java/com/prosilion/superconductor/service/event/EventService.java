@@ -12,10 +12,7 @@ import jakarta.annotation.Resource;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
-import nostr.event.IntentType;
-import nostr.event.Kind;
-import nostr.event.NIP77Event;
-import nostr.event.Side;
+import nostr.event.*;
 import nostr.event.impl.*;
 import nostr.event.message.EventMessage;
 import nostr.event.tag.*;
@@ -137,6 +134,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 }
                 // tradeId-->TakeIntentEvent-->EscrowParams---(escrow/signature)--->signature(63b)
             }
+
             // 调用端希望签名。
             if(!StringUtils.hasText(eip712Tag.getSign())) {
                 EscrowTag escrowTag = EIP712Signer.getSignedEscrowTag(
@@ -154,6 +152,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
 //            TokenTag tokenTag = takeIntent.getTokenTag();
 //            int tokenDecimals = tokenConfig.getDecimals(tokenTag.getChainId().toString(), tokenTag.getSymbol());
 //            validateEIP712(takeIntent, SignerType.TRADE_EVENT, tokenDecimals);
+
         }
     }
 

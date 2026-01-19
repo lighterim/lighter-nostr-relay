@@ -161,6 +161,7 @@ public class RedisCache<T extends GenericEvent> {
                 Long tradeId = takeIntentEvent.getTradeId();
                 String takerPubkey = event.getPubKey().toString();
                 if(takeIntentEvent.getTakeTag().getVisibleStatus()!=null) {
+                    //前端取消(takeTag.visibleState)take
                     if (tradeId == 0L){
                         log.warn("takeIntentEvent.takeTag.visibleStatus is null{} and tradeId is {}", takeIntentEvent.getId(), tradeId);
                     }
@@ -207,32 +208,24 @@ public class RedisCache<T extends GenericEvent> {
         if (isNoticePusher && event.getLedgerTag() != null) {
             setEncryptContentForNoticePusher(event);
         }
-        CreatedByTag createdByTag = event.getCreatedByTag();
-        long tradeId = createdByTag.getTradeId();
-        TakeIntentEventEntity takeIntentEventEntity = tradeEntityService.getTakeIntentEventEntityById(tradeId);
-        TakeIntentEvent takeIntentEvent = tradeEntityService.getTakeIntentEventByEntity(takeIntentEventEntity);
-        if(takeIntentEvent!=null) {
-            event.setCreatedByTag(CreatedByTag.builder()
-                    .tradeId(tradeId)
-                    .nip05(createdByTag.getNip05())
-                    .pubkey(createdByTag.getPubkey())
-                    .takeIntentEventId(takeIntentEvent.getTakeTag().getIntentEventId()).build());
-        }
-        if(!StringUtils.hasText(event.getCreatedByTag().getTakeIntentEventId())) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR, "CreatedByTag.TakeIntentEventId is null");
-        }
-        // 请求签名的30079消息，ledgerTag可能为空。
-        if(event.getLedgerTag() != null && TradeStatus.CreateEscrowEvent.equals(event.getLedgerTag().getTradeStatus())) {
-            if (takeIntentEvent != null) {
-                PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
-                String paymentInfo = String.format("\nPayment Method: %s\nPayment Qrcode: %s\nPayment Account: %s\nPayment Memo: %s", paymentTag.getMethod(), paymentTag.getQrCode(), paymentTag.getAccount(), paymentTag.getMemo());
-                event.setContent(event.getContent() + paymentInfo);
-            }
-            tradeEntityService.updateTradeEscrowHash(takeIntentEventEntity, event.getLedgerTag().getEscrowHash());
+        if(event.getCreatedByTag() == null || !StringUtils.hasText(event.getCreatedByTag().getTakeIntentEventId())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "createdByTag is null or CreatedByTag.TakeIntentEventId is null");
         }
         Long id = tradeMessageEntityService.saveEventEntity(event);
         if (isNoticePusher && event.getLedgerTag() != null && event.getLedgerTag().getTradeStatus() != null) {
-            tradeEntityService.updateTradeStatus(takeIntentEventEntity, event.getLedgerTag().getTradeStatus());
+            TakeIntentEventEntity takeIntentEventEntity = tradeEntityService.getTakeIntentEventEntityById(event.getCreatedByTag().getTradeId());
+            if(TradeStatus.CreateEscrowEvent.equals(event.getLedgerTag().getTradeStatus())) {
+                TakeIntentEvent takeIntentEvent = tradeEntityService.getTakeIntentEventByEntity(takeIntentEventEntity);
+                if (takeIntentEvent != null) {
+                    PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
+                    String paymentInfo = String.format("\nPayment Method: %s\nPayment Qrcode: %s\nPayment Account: %s\nPayment Memo: %s", paymentTag.getMethod(), paymentTag.getQrCode(), paymentTag.getAccount(), paymentTag.getMemo());
+                    event.setContent(event.getContent() + paymentInfo);
+                }
+                tradeEntityService.updateTradeStatusAndEscrowHash(takeIntentEventEntity, event.getLedgerTag().getTradeStatus(), event.getLedgerTag().getEscrowHash());
+            }
+            else {
+                tradeEntityService.updateTradeStatus(takeIntentEventEntity, event.getLedgerTag().getTradeStatus());
+            }
         }
         return id;
     }

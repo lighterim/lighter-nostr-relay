@@ -111,13 +111,25 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
 
         LedgerTag ledger = tradeMessageEvent.getLedgerTag();
         TakeIntentEvent takeIntent = null;
+        log.info("trade message event: [{}]", tradeMessageEvent);
         //push service/notice@lighter.im
+        /**
+         * [TradeMessageEvent(
+         * createdByTag=CreatedByTag(
+         * takeIntentEventId=, nip05=notice@lighter.im, pubkey=aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984, tradeId=220),
+         * ledgerTag=LedgerTag(
+         * chain=Ethereum, network=Sepolia, txId=b0dbf2f267c6e26d6b0bbf71b324a9e44076bcae8a0a8aad1f65ddd552f81925, txUrl=https://sepolia.etherscan.io/address/b0dbf2f267c6e26d6b0bbf71b324a9e44076bcae8a0a8aad1f65ddd552f81925, tradeStatus=CreateEscrowEvent, escrowHash=8e445286b56a35810ba22f95e6bee625ff0fc365922f888815e18337cdfe58a2),
+         * eip712Tag=null, escrowTag=null)]
+         */
+        log.info("createdBy.getPubkey().equals(noticePusherPubkey):{}, StringUtils.hasText(createdBy.getTakeIntentEventId()):{},  createdBy.getTradeId():{}", createdBy.getPubkey().equals(noticePusherPubkey), StringUtils.hasText(createdBy.getTakeIntentEventId()), createdBy.getTradeId() > 0L);
         if (ledger != null && createdBy.getPubkey().equals(noticePusherPubkey) && !StringUtils.hasText(createdBy.getTakeIntentEventId()) && createdBy.getTradeId() > 0L) {
             takeIntent = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, createdBy.getTradeId());
+            log.info("reset trade message: takeIntent event: [{}]", takeIntent);
             tradeMessageEvent.setCreatedByTag(
                     CreatedByTag.builder().takeIntentEventId(takeIntent.getId()).nip05(createdBy.getNip05()).pubkey(createdBy.getPubkey())
                             .tradeId(createdBy.getTradeId()).build()
             );
+            log.info("reset1 trade message event: [{}]", tradeMessageEvent);
         }
         EIP712Tag eip712Tag = tradeMessageEvent.getEip712Tag();
         if(eip712Tag!=null) {
@@ -147,6 +159,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                                 .contractAddress(eip712Tag.getContractAddress())
                                 .sign(escrowTag.getSignature()).build());
                 tradeMessageEvent.setEscrowTag(escrowTag);
+                log.info("reset2 trade message event: [{}]", tradeMessageEvent);
             }
             //TODO:  只有仲裁消息，对手同意仲裁消息需要eip712验证。
 //            TokenTag tokenTag = takeIntent.getTokenTag();

@@ -175,19 +175,11 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
     }
 
     public TakeIntentEvent getTakeIntentEventByEntity(TakeIntentEventEntity entity) {
-        if(entity!=null) {
-            return populateEventEntity(entity).convertEntityToDto();
-        }
-        return null;
+        return populateEventEntity(entity).convertEntityToDto();
     }
 
     public TakeIntentEventEntity getTakeIntentEventEntityById(long tradeId) {
-        Optional<TakeIntentEventEntity> opt  = takeEventEntityRepository.findById(tradeId);
-        if(opt.isEmpty()){
-            log.warn("getTakeIntentEventEntityById tradeId: {}, entity not exists!", tradeId);
-            return null;
-        }
-        return opt.get();
+        return takeEventEntityRepository.findById(tradeId).orElseThrow(NoResultException::new);
     }
 
     @Transactional
@@ -199,9 +191,10 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
     }
 
     @Transactional
-    public void updateTradeEscrowHash(TakeIntentEventEntity takeIntentEventEntity, String escrowHash) {
+    public void updateTradeStatusAndEscrowHash(TakeIntentEventEntity takeIntentEventEntity, TradeStatus tradeStatus, String escrowHash) {
         if(takeIntentEventEntity!=null) {
             takeIntentEventEntity.setEscrowHash(escrowHash);
+            takeIntentEventEntity.setStatus(tradeStatus.getValue());
             entityManager.merge(takeIntentEventEntity);
         }
     }

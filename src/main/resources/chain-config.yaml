@@ -11,3 +11,11 @@ blockchain:
       usdc:
         address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7xxx"
         decimals: 6
+    "2651420": # horizen testnet
+      usdc:
+        address: "0x01c7AEb2A0428b4159c0E333712f40e127aF639E"
+        decimals: 6
+    "26514": #horizen mainnet
+      usdc:
+        address: "0x070040A826B586b58569750ED43cb5979b171e8d"
+        decimals: 6

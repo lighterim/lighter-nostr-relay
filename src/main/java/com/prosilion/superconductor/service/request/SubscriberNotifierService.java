@@ -35,7 +35,9 @@ public class SubscriberNotifierService<T extends GenericEvent> {
   }
 
   private void broadcastMatch(AddNostrEvent<T> addNostrEvent, Long subscriberSessionHash) {
+      // abstractSubscriberService.getFiltersList(subscriberSessionHash)---> 接收者的过滤条件集合List<Filters>
     abstractSubscriberService.getFiltersList(subscriberSessionHash).forEach(
+            // 接收者过滤器:filters,发布者过滤器： filterMatcher
             filters -> filterMatcher.intersectFilterMatches(filters, (AddNostrEvent<GenericEvent>) addNostrEvent).forEach(
                     event -> broadcastToClients(
                             (FireNostrEvent<T>) new FireNostrEvent<>(subscriberSessionHash,

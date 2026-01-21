@@ -168,9 +168,15 @@ public class CachedSubscriberService extends AbstractSubscriberService {
         }
 
         private static boolean hasValidCompositionQuery(CompositionQuery compositionQuery) {
-            return Objects.nonNull(compositionQuery) && compositionQuery.getKind() != null
-                    && (compositionQuery.getKind() == Kind.POST_INTENT
-                    || (!compositionQuery.getAnyMatchList().isEmpty() && compositionQuery.getAnyMatchList().stream().anyMatch(Combo::hasValidGenericTagQuery)));
+            return Objects.nonNull(compositionQuery)
+                    && compositionQuery.getKind() != null
+                    && (
+                            compositionQuery.getKind() == Kind.POST_INTENT
+                                    || (
+                                            !compositionQuery.getAnyMatchList().isEmpty()
+                                                    && compositionQuery.getAnyMatchList().stream().anyMatch(Combo::hasValidGenericTagQuery)
+                            )
+            );
         }
 
         private static <T> boolean hasValidField(List<T> filtersField, Predicate<T> fieldPredicate) {

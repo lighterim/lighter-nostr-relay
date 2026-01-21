@@ -17,6 +17,9 @@ import java.util.function.BiPredicate;
 
 import static java.util.Objects.nonNull;
 
+/**
+ * 发布者过滤器条件集合
+ */
 @Component
 public class FilterMatcher {
     private final List<FilterPlugin<AbstractFilterType>> filterPlugins;
@@ -26,17 +29,27 @@ public class FilterMatcher {
         this.filterPlugins = filterPlugins;
     }
 
+    /**
+     * 接收者 & 发布者过滤双向匹配（取交集）的过程
+     * @param filters 接收者过滤器。
+     * @param eventToCheck
+     * @return 匹配到的事件（event)的集合。
+     * @param <U>
+     */
     public <U> List<AddNostrEvent<GenericEvent>> intersectFilterMatches(Filters filters, AddNostrEvent<GenericEvent> eventToCheck) {
         List<FilterMatcher.Combo<U>> combos = new ArrayList<>();
-
+        //filterPlugins的元素是发布者？？？？
         filterPlugins.forEach(filterPlugin -> combos.add(
                         new Combo(
+                                // filterPlugin.getPluginFilters(filters) --> 结构(发布者relayer一些event + 接收者的过滤器集合)
                                 Optional.ofNullable(filterPlugin.getPluginFilters(filters)).orElseGet(ArrayList::new),
+                                //规则
                                 filterPlugin.getBiPredicate()
                         )
                 )
         );
 
+        // combos：结构:{（可能要推的event(List) + 接收者条件:filters)}
         Set<AddNostrEvent<GenericEvent>> nostrEvents = getFilterMatchingEvents(combos, eventToCheck);
         if (withinRange(filters.getSince(), filters.getUntil(), eventToCheck.event().getCreatedAt())) {
             nostrEvents.add(eventToCheck);
@@ -58,6 +71,13 @@ public class FilterMatcher {
         return false;
     }
 
+    /**
+     * 双向匹配逻辑
+     * @param combos
+     * @param eventToCheck
+     * @return
+     * @param <U>
+     */
     private <U> Set<AddNostrEvent<GenericEvent>> getFilterMatchingEvents(List<Combo<U>> combos, AddNostrEvent<GenericEvent> eventToCheck) {
 //    return combos
 //        .stream()
@@ -80,6 +100,7 @@ public class FilterMatcher {
     private <U> boolean filterTypeMatchesEventAttribute(Combo<U> combo, AddNostrEvent<GenericEvent> eventToCheck) {
         //TODO: convert to stream
         for (U testable : combo.getSubscriberFilterType()) {
+            //核心双向匹配逻辑：test(testable规则，eventToCheck）
             if (combo.getBiPredicate().test(testable, eventToCheck))
                 return true;
         }

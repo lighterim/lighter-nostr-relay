@@ -158,7 +158,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
     }
 
     public Map<Kind, Map<Long, TakeIntentEvent>> getAll() {
-        return takeEventEntityRepository.findAll().stream()
+        return takeEventEntityRepository.findByStatusNot(TradeStatus.SellerReleasedEvent.getValue()).stream()
                 .map(this::populateEventEntity)
                 .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
                         Collectors.toMap(TakeIntentEventEntity::getId, TakeIntentEventEntity::convertEntityToDto)));

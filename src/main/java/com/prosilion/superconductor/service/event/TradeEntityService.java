@@ -1,9 +1,5 @@
 package com.prosilion.superconductor.service.event;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.prosilion.superconductor.config.TokenConfig;
 import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.dto.generic.ElementAttributeDto;
@@ -14,9 +10,7 @@ import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
 import com.prosilion.superconductor.repository.TakeEventEntityRepository;
 import com.prosilion.superconductor.repository.join.EventEntityAbstractTagEntityRepository;
 import com.prosilion.superconductor.service.event.join.generic.GenericTagEntitiesService;
-import com.prosilion.superconductor.util.ED25519Signer;
 import com.prosilion.superconductor.util.EIP712Signer;
-import com.prosilion.superconductor.util.RestClient;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -26,7 +20,6 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
-import nostr.event.Side;
 import nostr.event.TradeStatus;
 import nostr.event.impl.GenericTag;
 import nostr.event.impl.TakeIntentEvent;
@@ -37,14 +30,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
-import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.prosilion.superconductor.config.TokenConfig.PRICE_DECIMALS;
-import static com.prosilion.superconductor.util.EIP712Signer.getEscrowSign;
 import static nostr.event.NIP77Event.*;
 
 @Slf4j
@@ -54,6 +43,16 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
     @PersistenceContext
     private EntityManager entityManager;
     private final TakeEventEntityRepository takeEventEntityRepository;
+
+    private static final Collection<String> includedStatusList = Arrays.asList(
+            TradeStatus.TakeEvent.getValue(),
+            TradeStatus.CreateEscrowEvent.getValue(),
+            TradeStatus.BuyerPaidEvent.getValue(),
+            TradeStatus.SellerRequestCancelEvent.getValue(),
+            TradeStatus.SellerCancelEvent.getValue(),
+            TradeStatus.BuyerCancelEvent.getValue(),
+            TradeStatus.BuyerDisputedEvent.getValue(),
+            TradeStatus.SellerDisputedEvent.getValue());
 
     private final ConcreteTagEntitiesService<
             BaseTag,
@@ -158,7 +157,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
     }
 
     public Map<Kind, Map<Long, TakeIntentEvent>> getAll() {
-        return takeEventEntityRepository.findByStatusNot(TradeStatus.SellerReleasedEvent.getValue()).stream()
+        return takeEventEntityRepository.findByStatusIn(includedStatusList).stream()
                 .map(this::populateEventEntity)
                 .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
                         Collectors.toMap(TakeIntentEventEntity::getId, TakeIntentEventEntity::convertEntityToDto)));

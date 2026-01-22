@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,5 +14,5 @@ import java.util.Optional;
 public interface TakeEventEntityRepository extends JpaRepository<TakeIntentEventEntity, Long> {
     Optional<TakeIntentEventEntity> findByEventIdString(String eventIdString);
 
-    List<TakeIntentEventEntity> findByStatusNot(String status);
+    List<TakeIntentEventEntity> findByStatusIn(Collection<String> statusList);
 }

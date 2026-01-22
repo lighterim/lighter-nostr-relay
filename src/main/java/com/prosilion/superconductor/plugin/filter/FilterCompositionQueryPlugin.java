@@ -3,6 +3,7 @@ package com.prosilion.superconductor.plugin.filter;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
 import nostr.base.GenericTagQuery;
 import nostr.event.Kind;
+import nostr.event.TradeStatus;
 import nostr.event.impl.*;
 import nostr.event.query.CompositionQuery;
 import nostr.event.tag.*;
@@ -54,6 +55,12 @@ public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements
                 case "side" -> {
                     MakeTag makeTag = event.getSideTag();
                     if (makeTag == null || !values.contains(makeTag.getSide().getSide())) {
+                        return false;
+                    }
+                }
+                case "chainId" -> {
+                    TokenTag tokenTag = event.getTokenTag();
+                    if (tokenTag == null || !values.contains(tokenTag.getChainId().toString())) {
                         return false;
                     }
                 }
@@ -113,6 +120,9 @@ public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements
         for (GenericTagQuery t : anyMatchList) {
             String tagName = t.getTagName();
             List<String> values = t.getValue();
+            if("status".equals(tagName) && values.contains(TradeStatus.SellerReleasedEvent.getValue())) {
+                return false;
+            }
             if ("eventIdString".equals(tagName)) {
                 return values.contains(event.getCreatedByTag().getTakeIntentEventId());
             }

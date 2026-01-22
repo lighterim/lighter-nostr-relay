@@ -120,9 +120,6 @@ public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements
         for (GenericTagQuery t : anyMatchList) {
             String tagName = t.getTagName();
             List<String> values = t.getValue();
-            if("status".equals(tagName) && values.contains(TradeStatus.SellerReleasedEvent.getValue())) {
-                return false;
-            }
             if ("eventIdString".equals(tagName)) {
                 return values.contains(event.getCreatedByTag().getTakeIntentEventId());
             }

@@ -12,5 +12,4 @@ import java.util.Optional;
 @Repository
 public interface TakeEventEntityRepository extends JpaRepository<TakeIntentEventEntity, Long> {
     Optional<TakeIntentEventEntity> findByEventIdString(String eventIdString);
-
 }

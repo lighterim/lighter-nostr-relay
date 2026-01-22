@@ -49,10 +49,10 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
             TradeStatus.CreateEscrowEvent.getValue(),
             TradeStatus.BuyerPaidEvent.getValue(),
             TradeStatus.SellerRequestCancelEvent.getValue(),
-            TradeStatus.SellerCancelEvent.getValue(),
             TradeStatus.BuyerCancelEvent.getValue(),
             TradeStatus.BuyerDisputedEvent.getValue(),
-            TradeStatus.SellerDisputedEvent.getValue());
+            TradeStatus.SellerDisputedEvent.getValue()
+    );
 
     private final ConcreteTagEntitiesService<
             BaseTag,

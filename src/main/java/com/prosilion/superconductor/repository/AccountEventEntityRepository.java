@@ -24,4 +24,10 @@ public interface AccountEventEntityRepository extends JpaRepository<AccountMessa
     Optional<AccountMessageEntity> findById(Long id);
 
     Optional<AccountMessageEntity> findByEventIdString(String eventIdString);
+
+    AccountMessageEntity findByNostrPubkey(String nostrPubkey);
+
+    AccountMessageEntity findByChainIdAndNftId(BigInteger chainId, String nftId);
+
+    AccountMessageEntity findByChainIdAndTba(BigInteger chainId, String tba);
 }

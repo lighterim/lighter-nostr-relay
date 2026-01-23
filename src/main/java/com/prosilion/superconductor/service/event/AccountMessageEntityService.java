@@ -103,4 +103,16 @@ public class AccountMessageEntityService implements EventEntityServiceIF<Account
         return populateEventEntity(accountEventEntityRepository.findByEventIdString(eventIdString).orElseThrow(NoResultException::new)).convertEntityToDto();
     }
 
+    public AccountMessageEntity getByNostrPubkey(@NonNull String nostrPubkey) {
+        return accountEventEntityRepository.findByNostrPubkey(nostrPubkey);
+    }
+
+    public AccountMessageEntity getByChainIdAndNftId(@NonNull BigInteger chainId, @NonNull String nftId) {
+        return accountEventEntityRepository.findByChainIdAndNftId(chainId, nftId);
+    }
+
+    public AccountMessageEntity getByChainIdAndTba(@NonNull BigInteger chainId, @NonNull String tba) {
+        return accountEventEntityRepository.findByChainIdAndTba(chainId, tba);
+    }
+
 }

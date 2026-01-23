@@ -128,6 +128,19 @@ public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements
     }
 
     private boolean getBiPredicate(CompositionQuery query, TakeIntentEvent event) {
+        final List<GenericTagQuery> allMatchList = query.getAnyMatchList();
+
+        for (GenericTagQuery t : allMatchList) {
+            String tagName = t.getTagName();
+            List<String> values = t.getValue();
+            if("chainId".equals(tagName)) {
+                TokenTag tokenTag = event.getTokenTag();
+                if (tokenTag == null || !values.contains(tokenTag.getChainId().toString())) {
+                    return false;
+                }
+            }
+        }
+
         final List<GenericTagQuery> anyMatchList = query.getAnyMatchList();
         TakeTag takeTag = event.getTakeTag();
         for (GenericTagQuery t : anyMatchList) {

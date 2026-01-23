@@ -47,6 +47,9 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     private TokenConfig tokenConfig;
 
     @Autowired
+    RestClient restClient;
+
+    @Autowired
     public EventService(NotifierService<GenericEvent> notifierService, RedisCache<GenericEvent> redisCache) {
         this.notifierService = notifierService;
         this.redisCache = redisCache;
@@ -149,7 +152,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
 
             // 调用端希望签名。
             if(!StringUtils.hasText(eip712Tag.getSign())) {
-                EscrowTag escrowTag = EIP712Signer.getSignedEscrowTag(
+                EscrowTag escrowTag = EIP712Signer.getSignedEscrowTag(restClient,
                         takeIntent.getTokenTag(), takeIntent.getTakeTag(), takeIntent.getQuoteTag(),
                         takeIntent.getPermit2Tag(), takeIntent.getPaymentTag(), eip712Tag, tokenConfig, createdBy.getTradeId());
                 tradeMessageEvent.setEip712Tag(

@@ -11,6 +11,7 @@ import com.prosilion.superconductor.repository.TakeEventEntityRepository;
 import com.prosilion.superconductor.repository.join.EventEntityAbstractTagEntityRepository;
 import com.prosilion.superconductor.service.event.join.generic.GenericTagEntitiesService;
 import com.prosilion.superconductor.util.EIP712Signer;
+import com.prosilion.superconductor.util.RestClient;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -43,6 +44,9 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
     @PersistenceContext
     private EntityManager entityManager;
     private final TakeEventEntityRepository takeEventEntityRepository;
+
+    @Autowired
+    RestClient restClient;
 
     private static final Collection<String> includedStatusList = Arrays.asList(
             TradeStatus.TakeEvent.getValue(),
@@ -111,7 +115,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
         TokenTag tokenTag = takeIntentEvent.getTokenTag();
         EIP712Tag eip712Tag = takeIntentEvent.getEip712Tag();
-        return EIP712Signer.getSignedEscrowTag(tokenTag, takeTag, quoteTag, permit2Tag, paymentTag, eip712Tag,
+        return EIP712Signer.getSignedEscrowTag(restClient, tokenTag, takeTag, quoteTag, permit2Tag, paymentTag, eip712Tag,
                 tokenConfig, takeIntentEvent.getTradeId());
 //        String buyer;
 //        String seller;

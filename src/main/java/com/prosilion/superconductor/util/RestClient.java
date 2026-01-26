@@ -1,5 +1,10 @@
 package com.prosilion.superconductor.util;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -7,26 +12,60 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 
+@Component
 public class RestClient {
-    private final HttpClient httpClient;
-    private final String baseUrl;
+    private HttpClient httpClient;
 
-    public RestClient() {
-        this(null, Duration.ofSeconds(30));
-    }
+    @Value("${rest.client.base-url:#{null}}")
+    private String baseUrl;
 
-    public RestClient(String baseUrl) {
-        this(baseUrl, Duration.ofSeconds(30));
-    }
+    @Value("${rest.client.connect-timeout:30}")
+    private int connectTimeout;
 
-    public RestClient(String baseUrl, Duration timeout) {
-        this.baseUrl = baseUrl;
+    @Value("${rest.client.max-pool-size:20}")
+    private int maxPoolSize;
+
+    @Value("${rest.client.keep-alive-time:60}")
+    private int keepAliveTime;
+
+    private ExecutorService executorService;
+
+    @PostConstruct
+    public void init() {
+        // 创建线程池
+        executorService = new ThreadPoolExecutor(
+                0,
+                maxPoolSize,
+                keepAliveTime,
+                TimeUnit.SECONDS,
+                new SynchronousQueue<>(),
+                Executors.defaultThreadFactory(),
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+
+        // 创建HttpClient实例
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(timeout)
+                .connectTimeout(Duration.ofSeconds(connectTimeout))
+                .executor(executorService)
                 .version(HttpClient.Version.HTTP_2)
                 .build();
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (executorService != null) {
+            executorService.shutdown();
+            try {
+                if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     // GET请求
@@ -51,6 +90,7 @@ public class RestClient {
     public CompletableFuture<HttpResponse<String>> post(String endpoint, String body, Map<String, String> headers) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(buildUri(endpoint))
+                .timeout(Duration.ofSeconds(60))
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .header("Content-Type", "application/json");
 
@@ -104,5 +144,21 @@ public class RestClient {
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 
+    // 添加同步请求方法（可选）
+    public HttpResponse<String> getSync(String endpoint) throws Exception {
+        return get(endpoint).get();
+    }
+
+    public HttpResponse<String> getSync(String endpoint, Map<String, String> headers) throws Exception {
+        return get(endpoint, headers).get();
+    }
+
+    public HttpResponse<String> postSync(String endpoint, String body) throws Exception {
+        return post(endpoint, body).get();
+    }
+
+    public HttpResponse<String> postSync(String endpoint, String body, Map<String, String> headers) throws Exception {
+        return post(endpoint, body, headers).get();
+    }
 }
 

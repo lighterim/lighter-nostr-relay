@@ -1,26 +1,22 @@
 package com.prosilion.superconductor.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosilion.superconductor.entity.AccountMessageEntity;
+import com.prosilion.superconductor.service.event.AccountMessageEntityService;
 import com.prosilion.superconductor.service.event.EventServiceIF;
 import com.prosilion.superconductor.service.event.ProfileEntityService;
-import jakarta.annotation.Resource;
 import jakarta.persistence.NoResultException;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import nostr.base.PublicKey;
 import nostr.base.UserProfile;
 import nostr.event.BaseMessage;
 import nostr.event.impl.MetadataEvent;
-import nostr.event.impl.TradeMessageEvent;
 import nostr.event.json.codec.BaseMessageDecoder;
 import nostr.event.message.EventMessage;
-import nostr.event.tag.CreatedByTag;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -32,55 +28,69 @@ public class LighterController<T extends BaseMessage> {
     @Autowired
     private EventServiceIF<EventMessage> eventService;
 
-    @Value("${nip05.domain:@lighter.im}")
-    private String nip05Domain;
-
     @Autowired
     private ProfileEntityService profileEntityService;
 
     static final Pattern LOCAL_PART_PATTERN = Pattern.compile("^[a-z0-9_]+$", Pattern.CASE_INSENSITIVE);
 
+    @Autowired
+    AccountMessageEntityService accountMessageEntityService;
+
+    @GetMapping("/lighter/account/{nostrPubkey}")
+    public Map<String, Object> getAccountByPubkey(@PathVariable String nostrPubkey) {
+        return getAccount("nostrPubkey", null, nostrPubkey, null, null);
+    }
+
+    @GetMapping("/lighter/account/nft/{chainId}/{nftId}")
+    public Map<String, Object> getAccountByChainIdAndNftId(@PathVariable BigInteger chainId, @PathVariable String nftId) {
+        return getAccount("nftId", chainId, null, nftId, null);
+    }
+
+    @GetMapping("/lighter/account/tba/{chainId}/{tba}")
+    public Map<String, Object> getAccountByChainIdAndTba(@PathVariable BigInteger chainId, @PathVariable String tba) {
+        return getAccount("tba", chainId, null, null, tba);
+    }
 
     @PostMapping("/lighter/pushTradeMessage")
-    public Map<String, String> pushTradeMessage(@RequestBody String json) {
+    public Map<String, Object> pushTradeMessage(@RequestBody String json) {
         try {
             T message = (T) new BaseMessageDecoder<>().decode(json);
             if (message instanceof EventMessage eventMessage) {
                 eventService.processIncomingEvent(eventMessage);
             }
-            Map<String, String> resp = new HashMap<>();
+            Map<String, Object> resp = new HashMap<>();
             resp.put("status", "0");
             return resp;
         }
         catch (Exception ex){
             log.warn(ex.getMessage(), ex);
-            return reportErrorMessage(ex);
+            return reportErrorMessage(ex.getMessage());
         }
     }
 
     @PostMapping("/lighter/nftMinted")
-    public Map<String, String> nftMinted(@RequestBody String json){
+    public Map<String, Object> nftMinted(@RequestBody String json){
         try{
             T message = (T) new BaseMessageDecoder<>().decode(json);
 //            if (message instanceof EventMessage eventMessage) {
 //                eventService.processIncomingEvent(eventMessage);
 //            }
             log.info("{}", message);
-            Map<String, String> resp = new HashMap<>();
+            Map<String, Object> resp = new HashMap<>();
             resp.put("status", "0");
             return resp;
         }
         catch (Throwable ex){
             log.warn(ex.getMessage(), ex);
-            return reportErrorMessage(ex);
+            return reportErrorMessage(ex.getMessage());
         }
     }
 
     @NotNull
-    private static Map<String, String> reportErrorMessage(Throwable ex) {
-        Map<String, String> resp = new HashMap<>();
+    private static Map<String, Object> reportErrorMessage(String message) {
+        Map<String, Object> resp = new HashMap<>();
         resp.put("status", "1");
-        resp.put("message", ex.getMessage());
+        resp.put("message", message);
         return resp;
     }
 
@@ -114,6 +124,25 @@ public class LighterController<T extends BaseMessage> {
             resp.put("status", "1");
             resp.put("message", ex.getMessage());
         }
+        return resp;
+    }
+
+    private Map<String, Object> getAccount(String type, BigInteger chainId, String nostrPubkey, String nftId, String tba) {
+        AccountMessageEntity accountMessageEntity = null;
+        if("nostrPubkey".equals(type)) {
+            accountMessageEntity = accountMessageEntityService.getByNostrPubkey(nostrPubkey);
+        } else if("nftId".equals(type)) {
+            accountMessageEntity = accountMessageEntityService.getByChainIdAndNftId(chainId, nftId);
+        } else if("tba".equals(type)) {
+            accountMessageEntity = accountMessageEntityService.getByChainIdAndTba(chainId, tba);
+        }
+        if(accountMessageEntity==null) {
+            return reportErrorMessage("account not found");
+        }
+        accountMessageEntity.setIpfsHash(String.format("https://ipfs.io/ipfs/%s", accountMessageEntity.getIpfsHash()));
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("status", "0");
+        resp.put("account", accountMessageEntity);
         return resp;
     }
 

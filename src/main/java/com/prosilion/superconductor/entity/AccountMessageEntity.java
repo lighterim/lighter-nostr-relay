@@ -26,9 +26,9 @@ import java.util.List;
 @NoArgsConstructor
 @Entity
 @Table(name = "nostr_account", indexes={
-        @Index(name="IX_ACCOUNT_CHAIN_ID", columnList = "chain_id"),
-        @Index(name="IX_ACCOUNT_NFT_ID", columnList = "nft_id" ),
-        @Index(name="IX_ACCOUNT_NOSTR_PUBKEY", columnList = "nostr_pubkey")
+        @Index(name="UX_ACCOUNT_CHAINID_NFTID", columnList = "chain_id, nft_id", unique = true),
+        @Index(name="UX_ACCOUNT_CHAINID_TAB", columnList = "chain_id, tba", unique = true),
+        @Index(name="IX_ACCOUNT_NOSTR_PUBKEY", columnList = "nostr_pubkey", unique = true)
 })
 public class AccountMessageEntity {
 

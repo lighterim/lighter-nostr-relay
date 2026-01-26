@@ -14,6 +14,7 @@ import nostr.event.Side;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
 
@@ -50,7 +51,7 @@ public class EIP712Signer {
     }
 
 
-    public static EscrowTag getSignedEscrowTag(
+    public static EscrowTag getSignedEscrowTag(RestClient restClient,
             TokenTag tokenTag, TakeTag takeTag, QuoteTag quoteTag, Permit2Tag permit2Tag,
             PaymentTag paymentTag, EIP712Tag eip712Tag, TokenConfig tokenConfig,
             long tradeId) {
@@ -96,7 +97,7 @@ public class EIP712Signer {
                 tokenTag.getSymbol()
         );
 
-        String sign = getRelayerSignature(data);
+        String sign = getRelayerSignature(restClient, data);
         return new EscrowTag(tradeId,
                 tokenTag.getAddress(),
                 takeTag.getVolume(),
@@ -113,7 +114,7 @@ public class EIP712Signer {
                 sign);
     }
 
-    public static String getEscrowSign(TakeIntentEvent takeIntentEvent, String seller, String buyer, TokenConfig tokenConfig) {
+    public static String getEscrowSign(RestClient restClient, TakeIntentEvent takeIntentEvent, String seller, String buyer, TokenConfig tokenConfig) {
         TokenTag tokenTag = takeIntentEvent.getTokenTag();
         TakeTag takeTag = takeIntentEvent.getTakeTag();
         QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
@@ -147,11 +148,10 @@ public class EIP712Signer {
                 tokenTag.getSymbol()
         );
 
-        return getRelayerSignature(data);
+        return getRelayerSignature(restClient, data);
     }
 
-    private static String getRelayerSignature(String data) {
-        RestClient restClient = new RestClient("https://api.lighter.im");
+    private static String getRelayerSignature(RestClient restClient, String data) {
         HttpResponse<String> response = restClient.post("/signature/escrow", data).join();
         if (response.statusCode() == 200) {
             String responseBody = response.body();

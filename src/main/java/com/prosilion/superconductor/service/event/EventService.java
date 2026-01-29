@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -219,8 +220,8 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
 
             //3.3 quote
             QuoteTag takeQuoteTag = takeIntentEvent.getQuoteTag();
-            QuoteTag postQuoteTag = postIntentEvent.getQuoteTag();
-            if (!takeQuoteTag.getCurrency().equals(postQuoteTag.getCurrency())) {
+            QuoteTag makerQuoteTag = postIntentEvent.getQuoteTag();
+            if (!takeQuoteTag.getCurrency().equals(makerQuoteTag.getCurrency())) {
                 String msg = String.format("invalid intent quote: %s, event id:%s", takeQuoteTag.getCurrency(), makeEventId);
                 log.warn(msg);
                 throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
@@ -248,6 +249,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
             }
 
+            BigDecimal takePrice = takeQuoteTag.getNumber().stripTrailingZeros();
             if (takeTag.getSide() == Side.BUY) {
                 // 3.4.1 payment detail
                 List<String> accounts = makePaymentTags.stream().map(PaymentTag::getAccount).toList();
@@ -260,9 +262,9 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                     throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
                 }
                 //设置成低的那个价格
-                if(postQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0
-                        && takeQuoteTag.getNumber().compareTo(postQuoteTag.getNumber()) > 0) {
-                    takeQuoteTag.setNumber(postQuoteTag.getNumber());
+                if(makerQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0
+                        && takePrice.compareTo(makerQuoteTag.getNumber()) > 0) {
+                    takeQuoteTag.setNumber(makerQuoteTag.getNumber());
                 }
                 //4. the maker is seller.
                 //TODO: reset EIP712Tag & Permit2Tag with postIntentEvent(maker.intent)
@@ -276,26 +278,30 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 takeIntentEvent.setEip712Tag(postIntentEvent.getEip712Tag());
                 validateEIP712(takeIntentEvent, SignerType.TAKE_EVENT, tokenConfig.getDecimals(token.getChainId().toString(), token.getSymbol()));
                 //设置成高的那个价格
-                if(postQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0
-                        && takeQuoteTag.getNumber().compareTo(postQuoteTag.getNumber()) < 0) {
-                    takeQuoteTag.setNumber(postQuoteTag.getNumber());
+                if(makerQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0
+                        && takePrice.compareTo(makerQuoteTag.getNumber()) < 0) {
+                    takeQuoteTag.setNumber(makerQuoteTag.getNumber());
                 }
             }
 
             //校验实时价格
-            BigDecimal price = postQuoteTag.getNumber();
-            if(price.compareTo(BigDecimal.ZERO) == 0) {
+            BigDecimal makerPrice = makerQuoteTag.getNumber();
+            if(makerPrice.compareTo(BigDecimal.ZERO) == 0) {
                 if(!StringUtils.hasText(takeQuoteTag.getSignature())) {
                     throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("QuoteTag signature is blank. eventId: %s", makeEventId));
                 }
-                if(takeQuoteTag.getTimestamp().longValue() < (System.currentTimeMillis() / 1000)) {
-                    throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("QuoteTag price timestamp has expired. eventId: %s", makeEventId));
+                BigInteger quoteDeadline = takeQuoteTag.getTimestamp();
+                if(quoteDeadline.longValue() < (System.currentTimeMillis() / 1000)) {
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("QuoteTag makerPrice timestamp has expired. eventId: %s", makeEventId));
                 }
-                TokenTag postTokenTag = postIntentEvent.getTokenTag();
-                String msg = String.format("%d%s%s%s%d", postTokenTag.getChainId(), postTokenTag.getAddress(), takeQuoteTag.getTimestamp(), takeQuoteTag.getNumber().toPlainString(), postQuoteTag.getSlippageBP());
+                TokenTag makerTokenTag = postIntentEvent.getTokenTag();
+                BigInteger chainId = makerTokenTag.getChainId();
+                String tokenAddress = makerTokenTag.getAddress();
+                String msg = String.format("%d%s%s%s%d", chainId, tokenAddress.toLowerCase(), quoteDeadline, takePrice.toPlainString(), makerQuoteTag.getSlippageBP());
                 boolean verify = ED25519Signer.verify(msg, takeQuoteTag.getSignature());
                 if(!verify) {
-                    throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("Spot API price verify fail. msg: %s eventId: %s", msg, makeEventId));
+                    log.warn("price verification failed: {} msg:{}, signature: {}", takeIntentEvent.getId(),  msg, takeQuoteTag.getSignature());
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("Spot API makerPrice verify fail. msg: %s eventId: %s", msg, makeEventId));
                 }
             }
             //well done

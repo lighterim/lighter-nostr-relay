@@ -32,4 +32,10 @@ public class ED25519Signer {
         }
     }
 
+    public static void main(String[] args) {
+        String message = "111551110x1c7d4b196cb0c7b01d743fbc6116a902379c723817696584331.001520";
+        String signature = "4b8f5ca71c0ccbae83bfa720bcfbeb5de65a319608c28891de4768eacaa24607831019307b9862c52a190b07c6e0bf5e3f1251cc2d097c9d4087ace74be8ad09";
+        System.out.println(verify(message,signature));
+    }
+
 }

@@ -629,7 +629,8 @@ public class EIP712Signer {
 
         Map<String, Object> tokenPermissionsMap = new LinkedHashMap<>();
         tokenPermissionsMap.put("token", tokenTag.getAddress());
-        tokenPermissionsMap.put("amount", takeTag.getVolume().multiply(BigDecimal.TEN.pow(tokenDecimals)).toPlainString());
+        BigDecimal baseUnit = BigDecimal.TEN.pow(tokenDecimals);
+        tokenPermissionsMap.put("amount", takeTag.getVolume().multiply(baseUnit).stripTrailingZeros().toPlainString());
 
         Map<String, Object> permitTransferFromMap = new LinkedHashMap<>();
         permitTransferFromMap.put("permitted", tokenPermissionsMap);

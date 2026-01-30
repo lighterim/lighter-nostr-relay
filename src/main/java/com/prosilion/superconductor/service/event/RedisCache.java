@@ -164,6 +164,7 @@ public class RedisCache<T extends GenericEvent> {
                     //前端取消(takeTag.visibleState)take
                     if (tradeId == 0L){
                         log.warn("takeIntentEvent.takeTag.visibleStatus is null{} and tradeId is {}", takeIntentEvent.getId(), tradeId);
+                        throw new IllegalArgumentException("takeIntentEvent.takeTag.visibleStatus and tradeId is 0");
                     }
 
                     TakeIntentEventEntity takeIntentEventEntity = tradeEntityService.getTakeIntentEventEntityById(tradeId);

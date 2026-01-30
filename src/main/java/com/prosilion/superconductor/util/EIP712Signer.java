@@ -246,15 +246,6 @@ public class EIP712Signer {
                 case SIGNATURE_SELL -> verifySignatureSell(postIntentEvent, tokenDecimals);
                 case BUYER_INTENT -> verifyBuyerIntent(postIntentEvent, tokenDecimals);
             };
-//            if(intentType.equals(IntentType.BULK_SELL)) {
-//                boolean verifyPermit2 = verifyPermit2(postIntentEvent);
-//                if(!verifyPermit2) {
-//                    return false;
-//                }
-//            }
-//            eip712Tag = postIntentEvent.getEip712Tag();
-//            signature = eip712Tag.getSign();
-//            structuredDataJson = createPostStructuredDataJson(postIntentEvent, false);
         } else if(signerType.equals(SignerType.TAKE_EVENT)){
             TakeIntentEvent takeIntentEvent = (TakeIntentEvent)event;
             return verifySellerTakeIntent(takeIntentEvent, tokenDecimals);

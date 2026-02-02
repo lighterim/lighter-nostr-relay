@@ -12,11 +12,13 @@ import jakarta.annotation.Resource;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
+import nostr.crypto.schnorr.Schnorr;
 import nostr.event.*;
 import nostr.event.impl.*;
 import nostr.event.message.EventMessage;
 import nostr.event.tag.*;
 import nostr.event.util.Nip05Validator;
+import nostr.util.NostrUtil;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -94,6 +96,16 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     }
 
     private void validateEventForwarding(GenericEvent event) {
+        boolean verify;
+        try {
+            event.updateSerializedEvent();
+            verify = Schnorr.verify(NostrUtil.sha256(event.get_serializedEvent()), event.getPubKey().getRawData(), event.getSignature().getRawData());
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SIG_SIGN_ERROR, "sig verify error.");
+        }
+        if(!verify) {
+            throw new BusinessException(ErrorCode.SIG_SIGN_ERROR, "sig verify fail.");
+        }
         if (event instanceof PostIntentEvent postIntentEvent) {
             validatePostIntentEvent(postIntentEvent);
             TokenTag tokenTag = postIntentEvent.getTokenTag();

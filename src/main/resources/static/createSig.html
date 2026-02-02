@@ -1,0 +1,81 @@
+<script src="./nostr.bundle.js"></script>
+<script>
+    // 现在可以通过 window.nostr 访问所有函数
+    const { generateSecretKey, getPublicKey, finalizeEvent } = window.NostrTools;
+
+    function bytesToHex(bytes) {
+        return Array.from(bytes)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+
+    function hexToBytes(hex) {
+        hex = hex.trim().toLowerCase();
+        // 移除 0x 前缀
+        if (hex.startsWith('0x')) {
+            hex = hex.substring(2);
+        }
+        // 确保长度是偶数
+        if (hex.length % 2 !== 0) {
+            hex = '0' + hex;
+        }
+
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < hex.length; i += 2) {
+            bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+        }
+        return bytes;
+    }
+    function createAndSignNostrEvent(kind, created_at, tags, content, privateKey) {
+        // 如果还没有私钥，生成一个
+        if (!privateKey) {
+            privateKey = generateSecretKey();
+        }else if (typeof privateKey === 'string') {
+            // 如果私钥是十六进制字符串，转换为 Uint8Array
+            privateKey = hexToBytes(privateKey);
+        }
+
+        // 获取公钥
+        const pubkey = getPublicKey(privateKey);
+
+        // 创建事件模板
+        const eventTemplate = {
+            kind: kind,
+            created_at: created_at,
+            tags: tags,
+            content: content
+        };
+
+        // 签名事件
+        const signedEvent = finalizeEvent(eventTemplate, privateKey);
+
+        return {
+            signedEvent,
+            privateKey: bytesToHex(privateKey),
+            publicKey: pubkey
+        };
+    }
+
+    const tags = [
+            ['title','Custom Title'],
+            ['make','sell','1','9659f29cc4f3348a86e0897f41df384d3d8544078ff67d74973f3241f1b5f9d0','SIGNATURE_SELL'],
+            ['eip712','0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B','0xecd4fff6ea02f004143f9cf0b9546964800b16aa','MainnetUserTxn','1','0x86b9a740df5924391d37ee0fa7ebd1351834d6c76016c0bc6e8298ce43a814d520a5fbe549a50e7da6192a0696aedb42e2e2a99a9dbb96f274f665109c0a81951b'],
+            ['published_at','1769928235'],
+            ['limit','1000','10000'],
+            ['permit2','1212121','tytytytytyty','0x00000000000','0x00000000000','0xc73a3413406d719ea763d4d122eb371a1956292f','0x000000000022D473030F116dDEE9F6B43aC78BA3','Permit2'],
+            ['token','xrd','radixDLT','stokenet','0x1c7d4b196cb0c7b01d743fbc6116a902379c7238','1000','11155111','1760355495','0'],
+            ['quote','0','USD','71900000','0x86b9a740df5924391d37ee0fa7ebd1351834d6c76016c0bc6e8298ce43a814d520a5fbe549a50e7da6192a0696aedb42e2e2a99a9dbb96f274f665109c0a81951b','-100000','0'],
+            ['payment','alipay','cash11','cash11','cash11']
+        ]
+    const kind = 30077
+    const created_at = 1769928235
+    const content = 'Custom Content'
+    const pri_key = ''
+    // 使用示例
+    const result = createAndSignNostrEvent(kind, created_at, tags, content, pri_key);
+    console.log('Signed Event:', result.signedEvent);
+    console.log('Event ID:', result.signedEvent.id);
+    console.log('Signature:', result.signedEvent.sig);
+    console.log('privateKey:', result.privateKey);
+    console.log('publicKey:', result.publicKey);
+</script>

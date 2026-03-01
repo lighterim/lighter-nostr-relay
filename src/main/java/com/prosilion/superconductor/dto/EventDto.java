@@ -45,6 +45,12 @@ public class EventDto extends NIP01Event {
                 make.getMakerNip05(),
                 event.getPubKey().toString(),
                 make.getIntentType(),
+                make.getClientId(),
+                make.getFeeRate(),
+                make.getTotalTransAmount(),
+                make.getOrderCompletionRate(),
+                make.getKycAddress(),
+                make.getKycResult(),
 
                 token.getSymbol(),
                 token.getChain(),

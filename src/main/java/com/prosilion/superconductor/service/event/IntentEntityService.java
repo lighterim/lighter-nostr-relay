@@ -4,23 +4,25 @@ import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import com.prosilion.superconductor.entity.IntentEventEntity;
 import com.prosilion.superconductor.entity.join.IntentEntityAbstractTagEntity;
+import com.prosilion.superconductor.http.body.Intents;
 import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
 import com.prosilion.superconductor.repository.PostEventEntityRepository;
 import com.prosilion.superconductor.repository.join.IntentEntityAbstractTagEntityRepository;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
-import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
 import nostr.event.IntentType;
 import nostr.event.Kind;
-import nostr.event.Side;
+import nostr.event.impl.GenericEvent;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -120,6 +122,36 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
                 .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
                         Collectors.toMap(IntentEventEntity::getId, IntentEventEntity::convertEntityToDto)));
         return map;
+    }
+
+    public List<GenericEvent> getAllAsList(Intents intents) {
+        Specification<IntentEventEntity> spec = Specification.where(null);
+
+        if(intents.getId()!=null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.gt(root.get("id"), intents.getId()));
+        }
+
+        if(StringUtils.hasText(intents.getPubKey())) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("pubkey"), intents.getPubKey()));
+        }
+
+        if(StringUtils.hasText(intents.getEventId())) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("eventIdString"), intents.getEventId()));
+        }
+
+        if(intents.getStatus()==null) {
+            intents.setStatus(1);
+        }
+        spec = spec.and((root, query, cb) ->
+                cb.equal(root.get("status"), intents.getStatus()));
+
+        return postEventEntityRepository.findAll(spec).stream()
+                .map(this::populateEventEntity)
+                .map(entity -> (GenericEvent) entity.convertEntityToDto())
+                .collect(Collectors.toList());
     }
 
     private IntentEventEntity populateEventEntity(IntentEventEntity postIntentEventEntity) {

@@ -995,7 +995,7 @@ public class EIP712Signer {
             new TokenTag("USDT", "ethereum", "sepolia", "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0", new BigDecimal(1), BigInteger.valueOf(11155111), "1761904920", new BigDecimal(0)),
             // ["quote","3.221E+21","USD","1E+18",""]
             new QuoteTag(new BigDecimal("1"), "USD", new BigDecimal("1"), new BigInteger("1761237799"), "", 0),
-            new MakeTag(Side.SELL, "", pk.toString(), IntentType.SIGNATURE_SELL),
+            new MakeTag(Side.SELL, "", pk.toString(), IntentType.SIGNATURE_SELL, "", null, null, null, null, null),
             new Permit2Tag("270178257646664", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x1e4d58c5a97ab35c614a90ab04acc78711729f18", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2"),
             new LimitTag(BigDecimal.valueOf(1), BigDecimal.valueOf(1)),
             new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")

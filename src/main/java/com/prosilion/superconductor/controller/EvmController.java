@@ -2,24 +2,32 @@ package com.prosilion.superconductor.controller;
 
 import com.google.gson.Gson;
 import com.prosilion.superconductor.http.body.AddressBook;
+import com.prosilion.superconductor.http.body.Intents;
 import com.prosilion.superconductor.http.body.Rate;
+import com.prosilion.superconductor.http.body.Trades;
 import com.prosilion.superconductor.service.event.EventServiceIF;
+import com.prosilion.superconductor.service.event.IntentEntityService;
+import com.prosilion.superconductor.service.event.TradeEntityService;
+import com.prosilion.superconductor.service.event.TradeMessageEntityService;
+import com.prosilion.superconductor.util.BusinessException;
+import com.prosilion.superconductor.util.ErrorCode;
 import com.prosilion.superconductor.util.TagUtil;
 import lombok.extern.slf4j.Slf4j;
+import nostr.base.IEvent;
+import nostr.crypto.schnorr.Schnorr;
 import nostr.event.BaseMessage;
 import nostr.event.Kind;
 import nostr.event.impl.AddressBookIntentEvent;
+import nostr.event.impl.GenericEvent;
 import nostr.event.json.codec.BaseMessageDecoder;
 import nostr.event.message.EventMessage;
+import nostr.util.NostrUtil;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -29,8 +37,53 @@ public class EvmController<T extends BaseMessage> {
     @Autowired
     private EventServiceIF<EventMessage> eventService;
 
+    @Autowired
+    private IntentEntityService intentEntityService;
+
+    @Autowired
+    private TradeEntityService tradeEntityService;
+
+    @Autowired
+    private TradeMessageEntityService tradeMessageEntityService;
+
     @Value("#{${rate.bp}}")
     private Map<String, Integer> rateBP;
+
+    @PostMapping("/intents")
+    public Map<String, Object> listIntent(@RequestBody Intents intents) {
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("status", 0);
+        resp.put("data", intentEntityService.getAllAsList(intents));
+        return resp;
+    }
+
+    @PostMapping("/trades")
+    public Map<String, Object> listTrade(@RequestBody Trades trades, @RequestHeader(value = "X-Nostr-Sig") String sig) {
+        boolean verify = true;//tradeEntityService.verifyTradesSig(sig, trades);
+        Map<String, Object> resp = new HashMap<>();
+        if(!verify) {
+            resp.put("status", 1001);
+            resp.put("message", "sig verify fail.");
+            return resp;
+        }
+        resp.put("status", 0);
+        resp.put("data", tradeEntityService.getAllasList(trades));
+        return resp;
+    }
+
+    @PostMapping("/trade/messages")
+    public Map<String, Object> listTradeMessage(@RequestBody Trades trades, @RequestHeader(value = "X-Nostr-Sig") String sig) {
+        boolean verify = true;//tradeEntityService.verifyTradesSig(sig, trades);
+        Map<String, Object> resp = new HashMap<>();
+        if(!verify) {
+            resp.put("status", 1001);
+            resp.put("message", "sig verify fail.");
+            return resp;
+        }
+        resp.put("status", 0);
+        resp.put("data", tradeEntityService.getAllasList(trades));
+        return resp;
+    }
 
     @PostMapping("/rate/get")
     public Map<String, Integer> getRate(@RequestBody Rate rate) {
@@ -96,5 +149,4 @@ public class EvmController<T extends BaseMessage> {
         resp.put("message", ex.getMessage());
         return resp;
     }
-
 }

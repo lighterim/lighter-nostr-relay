@@ -41,6 +41,12 @@ public class IntentEventEntity {
     private String nip05;
     private String pubkey;
     private IntentType intentType;
+    private String clientId;
+    private Integer feeRate;
+    private BigDecimal totalTransAmount;
+    private Integer orderCompletionRate;
+    private String kycAddress;
+    private String kycResult;
 
     /** token **/
     private String symbol;
@@ -105,6 +111,7 @@ public class IntentEventEntity {
     private Long version; // 版本号字段
 
     public IntentEventEntity(String side, String nip05, String pubkey, IntentType intentType,
+                             String clientId, Integer feeRate, BigDecimal totalTransAmount, Integer orderCompletionRate, String kycAddress, String kycResult,
                              String symbol, String chain, String network, String address, BigDecimal amount, BigInteger chainId, String expireTime,
                              String walletAddress, String domainVersion,String domainAppName, String contractAddress, String eip712Signature,
                              BigDecimal price, String currency, BigInteger quoteDeadline, String quoteSignature, BigDecimal usdRate, Integer slippageBP,
@@ -115,6 +122,12 @@ public class IntentEventEntity {
         this.nip05 = nip05;
         this.pubkey = pubkey;
         this.intentType = intentType;
+        this.clientId = clientId;
+        this.feeRate = feeRate;
+        this.totalTransAmount = totalTransAmount;
+        this.orderCompletionRate = orderCompletionRate;
+        this.kycAddress = kycAddress;
+        this.kycResult = kycResult;
 
         this.symbol = symbol;
         this.chain = chain;
@@ -174,7 +187,7 @@ public class IntentEventEntity {
         event.setSignature(signature);
 
         List<BaseTag> tagList = new ArrayList<>(tags);
-        MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType);
+        MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType, clientId, feeRate, totalTransAmount, orderCompletionRate, kycAddress, kycResult);
         TokenTag token = new TokenTag(symbol, chain, network, tokenAddress, amount.stripTrailingZeros(), chainId, expireTime, tradedAmount);
         QuoteTag quote = new QuoteTag(price, quoteCurrency, quoteUsdRate, quoteDeadline, quoteSignature, quoteSlippageBP);
         EIP712Tag eip712Tag = new EIP712Tag(eip712WalletAddress, eip712ContractAddress, eip712DomainAppName, eip712DomainVersion, eip712Signature);

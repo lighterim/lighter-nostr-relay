@@ -1,17 +1,19 @@
 package com.prosilion.superconductor.service.event;
 
+import com.google.gson.Gson;
 import com.prosilion.superconductor.config.TokenConfig;
 import com.prosilion.superconductor.dto.EventDto;
 import com.prosilion.superconductor.dto.generic.ElementAttributeDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
+import com.prosilion.superconductor.entity.IntentEventEntity;
 import com.prosilion.superconductor.entity.TakeIntentEventEntity;
 import com.prosilion.superconductor.entity.join.EventEntityAbstractTagEntity;
+import com.prosilion.superconductor.http.body.Trades;
 import com.prosilion.superconductor.repository.AbstractTagEntityRepository;
 import com.prosilion.superconductor.repository.TakeEventEntityRepository;
 import com.prosilion.superconductor.repository.join.EventEntityAbstractTagEntityRepository;
 import com.prosilion.superconductor.service.event.join.generic.GenericTagEntitiesService;
-import com.prosilion.superconductor.util.EIP712Signer;
-import com.prosilion.superconductor.util.RestClient;
+import com.prosilion.superconductor.util.*;
 import jakarta.annotation.Resource;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -19,15 +21,19 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import nostr.crypto.schnorr.Schnorr;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
 import nostr.event.TradeStatus;
-import nostr.event.impl.GenericTag;
-import nostr.event.impl.TakeIntentEvent;
+import nostr.event.impl.*;
+import nostr.event.json.codec.BaseMessageDecoder;
+import nostr.event.message.EventMessage;
 import nostr.event.tag.*;
+import nostr.util.NostrUtil;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -212,5 +218,64 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         TakeIntentEventEntity entity = opt.get();
         entity.setEscrowSignature(sign);
         entityManager.merge(entity);
+    }
+
+    public List<GenericEvent> getAllasList(Trades trades) {
+        Specification<TakeIntentEventEntity> spec = Specification.where(null);
+
+        if(trades.getId()!=null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.gt(root.get("id"), trades.getId()));
+        }
+
+        if(StringUtils.hasText(trades.getPubKey())) {
+            spec = spec.and((root, query, cb) ->
+                    cb.or(
+                            cb.equal(root.get("buyerPubKey"), trades.getPubKey()),
+                            cb.equal(root.get("sellerPubKey"), trades.getPubKey())
+                    ));
+        }
+
+        return takeEventEntityRepository.findAll(spec).stream()
+                .map(this::populateEventEntity)
+                .map(entity -> (GenericEvent) entity.convertEntityToDto())
+                .collect(Collectors.toList());
+    }
+
+    public boolean verifyTradesSig(String sig, Trades trades) {
+        Gson gson = new Gson();
+        Map<String, Object> event = new LinkedHashMap<>();
+
+        int kind = Kind.POST_INTENT.getValue();
+        long ts = System.currentTimeMillis();
+        String digestContent = String.format("[[%d,%s,%d]]",
+                ts,
+                trades.getPubKey(),
+                kind);
+
+        event.put("id", TagUtil.createDigest(digestContent));
+        event.put("kind", kind);
+        event.put("content", "trades");
+        event.put("tags", Arrays.asList(
+                Arrays.asList("trades", trades.getNftId(),
+                        trades.getChainId(),
+                        trades.getPubKey())));
+        event.put("pubkey", trades.getPubKey());
+        event.put("created_at", ts / 1000);
+        event.put("sig", sig);
+
+        Object[] eventObj = new Object[]{"EVENT", event};
+        String json = gson.toJson(eventObj);
+
+        boolean verify;
+        EventMessage message = (EventMessage) new BaseMessageDecoder<>().decode(json);
+        GenericEvent messageEvent = (GenericEvent) message.getEvent();
+        try {
+            messageEvent.updateSerializedEvent();
+            verify = Schnorr.verify(NostrUtil.sha256(messageEvent.get_serializedEvent()), messageEvent.getPubKey().getRawData(), messageEvent.getSignature().getRawData());
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SIG_SIGN_ERROR, "sig verify error.");
+        }
+        return verify;
     }
 }

@@ -14,6 +14,7 @@ public enum ErrorCode {
     COMMON_ERROR(1001, "未知错误"),
     PARAM_ERROR(1002, "参数错误"),
     TRADE_ID_NOT_FOUND(1003, "TradeId不存在"),
+    SIG_SIGN_ERROR(1004, "Sig校验错误"),
     ;
 
     private final int code;

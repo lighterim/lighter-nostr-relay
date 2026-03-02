@@ -1,11 +1,11 @@
-package com.prosilion.superconductor.entity.event;
+package com.prosilion.superconductor.http.body;
 
 import lombok.Data;
 
 import java.math.BigInteger;
 
 @Data
-public class AddressBookReq {
+public class AddressBook {
 
     private String name;
 

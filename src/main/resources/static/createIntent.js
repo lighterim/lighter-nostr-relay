@@ -43,16 +43,16 @@ function replaceHash(id_hash) {
                 'tags': [
                     // ['subject', $("#subject").val()],
                     ['title', $("#title").val()],
-                    ['make', $("#side").val(), $("#userId").val(), $("#pubkey").val(), $("#intentType").val()],
+                    ['make', $("#side").val(), '1', $("#pubkey").val(), $("#intentType").val()],
                     ['eip712', $("#walletAddress").val(), $("#contractAddress").val(), $("#domainAppName").val(), $("#domainVersion").val(), $("#sign").val()],
-                    ['published_at', Date.now()],
+                    ['published_at', '1769928235'],
                     // ['summary', $("#summary").val()],
-                    ['limit', "1000000", "100000000"],
+                    ['limit', '1000', '10000'],
                     [
                         'permit2', $("#nonce").val(), $("#permit2_signature").val(), $('#payer').val(), $('#payer').val(), "0xc73a3413406d719ea763d4d122eb371a1956292f", "0x000000000022D473030F116dDEE9F6B43aC78BA3", "Permit2"
                     ],
-                    ['token', $("#symbol").val(), $("#chain").val(), "stokenet", $("#token_addr").val(), $("#amount").val(), $("#chainId").val(), $("#expiryTime").val()],
-                    ['quote', $("#number").val(), $("#currency").val(), "71900000", $("#sign").val(), "-100000"],
+                    ['token', $("#symbol").val(), $("#chain").val(), "stokenet", $("#token_addr").val(), '1000', $("#chainId").val(), $("#expiryTime").val(), '0'],
+                    ['quote', $("#number").val(), $("#currency").val(), "71900000", $("#sign").val(), "-100000", "0"],
                     ['payment', 'alipay', 'cash11', 'cash11', 'cash11']
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'seller'],
                     // ['p', 'cccd79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984', null, 'buyer'],
@@ -63,8 +63,8 @@ function replaceHash(id_hash) {
                     // ['g', $("#g_tag").val()]
                 ],
                 'pubkey': $("#pubkey").val(),
-                'created_at': Date.now(),
-                'sig': '86f25c161fec51b9e441bdb2c09095d5f8b92fdce66cb80d9ef09fad6ce53eaa14c5e16787c42f5404905536e43ebec0e463aee819378a4acbe412c533e60546'
+                'created_at': 1769928235,
+                'sig': '07a50f926b69bfb8fdaaba836dcebc33b6dda64ff2ee5e1201985b65f956d97b0d6bc9629aacd012fafec09abf294b5ff2f514a5aa08ef7ef261eced5e3b210e'
             }
         )
         + "]";

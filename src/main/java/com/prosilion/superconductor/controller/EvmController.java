@@ -1,7 +1,8 @@
 package com.prosilion.superconductor.controller;
 
 import com.google.gson.Gson;
-import com.prosilion.superconductor.entity.event.AddressBookReq;
+import com.prosilion.superconductor.http.body.AddressBook;
+import com.prosilion.superconductor.http.body.Rate;
 import com.prosilion.superconductor.service.event.EventServiceIF;
 import com.prosilion.superconductor.util.TagUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -12,10 +13,8 @@ import nostr.event.json.codec.BaseMessageDecoder;
 import nostr.event.message.EventMessage;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,8 +29,24 @@ public class EvmController<T extends BaseMessage> {
     @Autowired
     private EventServiceIF<EventMessage> eventService;
 
+    @Value("#{${rate.bp}}")
+    private Map<String, Integer> rateBP;
+
+    @PostMapping("/rate/get")
+    public Map<String, Integer> getRate(@RequestBody Rate rate) {
+        Integer rateValue = null;
+        if(rate.getSide()!=null) {
+            rateValue = rateBP.get(rate.getSide().name());
+        } else if(rate.getRole()!=null) {
+            rateValue = rateBP.get(rate.getRole().name());
+        }
+        Map<String, Integer> resp = new HashMap<>();
+        resp.put("status", 0);
+        resp.put("rate", rateValue);
+        return resp;
+    }
     @PostMapping("/addressbook/add")
-    public Map<String, String> pushAddressBookMessage(@RequestBody AddressBookReq addressBookReq) {
+    public Map<String, String> pushAddressBookMessage(@RequestBody AddressBook addressBook) {
         Gson gson = new Gson();
         Map<String, Object> event = new LinkedHashMap<>();
 
@@ -39,20 +54,20 @@ public class EvmController<T extends BaseMessage> {
         long ts = System.currentTimeMillis();
         String digestContent = String.format("[[%d,%s,%d,%s,%s]]",
                 ts,
-                addressBookReq.getPubkey(),
+                addressBook.getPubkey(),
                 kind,
-                addressBookReq.getCreatedBy(),
-                addressBookReq.getAddress());
+                addressBook.getCreatedBy(),
+                addressBook.getAddress());
 
         event.put("id", TagUtil.createDigest(digestContent));
         event.put("kind", kind);
         event.put("content", AddressBookIntentEvent.ADDRESS_BOOK_TAG_CODE);
         event.put("tags", Arrays.asList(
-                Arrays.asList("address_book", addressBookReq.getName(), addressBookReq.getAddress(),
-                        addressBookReq.getPubkey(),
-                        addressBookReq.getNftId(),
-                        addressBookReq.getChainId(), addressBookReq.getCreatedBy())));
-        event.put("pubkey", addressBookReq.getPubkey());
+                Arrays.asList("address_book", addressBook.getName(), addressBook.getAddress(),
+                        addressBook.getPubkey(),
+                        addressBook.getNftId(),
+                        addressBook.getChainId(), addressBook.getCreatedBy())));
+        event.put("pubkey", addressBook.getPubkey());
         event.put("created_at", ts);
 
         Object[] eventObj = new Object[]{"EVENT", event};

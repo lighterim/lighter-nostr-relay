@@ -1,19 +1,24 @@
 package com.prosilion.superconductor.entity;
 
 import com.prosilion.superconductor.util.EIP712Signer;
+import com.prosilion.superconductor.util.NostrSigner;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
+import nostr.crypto.bech32.Bech32;
+import nostr.encryption.nip04.MessageCipher04;
 import nostr.event.BaseTag;
 import nostr.event.Side;
 import nostr.event.TradeStatus;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
+import nostr.util.NostrException;
 import nostr.util.NostrUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -255,7 +260,7 @@ public class TakeIntentEventEntity {
                             new TakeTag(side, makeIntentEventId, seller, sellerPubKey, volume_, buyer, buyerPubKey, sellerFeeRate_, buyerFeeRate_, payer, 1),
                             new TokenTag(symbol, chain, network, tokenAddr, max(lowLimit, upLimit).stripTrailingZeros(), chainId, expireTime, null),
                             new QuoteTag(price_, currency, usdRate_, quoteDeadline, quoteSignature, slippageBP),
-                            new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo),
+                            new PaymentTag(paymentMethod, NostrSigner.decrypt(paymentAccount), NostrSigner.decrypt(paymentQrCode), paymentMemo),
                             new LimitTag(lowLimit_, upLimit_),
                             new EIP712Tag(eip712WalletAddress, eip712ContractAddress, eip712DomainAppName, eip712DomainVersion, eip712Signature),
                             new Permit2Tag(permit2Nonce, permit2Sign, payer, permit2Spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName),

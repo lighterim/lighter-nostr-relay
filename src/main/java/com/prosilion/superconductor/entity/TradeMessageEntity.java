@@ -1,5 +1,6 @@
 package com.prosilion.superconductor.entity;
 
+import com.prosilion.superconductor.util.NostrSigner;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -67,6 +68,7 @@ public class TradeMessageEntity {
                 (tags==null||tags.isEmpty())? list: Stream.concat(tags.stream(),list.stream()).toList(),
                 content
         );
+        takeEvent.setContent(NostrSigner.decrypt(takeEvent.getContent()));
         takeEvent.setSignature(sig);
         takeEvent.setCreatedAt(createAt);
         takeEvent.setId(eventIdString);

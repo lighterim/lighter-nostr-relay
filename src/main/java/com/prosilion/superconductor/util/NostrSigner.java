@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.HexFormat;
 
@@ -41,11 +42,17 @@ public class NostrSigner {
         messageCipher04 = new MessageCipher04(nostrPriKeyBytes, publicKey.getRawData());
     }
 
-    public static String encrypt(@NonNull String message) {
+    public static String encrypt(String message) {
+        if(!StringUtils.hasText(message)) {
+            return message;
+        }
         return messageCipher04.encrypt(message);
     }
 
-    public static String decrypt(@NonNull String message) {
+    public static String decrypt(String message) {
+        if(!StringUtils.hasText(message)) {
+            return message;
+        }
         return messageCipher04.decrypt(message);
     }
 }

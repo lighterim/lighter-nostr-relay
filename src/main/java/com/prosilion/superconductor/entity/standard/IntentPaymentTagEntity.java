@@ -3,6 +3,7 @@ package com.prosilion.superconductor.entity.standard;
 import com.prosilion.superconductor.dto.AbstractTagDto;
 import com.prosilion.superconductor.dto.classified.IntentPaymentTagDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
+import com.prosilion.superconductor.util.NostrSigner;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -28,9 +29,9 @@ public class IntentPaymentTagEntity extends AbstractTagEntity {
 
     public IntentPaymentTagEntity(@NonNull PaymentTag paymentTag){
         this.method = paymentTag.getMethod();
-        this.account = paymentTag.getAccount();
-        this.qrCode = paymentTag.getQrCode();
-        this.memo = paymentTag.getMemo();
+        this.account = NostrSigner.encrypt(paymentTag.getAccount());
+        this.qrCode = NostrSigner.encrypt(paymentTag.getQrCode());
+        this.memo = NostrSigner.encrypt(paymentTag.getMemo());
     }
 
     @Override
@@ -40,12 +41,20 @@ public class IntentPaymentTagEntity extends AbstractTagEntity {
 
     @Override
     public AbstractTagDto convertEntityToDto() {
-        return new IntentPaymentTagDto(new PaymentTag(method, account, qrCode, memo));
+        return new IntentPaymentTagDto(new PaymentTag(
+                method,
+                NostrSigner.decrypt(account),
+                NostrSigner.decrypt(qrCode),
+                NostrSigner.decrypt(memo)));
     }
 
     @Override
     public BaseTag getAsBaseTag() {
-        return new PaymentTag(method, account, qrCode, memo);
+        return new PaymentTag(
+                method,
+                NostrSigner.decrypt(account),
+                NostrSigner.decrypt(qrCode),
+                NostrSigner.decrypt(memo));
     }
 
     @Override

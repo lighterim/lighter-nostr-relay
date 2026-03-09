@@ -1,14 +1,21 @@
 package com.prosilion.superconductor.dto;
 
 import com.prosilion.superconductor.entity.*;
+import com.prosilion.superconductor.util.NostrSigner;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
+import nostr.crypto.bech32.Bech32;
+import nostr.encryption.nip04.MessageCipher04;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
 import nostr.event.NIP01Event;
 import nostr.event.Side;
 import nostr.event.impl.*;
 import nostr.event.tag.*;
+import nostr.util.NostrException;
+import nostr.util.NostrUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -156,7 +163,7 @@ public class EventDto extends NIP01Event {
                 takeTag.getSellerFeeRate(), takeTag.getBuyerFeeRate(), takeTag.getPayer(),
                 tokenTag.getAddress(), tokenTag.getSymbol(), tokenTag.getChainId(), tokenTag.getExpiryTime(), tokenTag.getChain(), tokenTag.getNetwork(),
                 quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(), quoteTag.getSlippageBP(), quoteTag.getTimestamp(), quoteTag.getSignature(),
-                paymentTag.getMethod(), paymentTag.getAccount(), paymentTag.getQrCode(), paymentTag.getMemo(),
+                paymentTag.getMethod(), NostrSigner.encrypt(paymentTag.getAccount()), NostrSigner.encrypt(paymentTag.getQrCode()), paymentTag.getMemo(),
                 keyTag==null?"":keyTag.getKeyForBuyer(), keyTag==null?"":keyTag.getKeyForSeller(), keyTag==null?"":keyTag.getKeyForWitness(), keyTag==null?"":keyTag.getKeyForSomeone(), keyTag==null?"":keyTag.getPubkey(),
                 event.getTradeStatus(),
                 event.getContent(),
@@ -178,7 +185,7 @@ public class EventDto extends NIP01Event {
                 createdByTag.getTakeIntentEventId(),
                 createdByTag.getNip05(),
                 createdByTag.getPubkey(),
-                event.getContent(),
+                NostrSigner.encrypt(event.getContent()),
                 event.getSignature().toString(),
                 event.getEip712Tag() == null ? "" : event.getEip712Tag().getSign(),
                 event.getCreatedAt()

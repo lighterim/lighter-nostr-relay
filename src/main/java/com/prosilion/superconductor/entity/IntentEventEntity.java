@@ -1,15 +1,13 @@
 package com.prosilion.superconductor.entity;
 
 import jakarta.persistence.*;
+import jnr.ffi.annotations.In;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import nostr.base.PublicKey;
 import nostr.base.Signature;
-import nostr.event.BaseTag;
-import nostr.event.IntentType;
-import nostr.event.Kind;
-import nostr.event.Side;
+import nostr.event.*;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.tag.*;
@@ -28,6 +26,7 @@ import java.util.List;
         @Index(name="IX_INTENT_EVENT_ID_STRING", columnList = "eventIdString", unique = true),
         @Index(name="IX_INTENT_SYMBOL", columnList = "symbol" ),
         @Index(name="IX_INTENT_SIDE", columnList = "side"),
+        @Index(name="IX_INTENT_CHAIN_ID", columnList = "chainId"),
         @Index(name="IX_INTENT_CURRENCY", columnList = "quoteCurrency")
 })
 public class IntentEventEntity {
@@ -41,6 +40,11 @@ public class IntentEventEntity {
     private String nip05;
     private String pubkey;
     private IntentType intentType;
+    private Integer status;
+    private Integer feeRateBp;
+    private String clientId;
+    private Long accumulatedUsd;
+    private Integer completedRatioBp;
 
     /** token **/
     private String symbol;
@@ -99,22 +103,27 @@ public class IntentEventEntity {
     @Transient
     private List<BaseTag> tags;
 
-    private Integer status;
+
 
     @Version
     private Long version; // 版本号字段
 
-    public IntentEventEntity(String side, String nip05, String pubkey, IntentType intentType,
-                             String symbol, String chain, String network, String address, BigDecimal amount, BigInteger chainId, String expireTime,
+    public IntentEventEntity(String side, String nip05, String pubkey, IntentType intentType, IntentStatus status, Integer feeRateBp, String clientId, Long accumulatedUsd, Integer completedRatioBp,
+                             String symbol, String chain, String network, String address, BigDecimal amount, BigInteger chainId, String expireTime, BigDecimal tradedAmount,
                              String walletAddress, String domainVersion,String domainAppName, String contractAddress, String eip712Signature,
                              BigDecimal price, String currency, BigInteger quoteDeadline, String quoteSignature, BigDecimal usdRate, Integer slippageBP,
                              BigDecimal lowLimit, BigDecimal upLimit,
                              String nonce, String permit2Sign, String payer, String spender,String permit2WalletAddress, String permit2DomainAppName, String permit2ContractAddress,
-                             String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content, Integer status, BigDecimal tradedAmount) {
+                             String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content) {
         this.side = side;
         this.nip05 = nip05;
         this.pubkey = pubkey;
         this.intentType = intentType;
+        this.status = status == IntentStatus.OPEN ? 1 : 0;
+        this.feeRateBp = feeRateBp;
+        this.clientId = clientId;
+        this.accumulatedUsd = accumulatedUsd;
+        this.completedRatioBp = completedRatioBp;
 
         this.symbol = symbol;
         this.chain = chain;
@@ -123,6 +132,7 @@ public class IntentEventEntity {
         this.amount = amount;
         this.chainId = chainId;
         this.expireTime = expireTime;
+        this.tradedAmount = tradedAmount;
 
         this.eip712WalletAddress = walletAddress;
         this.eip712DomainVersion = domainVersion;
@@ -154,8 +164,8 @@ public class IntentEventEntity {
         this.nip = nip;
         this.createdAt = createdAt;
         this.content = content;
-        this.status = status;
-        this.tradedAmount = tradedAmount;
+
+
 
     }
 
@@ -174,7 +184,7 @@ public class IntentEventEntity {
         event.setSignature(signature);
 
         List<BaseTag> tagList = new ArrayList<>(tags);
-        MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType);
+        MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType, status==1? IntentStatus.OPEN:IntentStatus.CLOSED, feeRateBp, clientId, accumulatedUsd, completedRatioBp);
         TokenTag token = new TokenTag(symbol, chain, network, tokenAddress, amount.stripTrailingZeros(), chainId, expireTime, tradedAmount);
         QuoteTag quote = new QuoteTag(price, quoteCurrency, quoteUsdRate, quoteDeadline, quoteSignature, quoteSlippageBP);
         EIP712Tag eip712Tag = new EIP712Tag(eip712WalletAddress, eip712ContractAddress, eip712DomainAppName, eip712DomainVersion, eip712Signature);

@@ -14,21 +14,21 @@ import java.util.List;
 
 @Service
 public class ReqService<T extends ReqMessage, U extends GenericEvent> {
-  private final AbstractSubscriberService abstractSubscriberService;
-  private final NotifierService<U> notifierService;
+    private final AbstractSubscriberService abstractSubscriberService;
+    private final NotifierService<U> notifierService;
 
-  @Autowired
-  public ReqService(AbstractSubscriberService abstractSubscriberService, NotifierService<U> notifierService) {
-    this.abstractSubscriberService = abstractSubscriberService;
-    this.notifierService = notifierService;
-  }
+    @Autowired
+    public ReqService(AbstractSubscriberService abstractSubscriberService, NotifierService<U> notifierService) {
+        this.abstractSubscriberService = abstractSubscriberService;
+        this.notifierService = notifierService;
+    }
 
-  public void processIncoming(@NotNull T reqMessage, @NonNull String sessionId) throws EmptyFiltersException {
-    notifierService.subscriptionEventHandler(
-            abstractSubscriberService.save(
-                    new Subscriber(reqMessage.getSubscriptionId(), sessionId, true),
-                    reqMessage.getFiltersList()
-            )
-    );
-  }
+    public void processIncoming(@NotNull T reqMessage, @NonNull String sessionId) throws EmptyFiltersException {
+        notifierService.subscriptionEventHandler(
+                abstractSubscriberService.save(
+                        new Subscriber(reqMessage.getSubscriptionId(), sessionId, true),
+                        reqMessage.getFiltersList()
+                )
+        );
+    }
 }

@@ -17,6 +17,7 @@ public class TokenConfig {
     private Map<String, Map<String, TokenDetail>> networks;
 
     public static final int PRICE_DECIMALS = 18;
+    public static final int USD_DECIMALS = 6;
 
     @Data
     public static class TokenDetail {

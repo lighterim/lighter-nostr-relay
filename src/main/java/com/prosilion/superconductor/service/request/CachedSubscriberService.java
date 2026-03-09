@@ -2,6 +2,7 @@ package com.prosilion.superconductor.service.request;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 import com.prosilion.superconductor.entity.Subscriber;
 import com.prosilion.superconductor.entity.join.subscriber.SubscriberFilter;
@@ -23,6 +24,8 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Predicate;
 
 
@@ -30,11 +33,14 @@ import java.util.function.Predicate;
 @Service
 public class CachedSubscriberService extends AbstractSubscriberService {
 
-    private final Map<Long, List<Combo>> subscriberSessionHashComboMap = Collections.synchronizedMap(new HashMap<>());
+    private final Map<Long, List<Combo>> subscriberSessionHashComboMap = new ConcurrentHashMap<>();
 
-    private final BiMap<String, String> biMap = HashBiMap.create();
+//    private final Map<Integer, Set<Long>> kindIndex = new ConcurrentHashMap<>();
 
-    private final BiMap<String, String> subscriptionIdMap = HashBiMap.create();
+//    private final Map<String, Set<Long>> authorIndex = new ConcurrentHashMap<>();
+
+    private final Map<String, Set<Long>> sessionToSub = new ConcurrentHashMap<>();
+
 
     @Autowired
     public CachedSubscriberService(ApplicationEventPublisher publisher) {
@@ -43,27 +49,70 @@ public class CachedSubscriberService extends AbstractSubscriberService {
 
     @Override
     public Long save(@NonNull Subscriber subscriber, @NonNull List<Filters> filtersList) throws EmptyFiltersException {
-        removeSubscriberBySessionId(subscriber.getSessionId());
-        long subscriberSessionHash = getHash(subscriber);
-        subscriber.setSubscriberSessionHash(subscriberSessionHash);
-        for (Filters filters : filtersList) {
-            put(subscriber, filters);
+
+        long subscriberSessionHash = subscriber.getSubscriberSessionHash();
+        sessionToSub.computeIfAbsent(subscriber.getSessionId(), k -> new CopyOnWriteArraySet<>()).add(subscriberSessionHash);
+        for (Filters f : filtersList) {
+//            if (f.getKinds() != null) {
+//                f.getKinds().forEach(kind ->
+//                        kindIndex.computeIfAbsent(kind.getValue(), k -> new CopyOnWriteArraySet<>()).add(subscriberSessionHash));
+//            }
+//
+//            if (f.getAuthors() != null) {
+//                f.getAuthors().forEach(pubkey ->
+//                        authorIndex.computeIfAbsent(pubkey.toString(), k -> new CopyOnWriteArraySet<>()).add(subscriberSessionHash));
+//            }
+            Combo combo = new Combo(
+                    subscriber,
+                    new SubscriberFilter(
+                            subscriberSessionHash,
+                            f.getSince(),
+                            f.getUntil(),
+                            f.getLimit()
+                    ),
+                    f
+            );
+            subscriberSessionHashComboMap.computeIfAbsent(subscriberSessionHash, k->new ArrayList<>(List.of(combo))).add(combo);
         }
         return subscriberSessionHash;
     }
 
-    //  TODO: list of long???  why not just long
     @Override
     public Map<Long, List<Filters>> getAllFiltersOfAllSubscribers() {
         Map<Long, List<Filters>> map = new HashMap<>();
-        subscriberSessionHashComboMap.forEach((key, value) -> map.put(key, value.stream().map(Combo::getFilters).toList()));
+        subscriberSessionHashComboMap.forEach((k, v) -> map.put(k, v.stream().map(Combo::getFilters).toList()));
         return map;
+    }
+
+    public Set<Long> findMatchingSubscribers(GenericEvent event) {
+        Set<Long> candidates = new HashSet<>();
+
+//        Set<Long> kindMatches = kindIndex.get(event.getKind());
+//        if (kindMatches != null) candidates.addAll(kindMatches);
+//
+//        // 2. 从 Author 索引中获取候选人
+//        Set<Long> authorMatches = authorIndex.get(event.getPubKey().toString());
+//        if (authorMatches != null) candidates = Sets.intersection(candidates, authorMatches);
+//
+//        // 3. 二次精细化校验 (因为 Filter 可能包含其他复杂条件如 since/until)
+        Set<Long> result = new HashSet<>();
+//        for (Long key : candidates) {
+//            List<Filters> filters = subscriberSessionHashComboMap.get(key).stream().map(Combo::getFilters).toList();
+//            if (filters.stream().allMatch(f -> matchFilter(f, event))) {
+//                result.add(key);
+//            }
+//        }
+        return result;
+    }
+
+    private boolean matchFilter(Filters f, GenericEvent event) {
+        return true;
     }
 
     //  @Cacheable("subscriber")
     @Override
     public Subscriber get(@NonNull Long subscriberSessionHash) {
-        return subscriberSessionHashComboMap.get(subscriberSessionHash).stream().findFirst().get().getSubscriber();
+        return subscriberSessionHashComboMap.get(subscriberSessionHash).getFirst().getSubscriber();
     }
 
     @Override
@@ -78,65 +127,21 @@ public class CachedSubscriberService extends AbstractSubscriberService {
 
     @Override
     public List<Long> removeSubscriberBySessionId(@NonNull String sessionId) {
-        String subscriberId = biMap.inverse().getOrDefault(sessionId, "");
-        long hash = getHash(new Subscriber(subscriberId, sessionId, true));
-        biMap.inverse().remove(sessionId);
-        subscriberSessionHashComboMap.remove(hash);
-        return List.of(hash);
+        Set<Long> subHashSet = sessionToSub.remove(sessionId);
+        if(subHashSet != null) {
+            subHashSet.forEach(hash -> {
+                subscriberSessionHashComboMap.remove(hash);
+//                kindIndex.values().forEach(set -> set.remove(hash));
+//                authorIndex.values().forEach(set -> set.remove(hash));
+            });
+            return new ArrayList<>(subHashSet);
+        }
+        return new ArrayList<>();
     }
 
     @Override
     public Long removeSubscriberBySubscriberId(@NonNull String subscriberId) {
-        long hash = getHash(
-                new Subscriber(
-                        subscriberId,
-                        biMap.remove(subscriberId),
-                        true));
-        subscriberSessionHashComboMap.remove(hash);
-        return hash;
-    }
-
-    private void put(Subscriber subscriber, Filters filters) throws EmptyFiltersException {
-        String existingKey = biMap.inverse().get(subscriber.getSessionId());
-        // 由于biMap的特性value也不能重复，所以同一个sessionId只能保留一个订阅，这里做判断是否已经有订阅，如果有先移除之前的订阅在插入
-        if (existingKey != null) {
-//            removeSubscriberBySessionId(subscriber.getSessionId());
-            biMap.remove(existingKey);
-        }
-//        biMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
-        biMap.forcePut(subscriber.getSubscriberId(), subscriber.getSessionId());
-//        subscriptionIdMap.put(subscriber.getSubscriberId(), subscriber.getSessionId());
-        subscriptionIdMap.forcePut(subscriber.getSubscriberId(), subscriber.getSessionId());
-
-
-        long subscriberSessionHash = getHash(subscriber);
-
-        Combo combo = new Combo(
-                subscriber,
-                new SubscriberFilter(
-                        subscriberSessionHash,
-                        filters.getSince(),
-                        filters.getUntil(),
-                        filters.getLimit()),
-                filters);
-
-        if (!subscriberSessionHashComboMap.containsKey(subscriberSessionHash)) {
-            subscriberSessionHashComboMap.put(subscriberSessionHash, new ArrayList<>(List.of(combo)));
-            return;
-        }
-        subscriberSessionHashComboMap.get(subscriberSessionHash).add(combo);
-    }
-
-    private long getHash(Subscriber subscriber) {
-        return getHash(subscriber.getSubscriberId(), subscriber.getSessionId());
-    }
-
-    private long getHash(String subscriberId, String sessionId) {
-        return getHash(subscriberId.concat(sessionId));
-    }
-
-    private long getHash(String string) {
-        return Hashing.murmur3_128().hashString(string, StandardCharsets.UTF_8).asLong();
+        return 0L;
     }
 
     @Getter

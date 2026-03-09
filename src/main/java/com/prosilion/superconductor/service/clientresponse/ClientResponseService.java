@@ -5,6 +5,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.impl.GenericEvent;
 import nostr.event.message.EventMessage;
+import nostr.event.message.PongMessage;
 import nostr.event.message.ReqMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -33,6 +34,15 @@ public class ClientResponseService {
     } catch (JsonProcessingException e) {
       processNotOkClientResponse(sessionId, eventMessage, e.getMessage());
     }
+  }
+
+  public void processPongClientResponse(@NonNull String sessionId) {
+      try{
+          publisher.publishEvent(new TextMessage("[[\"PONG\"]]"));
+      }
+      catch (Exception ex){
+          log.info("Processing ping message, {}", ex.getMessage(), ex);
+      }
   }
 
   public void processCloseClientResponse(@NonNull String sessionId) {

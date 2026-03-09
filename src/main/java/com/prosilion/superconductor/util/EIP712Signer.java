@@ -7,14 +7,11 @@ import com.google.gson.JsonParser;
 import com.prosilion.superconductor.config.TokenConfig;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
-import nostr.event.BaseTag;
-import nostr.event.IntentType;
-import nostr.event.NIP77Event;
-import nostr.event.Side;
+import nostr.event.*;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang3.StringUtils;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
 
@@ -538,8 +535,9 @@ public class EIP712Signer {
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
         Permit2Tag permit2Tag = event.getPermit2Tag();
         TokenTag tokenTag = event.getTokenTag();
+        MakeTag makeTag = event.getSideTag();
 
-        List<Map<String, String>> domainType = createNoVDomainTypes();
+        List<Map<String, String>> domainType = createNoVersionDomainTypes();
         types.put("EIP712Domain", domainType);
 
         List<Map<String, String>> permitDetailsType = getPermitDetailsType();
@@ -556,7 +554,8 @@ public class EIP712Signer {
 
         Map<String, Object> permitDetailsMap = new LinkedHashMap<>();
         permitDetailsMap.put("token", tokenTag.getAddress());
-        permitDetailsMap.put("amount", tokenTag.getAmount().multiply(BigDecimal.TEN.pow(tokenDecimals)).toPlainString());
+        BigDecimal amountWithFee = CalcUtils.ceilAmountWithFeeBp(tokenTag.getAmount().multiply(BigDecimal.TEN.pow(tokenDecimals)), makeTag.getFeeRateBp());
+        permitDetailsMap.put("amount", amountWithFee.stripTrailingZeros().toPlainString());
         permitDetailsMap.put("expiration", tokenTag.getExpiryTime());
         permitDetailsMap.put("nonce", permit2Tag.getNonce());
 
@@ -595,7 +594,7 @@ public class EIP712Signer {
         TakeTag takeTag = event.getTakeTag();
 
         // EIP712Domain 类型定义
-        List<Map<String, String>> domainType = createNoVDomainTypes();
+        List<Map<String, String>> domainType = createNoVersionDomainTypes();
         types.put("EIP712Domain", domainType);
 
         List<Map<String, String>> tokenPermissionsType = new ArrayList<>();
@@ -621,7 +620,8 @@ public class EIP712Signer {
         Map<String, Object> tokenPermissionsMap = new LinkedHashMap<>();
         tokenPermissionsMap.put("token", tokenTag.getAddress());
         BigDecimal baseUnit = BigDecimal.TEN.pow(tokenDecimals);
-        tokenPermissionsMap.put("amount", takeTag.getVolume().multiply(baseUnit).stripTrailingZeros().toPlainString());
+        BigDecimal amountWithFee = CalcUtils.ceilAmountWithFeeBp(takeTag.getVolume().multiply(baseUnit), takeTag.getSellerFeeRate().intValue());
+        tokenPermissionsMap.put("amount", amountWithFee.stripTrailingZeros().toPlainString());
 
         Map<String, Object> permitTransferFromMap = new LinkedHashMap<>();
         permitTransferFromMap.put("permitted", tokenPermissionsMap);
@@ -645,11 +645,12 @@ public class EIP712Signer {
         LimitTag limitTag = event.getLimitTag();
         Permit2Tag permit2Tag = event.getPermit2Tag();
         QuoteTag quoteTag = event.getQuoteTag();
-        PaymentTag paymentTag = event.getPaymentTags().get(0);
+        PaymentTag paymentTag = event.getPaymentTag();
+        MakeTag makeTag = event.getSideTag();
         BigDecimal baseUnit = BigDecimal.TEN.pow(tokenDecimals);
 
         // EIP712Domain 类型定义
-        List<Map<String, String>> domainType = createNoVDomainTypes();
+        List<Map<String, String>> domainType = createNoVersionDomainTypes();
         types.put("EIP712Domain", domainType);
 
         // IntentRange 类型定义
@@ -687,7 +688,8 @@ public class EIP712Signer {
 
         Map<String, Object> tokenPermissionsMap = new LinkedHashMap<>();
         tokenPermissionsMap.put("token", tokenTag.getAddress());
-        tokenPermissionsMap.put("amount", tokenTag.getAmount().multiply(baseUnit).stripTrailingZeros().toPlainString());
+        BigDecimal amountWithFee = CalcUtils.ceilAmountWithFeeBp(tokenTag.getAmount().multiply(baseUnit), makeTag.getFeeRateBp());
+        tokenPermissionsMap.put("amount", amountWithFee.stripTrailingZeros().toPlainString());
 
         Map<String, Object> intentParamsMap = new LinkedHashMap<>();
         intentParamsMap.put("token", tokenTag.getAddress());
@@ -697,6 +699,9 @@ public class EIP712Signer {
         intentParamsMap.put("paymentMethod", keccak256(paymentTag.getMethod()));
         intentParamsMap.put("payeeDetails", keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()));
         intentParamsMap.put("price", quoteTag.getNumber().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)).stripTrailingZeros().toPlainString());
+        intentParamsMap.put("clientId", StringUtils.isBlank(makeTag.getClientId())?"0":makeTag.getClientId());
+        intentParamsMap.put("accumulatedUsd", makeTag.getAccumulatedUsd()==null?"0":BigDecimal.TEN.pow(TokenConfig.USD_DECIMALS).multiply(BigDecimal.valueOf(makeTag.getAccumulatedUsd())).stripTrailingZeros().toPlainString());
+        intentParamsMap.put("completedRatioBp", makeTag.getCompletedRatioBp()==null?"0":makeTag.getCompletedRatioBp());
 
         Map<String, Object> permitWitnessTransferFromMap = new LinkedHashMap<>();
         permitWitnessTransferFromMap.put("permitted", tokenPermissionsMap);
@@ -717,11 +722,12 @@ public class EIP712Signer {
         // 1. 定义所有类型（包括嵌套结构）
         Map<String, List<Map<String, String>>> types = new LinkedHashMap<>();
 
+        MakeTag makeTag = postIntentEvent.getSideTag();
         EIP712Tag eip712Tag = postIntentEvent.getEip712Tag();
         TokenTag tokenTag = postIntentEvent.getTokenTag();
         LimitTag limitTag = postIntentEvent.getLimitTag();
         QuoteTag quoteTag = postIntentEvent.getQuoteTag();
-        PaymentTag paymentTag = postIntentEvent.getPaymentTags().get(0);
+        PaymentTag paymentTag = postIntentEvent.getPaymentTag();
         BigDecimal baseUnit = BigDecimal.TEN.pow(tokenDecimals);
 
         // EIP712Domain 类型定义
@@ -758,6 +764,9 @@ public class EIP712Signer {
         messageMap.put("paymentMethod", keccak256(paymentTag.getMethod()));
         messageMap.put("payeeDetails", keccak256(paymentTag.getAccount() + paymentTag.getQrCode() + paymentTag.getMemo()));
         messageMap.put("price", quoteTag.getNumber().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)).stripTrailingZeros().toPlainString());
+        messageMap.put("clientId", StringUtils.isBlank(makeTag.getClientId())?"0":makeTag.getClientId());
+        messageMap.put("accumulatedUsd", makeTag.getAccumulatedUsd()==null?"0":BigDecimal.TEN.pow(TokenConfig.USD_DECIMALS).multiply(BigDecimal.valueOf(makeTag.getAccumulatedUsd())).stripTrailingZeros().toPlainString());
+        messageMap.put("completedRatioBp", makeTag.getCompletedRatioBp()==null?"0":makeTag.getCompletedRatioBp());
 
         structuredData.put("message", messageMap);
         structuredData.put("primaryType", "IntentParams");
@@ -775,7 +784,7 @@ public class EIP712Signer {
         return domainType;
     }
 
-    private static List<Map<String, String>> createNoVDomainTypes() {
+    private static List<Map<String, String>> createNoVersionDomainTypes() {
         List<Map<String, String>> domainType = new ArrayList<>();
         domainType.add(createType("name", "string"));
         domainType.add(createType("chainId", "uint256"));
@@ -816,6 +825,9 @@ public class EIP712Signer {
         intentParamsType.add(createType("paymentMethod", "bytes32"));
         intentParamsType.add(createType("payeeDetails", "bytes32"));
         intentParamsType.add(createType("price", "uint256"));
+        intentParamsType.add(createType("clientId", "uint256"));
+        intentParamsType.add(createType("accumulatedUsd", "uint256"));
+        intentParamsType.add(createType("completedRatioBp", "uint32"));
         return intentParamsType;
     }
 
@@ -927,7 +939,7 @@ public class EIP712Signer {
         event.setPermit2Tag(permit2Tag);
         event.setTokenTag(tokenTag);
         event.setLimitTag(limitTag);
-        event.setPaymentTags(List.of(new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")));
+        event.setPaymentTag(new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo"));
         event.setQuoteTag(new QuoteTag(new BigDecimal("1"), "USD", new BigDecimal("1"), new BigInteger("1761237799"), "", 0));
 //        System.out.println(getIntentStructuredData(event));
 //        System.out.println(getBulkSellPermit2StructuredData(event));
@@ -995,7 +1007,7 @@ public class EIP712Signer {
             new TokenTag("USDT", "ethereum", "sepolia", "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0", new BigDecimal(1), BigInteger.valueOf(11155111), "1761904920", new BigDecimal(0)),
             // ["quote","3.221E+21","USD","1E+18",""]
             new QuoteTag(new BigDecimal("1"), "USD", new BigDecimal("1"), new BigInteger("1761237799"), "", 0),
-            new MakeTag(Side.SELL, "", pk.toString(), IntentType.SIGNATURE_SELL),
+            new MakeTag(Side.SELL, "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", pk.toString(), IntentType.SIGNATURE_SELL, IntentStatus.OPEN,  20,"0", 10000000L, 0),
             new Permit2Tag("270178257646664", "0x5a41235a9127cd6a85e3ee3afcb41e26d50b0c020d2dc8c29ebfd294300bf0b815a555484204fff2996276fac6a4e5a485465a4fc893370a6f652b790ee19fef1b", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x1e4d58c5a97ab35c614a90ab04acc78711729f18", "0xD58382f295f5c98BAeB525FAbb7FEBcCc62bc63B", "0x000000000022d473030f116ddee9f6b43ac78ba3", "Permit2"),
             new LimitTag(BigDecimal.valueOf(1), BigDecimal.valueOf(1)),
             new PaymentTag("wechat", "dust", "wxp://f2f0in9xnsA4G_eXWBRORK63ixD6bMQcP11eKGFz1VS4Kf0", "memo")

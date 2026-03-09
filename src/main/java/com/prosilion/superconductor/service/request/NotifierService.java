@@ -30,7 +30,9 @@ public class NotifierService<T extends GenericEvent> {
 
   public void subscriptionEventHandler(@NonNull Long subscriberSessionHash) {
     redisCache.getAll().forEach(
+            // all events for all kind.
             (kind, eventMap) -> eventMap.forEach(
+                    // all events for single Kind.
                     (eventId, event) -> subscriberNotifierService.newSubscriptionHandler(
                             subscriberSessionHash, new AddNostrEvent<>((T)event)
                     )

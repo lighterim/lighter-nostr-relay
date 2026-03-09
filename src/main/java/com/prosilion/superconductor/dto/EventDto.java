@@ -45,6 +45,11 @@ public class EventDto extends NIP01Event {
                 make.getMakerNip05(),
                 event.getPubKey().toString(),
                 make.getIntentType(),
+                make.getIntentStatus(),
+                make.getFeeRateBp(),
+                make.getClientId(),
+                make.getAccumulatedUsd(),
+                make.getCompletedRatioBp(),
 
                 token.getSymbol(),
                 token.getChain(),
@@ -53,6 +58,7 @@ public class EventDto extends NIP01Event {
                 token.getAmount(),
                 token.getChainId(),
                 token.getExpiryTime(),
+                token.getTradedAmount(),
 
                 eip712Tag == null?null:eip712Tag.getWalletAddress(),
                 eip712Tag == null?null:eip712Tag.getDomainVersion(),
@@ -83,9 +89,7 @@ public class EventDto extends NIP01Event {
                 event.getKind(),
                 event.getNip(),
                 event.getCreatedAt(),
-                event.getContent(),
-                1,
-                BigDecimal.ZERO
+                event.getContent()
         );
     }
 

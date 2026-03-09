@@ -14,7 +14,7 @@ import java.util.function.BiPredicate;
 
 import static nostr.event.Kind.TEXT_NOTE;
 
-@Component
+//@Component
 public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements FilterPlugin<T> {
 
     private static boolean anyMatch(PostIntentEvent event, List<GenericTagQuery> anyMatchList) {
@@ -26,6 +26,12 @@ public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements
                     MakeTag makeTag = event.getSideTag();
                     return makeTag != null && values.contains(makeTag.getSide().getSide());
                 }
+                case "chainId" -> {
+                    TokenTag tokenTag = event.getTokenTag();
+                    if (tokenTag == null || !values.contains(tokenTag.getChainId().toString())) {
+                        return false;
+                    }
+                }
                 case "symbol" -> {
                     TokenTag token = event.getTokenTag();
                     return token != null && values.contains(token.getSymbol());
@@ -35,12 +41,8 @@ public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements
                     return quote != null && values.contains(quote.getCurrency());
                 }
                 case "paymentMethod" -> {
-                    List<PaymentTag> paymentMethods = event.getPaymentTags();
-                    for (PaymentTag p : paymentMethods) {
-                        if (values.contains(p.getMethod())) {
-                            return true;
-                        }
-                    }
+                    PaymentTag paymentMethod = event.getPaymentTag();
+                    return paymentMethod != null && values.contains(paymentMethod.getMethod());
                 }
             }
         }
@@ -77,8 +79,8 @@ public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements
                     }
                 }
                 case "paymentMethod" -> {
-                    List<PaymentTag> paymentMethods = event.getPaymentTags();
-                    if (paymentMethods == null || paymentMethods.isEmpty() || !contains(values, paymentMethods)) {
+                    PaymentTag paymentMethod = event.getPaymentTag();
+                    if (paymentMethod == null || !values.contains(paymentMethod.getMethod())) {
                         return false;
                     }
                 }
@@ -174,7 +176,7 @@ public class FilterCompositionQueryPlugin<T extends CompositionQuery> implements
 
     @Override
     public List<T> getPluginFilters(Filters filters) {
-        return (List<T>) List.of(filters.getCompositionQuery());
+        return (List<T>) (filters.getCompositionQuery()==null? List.of() : List.of(filters.getCompositionQuery()));
     }
 
     @Override

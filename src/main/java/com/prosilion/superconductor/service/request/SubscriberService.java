@@ -10,7 +10,16 @@ import java.util.List;
 import java.util.Map;
 
 public interface SubscriberService {
-  Long save(@NonNull Subscriber subscriber, @NonNull List<Filters> filtersList) throws EmptyFiltersException;
+    /**
+     * persist subscriber membership
+     * &lt; subscriberId, List &lt; Fitlers &gt;&gt;
+     * @param subscriber
+     * @param filtersList
+     * @return
+     * @throws EmptyFiltersException
+     */
+    Long save(@NonNull Subscriber subscriber, @NonNull List<Filters> filtersList) throws EmptyFiltersException;
+
 
   List<Long> removeSubscriberBySessionId(@NonNull String sessionId);
 

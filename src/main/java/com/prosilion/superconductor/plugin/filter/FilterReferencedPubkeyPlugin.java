@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.function.BiPredicate;
 
-@Component
+//@Component
 public class FilterReferencedPubkeyPlugin<T extends PublicKey> implements FilterPlugin<T> {
 
   @Override

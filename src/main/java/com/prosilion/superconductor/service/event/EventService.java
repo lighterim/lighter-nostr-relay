@@ -241,10 +241,10 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
 
             //3.4 payment
             PaymentTag takePayment = takeIntentEvent.getPaymentTag();
-            List<PaymentTag> makePaymentTags = postIntentEvent.getPaymentTags();
-            List<String> methods = makePaymentTags.stream().map(PaymentTag::getMethod).toList();
-            if (!methods.contains(takePayment.getMethod())) {
-                String msg = String.format("take payment{%s} does not matches: %s", takePayment.getMethod(), methods);
+            PaymentTag makePaymentTag = postIntentEvent.getPaymentTag();
+            String method = makePaymentTag.getMethod();
+            if (!method.equalsIgnoreCase(takePayment.getMethod())) {
+                String msg = String.format("take payment{%s} does not matches: %s", takePayment.getMethod(), method);
                 log.warn(msg);
                 throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
             }
@@ -264,11 +264,11 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             BigDecimal takePrice = takeQuoteTag.getNumber().stripTrailingZeros();
             if (takeTag.getSide() == Side.BUY) {
                 // 3.4.1 payment detail
-                List<String> accounts = makePaymentTags.stream().map(PaymentTag::getAccount).toList();
-                List<String> qrCodes = makePaymentTags.stream().map(PaymentTag::getQrCode).toList();
-                if (!accounts.contains(takePayment.getAccount()) && !qrCodes.contains(takePayment.getQrCode())) {
+                String account = makePaymentTag.getAccount();
+                String qrCode = makePaymentTag.getQrCode();
+                if (!account.equalsIgnoreCase(takePayment.getAccount()) || !qrCode.equalsIgnoreCase(takePayment.getQrCode())) {
                     String msg = String.format("take payment:%s, %s does not matches: %s, %s",
-                            takePayment.getAccount(), takePayment.getQrCode(), accounts, qrCodes
+                            takePayment.getAccount(), takePayment.getQrCode(), account, qrCode
                     );
                     log.warn(msg);
                     throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
@@ -355,9 +355,9 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("invalid nip05: %s, %s", make.getMakerNip05(), make.getMakerPubkey()));
             }
 
-            List<PaymentTag> paymentTags = postIntentEvent.getPaymentTags();
-            if (!paymentTags.stream().allMatch(p -> StringUtils.hasText(p.getAccount()) && StringUtils.hasText(p.getQrCode()))) {
-                String msg = String.format("invalid paymentTags: %s", paymentTags);
+            PaymentTag paymentTag = postIntentEvent.getPaymentTag();
+            if (!StringUtils.hasText(paymentTag.getAccount()) || !StringUtils.hasText(paymentTag.getQrCode())) {
+                String msg = String.format("invalid paymentTags: %s", paymentTag);
                 log.warn(msg);
                 throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
             }

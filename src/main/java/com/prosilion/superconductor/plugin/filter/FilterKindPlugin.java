@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.function.BiPredicate;
 
-@Component
+//@Component
 public class FilterKindPlugin<T extends Kind> implements FilterPlugin<T> {
 
   @Override

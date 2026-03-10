@@ -2,10 +2,13 @@ package com.prosilion.superconductor.plugin.filter;
 
 import com.prosilion.superconductor.entity.join.subscriber.GenericFiltersFilter;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
+import nostr.base.BaseKey;
 import nostr.base.GenericTagQuery;
+import nostr.base.PublicKey;
 import nostr.event.Kind;
 import nostr.event.impl.*;
 import nostr.event.query.CompositionQuery;
+import nostr.event.tag.TakeTag;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -41,7 +44,17 @@ public class GenericFilterPlugin<T extends GenericFiltersFilter> implements Filt
     }
 
     private boolean getBiPredicate(Filters filters, TakeIntentEvent takeEvent) {
-        return false;
+        List<PublicKey> authors = filters.getAuthors();
+        // the 30078 event must have author
+        if (authors.isEmpty()) {
+            return false;
+        }
+        List<String> pubkeys = authors.stream().map(BaseKey::toHexString).toList();
+        TakeTag takeTag = takeEvent.getTakeTag();
+        if(takeTag == null) {
+            return false;
+        }
+        return pubkeys.contains(takeTag.getTakerPubkey()) || pubkeys.contains(takeTag.getMakerPubkey());
     }
 
     private boolean getBiPredicate(Filters filters, TradeMessageEvent tradeMessageEvent) {

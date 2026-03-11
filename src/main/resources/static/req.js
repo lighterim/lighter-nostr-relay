@@ -28,9 +28,9 @@ function replaceHash(id_hash) {
                 // 'ids': [$("#content").val(), "494001ac0c8af2a10f60f23538e5b35d3cdacb8e1cc956fe7a16dfa5cbfc1234", "432101ac0c8af2a10f60f23538e5b35d3cdacb8e1cc956fe7a16dfa5cbfc5678"]
                 // 'ids': [$("#idcontent").val()],
                 // 'authors': [$("#authors1").val(), $("#authors2").val()],
-                // 'authors': [$("#authors1").val()],
-                'kinds': [30077],
-                '#chainId': [11155111],
+                'authors': ['43922dcb6ec820cee0ddf5c42f5b52f145364b5e9415611d4d29df728e11affb'],
+                'kinds': [30078],
+                //'#chainId': [11155111],
                 // 'genericTagQuery': {
                 // 'side': ["sell"]}
                 // 'genericTagQuery': {

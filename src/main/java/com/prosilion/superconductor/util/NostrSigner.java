@@ -46,13 +46,21 @@ public class NostrSigner {
         if(!StringUtils.hasText(message)) {
             return message;
         }
+        try {
         return messageCipher04.encrypt(message);
+        } catch(Exception e){
+            return message;
+        }
     }
 
     public static String decrypt(String message) {
         if(!StringUtils.hasText(message)) {
             return message;
         }
-        return messageCipher04.decrypt(message);
+        try {
+            return messageCipher04.decrypt(message);
+        } catch(Exception e){
+            return message;
+        }
     }
 }

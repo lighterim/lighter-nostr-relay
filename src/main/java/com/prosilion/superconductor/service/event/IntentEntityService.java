@@ -12,15 +12,17 @@ import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
-import nostr.event.BaseTag;
-import nostr.event.IntentType;
-import nostr.event.Kind;
-import nostr.event.Side;
+import nostr.event.*;
+import nostr.event.impl.Filters;
+import nostr.event.impl.GenericEvent;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -120,6 +122,48 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
                 .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
                         Collectors.toMap(IntentEventEntity::getId, IntentEventEntity::convertEntityToDto)));
         return map;
+    }
+
+    public Map<Kind, Map<Long, PostIntentEvent>> getAllByReq(Filters filter) {
+        Integer chainId = CollectionUtils.isEmpty(filter.getChainId()) ? null : filter.getChainId().getFirst();
+        String symbol = CollectionUtils.isEmpty(filter.getSymbol()) ? null : filter.getSymbol().getFirst();
+        String paymentMethod = CollectionUtils.isEmpty(filter.getPaymentMethod()) ? null : filter.getPaymentMethod().getFirst();
+        String currency = CollectionUtils.isEmpty(filter.getCurrency()) ? null : filter.getCurrency().getFirst();
+        String side = CollectionUtils.isEmpty(filter.getSide()) ? null : filter.getSide().getFirst();
+
+        Specification<IntentEventEntity> spec = Specification.where(null);
+        spec = spec.and((root, query, cb) ->
+                cb.equal(root.get("status"), 1));
+        if(chainId!=null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("chainId"), chainId));
+        }
+
+        if(StringUtils.hasText(symbol)) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("symbol"), symbol));
+        }
+
+        if(StringUtils.hasText(paymentMethod)) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("paymentMethod"), paymentMethod));
+        }
+
+        if(StringUtils.hasText(currency)) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("currency"), currency));
+        }
+
+        if(StringUtils.hasText(side)) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("side"), side));
+        }
+
+
+        return postEventEntityRepository.findAll(spec).stream()
+                .map(this::populateEventEntity)
+                .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
+                        Collectors.toMap(IntentEventEntity::getId, IntentEventEntity::convertEntityToDto)));
     }
 
     private IntentEventEntity populateEventEntity(IntentEventEntity postIntentEventEntity) {

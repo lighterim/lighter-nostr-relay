@@ -3,6 +3,10 @@ package com.prosilion.superconductor.service.event;
 import com.prosilion.superconductor.entity.TakeIntentEventEntity;
 import com.prosilion.superconductor.util.BusinessException;
 import com.prosilion.superconductor.util.ErrorCode;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -16,11 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,7 +42,6 @@ public class RedisCache<T extends GenericEvent> {
     private final EventEntityService<T> eventEntityService;
     @Value("${notice.lighter.im.pubkey:aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984}")
     private String noticePusherPubkey;
-
 
     @Autowired
     public RedisCache(List<EventEntityServiceIF<T>> eventEntityServiceList) {
@@ -89,6 +91,40 @@ public class RedisCache<T extends GenericEvent> {
 //            throw new RuntimeException(e);
 //        }
         return plainText;
+    }
+
+    public Map<Kind, Map<Long, GenericEvent>> listByFilter(List<Filters> filtersList) {
+        if (!CollectionUtils.isEmpty(filtersList)) {
+            Map<Kind, Map<Long, GenericEvent>> map = new HashMap<>();
+            for(Filters filter: filtersList) {
+                List<Kind> kindList = filter.getKinds();
+                for (Kind kind : kindList) {
+                    switch (kind) {
+                        case POST_INTENT: {
+                            Map<Kind, Map<Long, PostIntentEvent>> postEventMap = postEventEntityService.getAllByReq(filter);
+                            map.putAll(postEventMap.entrySet().stream()
+                                    .collect(Collectors.toMap(
+                                            Map.Entry::getKey,
+                                            entry -> convertToGenericEventMap(entry.getValue())
+                                    )));
+                        }
+                        case TAKE_INTENT: {
+                            Map<Kind, Map<Long, TakeIntentEvent>> takeEventMap = tradeEntityService.getAllByReq(filter);
+                            map.putAll(takeEventMap.entrySet().stream()
+                                    .collect(Collectors.toMap(
+                                            Map.Entry::getKey,
+                                            entry -> convertToGenericEventMap(entry.getValue())
+                                    )));
+                        }
+                        case TRADE_MESSAGE: {
+
+                        }
+                    }
+                }
+            }
+            return map;
+        }
+        throw new IllegalStateException("filter list is empty");
     }
 
     public Map<Kind, Map<Long, GenericEvent>> getAll() {

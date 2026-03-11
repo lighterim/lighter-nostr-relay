@@ -29,7 +29,8 @@ function replaceHash(id_hash) {
                 // 'ids': [$("#idcontent").val()],
                 // 'authors': [$("#authors1").val(), $("#authors2").val()],
                 // 'authors': [$("#authors1").val()],
-                'kinds': [30402],
+                'kinds': [30077],
+                '#chainId': [11155111],
                 // 'genericTagQuery': {
                 // 'side': ["sell"]}
                 // 'genericTagQuery': {

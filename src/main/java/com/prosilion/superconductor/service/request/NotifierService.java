@@ -3,9 +3,12 @@ package com.prosilion.superconductor.service.request;
 import com.prosilion.superconductor.service.event.RedisCache;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
 import lombok.NonNull;
+import nostr.event.impl.Filters;
 import nostr.event.impl.GenericEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class NotifierService<T extends GenericEvent> {
@@ -29,7 +32,8 @@ public class NotifierService<T extends GenericEvent> {
 
 
   public void subscriptionEventHandler(@NonNull Long subscriberSessionHash) {
-    redisCache.getAll().forEach(
+    List<Filters> filtersList = subscriberNotifierService.getFilterList(subscriberSessionHash);
+    redisCache.listByFilter(filtersList).forEach(
             // all events for all kind.
             (kind, eventMap) -> eventMap.forEach(
                     // all events for single Kind.

@@ -6,9 +6,12 @@ import com.prosilion.superconductor.service.request.pubsub.FireNostrEvent;
 import com.prosilion.superconductor.util.FilterMatcher;
 import lombok.NonNull;
 import lombok.SneakyThrows;
+import nostr.event.impl.Filters;
 import nostr.event.impl.GenericEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class SubscriberNotifierService<T extends GenericEvent> {
@@ -40,6 +43,9 @@ public class SubscriberNotifierService<T extends GenericEvent> {
         eventHandler(subscriberSessionHash, addNostrEvent);
     }
 
+    protected List<Filters> getFilterList(Long subscriberSessionHash) {
+        return abstractSubscriberService.getFiltersList(subscriberSessionHash);
+    }
     private void eventHandler(@NonNull Long subscriberSessionHash, @NonNull AddNostrEvent<T> addNostrEvent) {
         broadcastMatch(addNostrEvent, subscriberSessionHash);
     }

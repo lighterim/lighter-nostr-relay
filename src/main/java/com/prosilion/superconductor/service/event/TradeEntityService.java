@@ -19,16 +19,21 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import nostr.base.PublicKey;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
 import nostr.event.TradeStatus;
+import nostr.event.impl.Filters;
+import nostr.event.impl.GenericEvent;
 import nostr.event.impl.GenericTag;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
@@ -212,5 +217,23 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         TakeIntentEventEntity entity = opt.get();
         entity.setEscrowSignature(sign);
         entityManager.merge(entity);
+    }
+
+    public Map<Kind, Map<Long, TakeIntentEvent>> getAllByReq(Filters filter) {
+        Specification<TakeIntentEventEntity> spec = Specification.where(null);
+
+        PublicKey publicKey = CollectionUtils.isEmpty(filter.getAuthors()) ? null : filter.getAuthors().getFirst();
+        if(publicKey!=null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.or(
+                            cb.equal(root.get("buyerPubKey"), publicKey.toHexString()),
+                            cb.equal(root.get("sellerPubKey"), publicKey.toHexString())
+                    ));
+        }
+
+        return takeEventEntityRepository.findAll(spec).stream()
+                .map(this::populateEventEntity)
+                .collect(Collectors.groupingBy(eventEntity -> Kind.valueOf(eventEntity.getKind()),
+                        Collectors.toMap(TakeIntentEventEntity::getId, TakeIntentEventEntity::convertEntityToDto)));
     }
 }

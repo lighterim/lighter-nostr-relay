@@ -224,10 +224,11 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
 
         PublicKey publicKey = CollectionUtils.isEmpty(filter.getAuthors()) ? null : filter.getAuthors().getFirst();
         if(publicKey!=null) {
+            String publicKeyHex = publicKey.toHexString();
             spec = spec.and((root, query, cb) ->
                     cb.or(
-                            cb.equal(root.get("buyerPubKey"), publicKey.toHexString()),
-                            cb.equal(root.get("sellerPubKey"), publicKey.toHexString())
+                            cb.equal(root.get("buyerPubKey"), publicKeyHex),
+                            cb.equal(root.get("sellerPubKey"), publicKeyHex)
                     ));
         }
 

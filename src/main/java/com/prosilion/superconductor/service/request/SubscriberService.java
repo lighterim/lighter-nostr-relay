@@ -23,7 +23,7 @@ public interface SubscriberService {
 
   List<Long> removeSubscriberBySessionId(@NonNull String sessionId);
 
-  Long removeSubscriberBySubscriberId(@NonNull String subscriberId) throws NoExistingUserException;
+  Long removeSubscriberBySubscriberId(@NonNull String subscriberId, @NonNull String sessionId) throws NoExistingUserException;
 
   List<Filters> getFiltersList(@NonNull Long subscriberId);
 

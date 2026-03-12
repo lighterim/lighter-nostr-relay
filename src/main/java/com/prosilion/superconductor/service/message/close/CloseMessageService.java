@@ -38,16 +38,15 @@ public class CloseMessageService<T extends CloseMessage> implements CloseMessage
   @Override
   public void removeSubscriberBySessionId(@NonNull String sessionId) {
     List<Long> subscriberBySessionId = abstractSubscriberService.removeSubscriberBySessionId(sessionId);
-    // TODO: no publishers bound to below?
     subscriberBySessionId.forEach(subscriber -> publisher.publishEvent(new RemoveSubscriberFilter(subscriber)));
   }
 
   @Override
-  public void removeSubscriberBySubscriberId(@NonNull String subscriberId) {
+  public void removeSubscriberBySubscriberId(@NonNull String subscriberId,  @NonNull String sessionId) {
     try {
       publisher.publishEvent(
           new RemoveSubscriberFilter(
-              abstractSubscriberService.removeSubscriberBySubscriberId(subscriberId)));
+              abstractSubscriberService.removeSubscriberBySubscriberId(subscriberId, sessionId)));
     } catch (NoExistingUserException e) {
       log.info("no match to remove for subscriptionHash [{}]", subscriberId);
     }

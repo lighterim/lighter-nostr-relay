@@ -4,6 +4,7 @@ import com.prosilion.superconductor.service.request.AbstractSubscriberService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.message.CloseMessage;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationEventPublisher;
@@ -26,8 +27,13 @@ public class CloseMessageServiceNoAuthDecorator<T extends CloseMessage> implemen
 
   @Override
   public void processIncoming(@NonNull T closeMessage, @NonNull String sessionId) {
-    closeSession(sessionId);
-    removeSubscriberBySessionId(sessionId);
+      log.info("processIncoming closeMessage={}, sessionId:{}, closeMessage:{}", closeMessage, sessionId, closeMessage);
+      if(StringUtils.isBlank(closeMessage.getSubscriptionId())) {
+          closeSession(sessionId);
+      }
+      else{
+          removeSubscriberBySubscriberId(closeMessage.getSubscriptionId(), sessionId);
+      }
   }
 
   @Override
@@ -40,8 +46,8 @@ public class CloseMessageServiceNoAuthDecorator<T extends CloseMessage> implemen
     closeMessageService.removeSubscriberBySessionId(sessionId);
   }
 
-  public void removeSubscriberBySubscriberId(@NonNull String subscriberId) {
-    closeMessageService.removeSubscriberBySubscriberId(subscriberId);
+  public void removeSubscriberBySubscriberId(@NonNull String subscriberId, String sessionId) {
+    closeMessageService.removeSubscriberBySubscriberId(subscriberId, sessionId);
   }
 
   @Override

@@ -2,6 +2,7 @@ package com.prosilion.superconductor.service.message.close;
 
 import com.prosilion.superconductor.service.request.AbstractSubscriberService;
 import com.prosilion.superconductor.service.event.AuthEntityService;
+import io.micrometer.common.util.StringUtils;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.message.CloseMessage;
@@ -31,8 +32,12 @@ public class CloseMessageServiceAuthDecorator<T extends CloseMessage> implements
   @Override
   public void processIncoming(@NonNull T closeMessage, @NonNull String sessionId) {
     log.info("processing AUTH CLOSE event, sessionId [{}]", sessionId);
-    closeSession(sessionId);
-    removeSubscriberBySessionId(sessionId);
+    if(StringUtils.isBlank(closeMessage.getSubscriptionId())) {
+        closeSession(sessionId);
+    }
+    else {
+        removeSubscriberBySubscriberId(closeMessage.getSubscriptionId(), sessionId);
+    }
   }
 
   @Override
@@ -47,7 +52,8 @@ public class CloseMessageServiceAuthDecorator<T extends CloseMessage> implements
   }
 
   @Override
-  public void removeSubscriberBySubscriberId(@NonNull String subscriberId) {
+  public void removeSubscriberBySubscriberId(@NonNull String subscriberId, @NonNull String sessionId) {
+      closeMessageService.removeSubscriberBySubscriberId(subscriberId, sessionId);
   }
 
   @Override

@@ -130,7 +130,8 @@ public class CachedSubscriberService extends AbstractSubscriberService {
         Set<Long> subHashSet = sessionToSub.remove(sessionId);
         if(subHashSet != null) {
             subHashSet.forEach(hash -> {
-                subscriberSessionHashComboMap.remove(hash);
+                List<Combo> list =  subscriberSessionHashComboMap.remove(hash);
+                log.info("remove subscriber by session id " + sessionId + " from hash " + hash + "combo: " + list);
 //                kindIndex.values().forEach(set -> set.remove(hash));
 //                authorIndex.values().forEach(set -> set.remove(hash));
             });
@@ -140,8 +141,12 @@ public class CachedSubscriberService extends AbstractSubscriberService {
     }
 
     @Override
-    public Long removeSubscriberBySubscriberId(@NonNull String subscriberId) {
-        return 0L;
+    public Long removeSubscriberBySubscriberId(@NonNull String subscriberId, @NonNull String sessionId) {
+        log.info("removeSubscriberBySubscriberId " + subscriberId);
+        Long hash = new Subscriber(subscriberId, sessionId, true).getSubscriberSessionHash();
+        List<Combo> list =  subscriberSessionHashComboMap.remove(hash);
+        log.info("removeSubscriberBySubscriberId " + sessionId + " from hash " + hash + "combo: " + list);
+        return hash;
     }
 
     @Getter
@@ -156,6 +161,27 @@ public class CachedSubscriberService extends AbstractSubscriberService {
                 throw new EmptyFiltersException(String.format("invalid: empty filters encountered for subscriber [%s]", subscriber.getSubscriberId()));
             this.subscriberFilter = subscriberFilter;
             this.filters = filters;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            Combo combo = (Combo) o;
+            return Objects.equals(subscriber, combo.subscriber) && Objects.equals(subscriberFilter, combo.subscriberFilter) && Objects.equals(filters, combo.filters);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(subscriber, subscriberFilter, filters);
+        }
+
+        @Override
+        public String toString() {
+            return "Combo{" +
+                    "subscriber=" + subscriber +
+                    ", subscriberFilter=" + subscriberFilter +
+                    ", filters=" + filters +
+                    '}';
         }
 
         private static boolean checkMinimallyPopulatedFilters(SubscriberFilter subscriberFilter, Filters filters) {

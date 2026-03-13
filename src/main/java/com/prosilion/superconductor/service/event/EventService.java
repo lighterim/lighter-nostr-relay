@@ -309,7 +309,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 TokenTag makerTokenTag = postIntentEvent.getTokenTag();
                 BigInteger chainId = makerTokenTag.getChainId();
                 String tokenAddress = makerTokenTag.getAddress();
-                String msg = String.format("%d%s%s%s%d", chainId, tokenAddress.toLowerCase(), quoteDeadline, takePrice.toPlainString(), makerQuoteTag.getSlippageBP());
+                String msg = String.format("%d%s%s%s%d%s", chainId, tokenAddress.toLowerCase(), quoteDeadline, takePrice.toPlainString(), makerQuoteTag.getSlippageBP(), takeTag.getSide().name());
                 boolean verify = ED25519Signer.verify(msg, takeQuoteTag.getSignature());
                 if(!verify) {
                     log.warn("price verification failed: {} msg:{}, signature: {}", takeIntentEvent.getId(),  msg, takeQuoteTag.getSignature());

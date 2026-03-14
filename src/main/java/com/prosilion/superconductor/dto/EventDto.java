@@ -46,6 +46,7 @@ public class EventDto extends NIP01Event {
         LimitTag limit = event.getLimitTag();
         Permit2Tag permit2Tag = event.getPermit2Tag();
         EIP712Tag eip712Tag = event.getEip712Tag();
+        PaymentTag payment = event.getPaymentTag();
 
         return new IntentEventEntity(
                 make.getSide().getSide(),
@@ -79,6 +80,11 @@ public class EventDto extends NIP01Event {
                 quote.getSignature(),
                 quote.getUsdRate(),
                 quote.getSlippageBP(),
+
+                payment.getMethod(),
+                payment.getAccount(),
+                payment.getQrCode(),
+                payment.getMemo(),
 
                 limit == null || limit.getLowLimit() == null ? BigDecimal.ZERO : limit.getLowLimit(),
                 limit == null || limit.getUpLimit() == null ? BigDecimal.ZERO : limit.getUpLimit(),

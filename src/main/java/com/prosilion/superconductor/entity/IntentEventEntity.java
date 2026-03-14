@@ -27,7 +27,8 @@ import java.util.List;
         @Index(name="IX_INTENT_SYMBOL", columnList = "symbol" ),
         @Index(name="IX_INTENT_SIDE", columnList = "side"),
         @Index(name="IX_INTENT_CHAIN_ID", columnList = "chainId"),
-        @Index(name="IX_INTENT_CURRENCY", columnList = "quoteCurrency")
+        @Index(name="IX_INTENT_CURRENCY", columnList = "quoteCurrency"),
+        @Index(name="IX_INTENT_PAYMENT_METHOD", columnList = "paymentMethod")
 })
 public class IntentEventEntity {
 
@@ -65,6 +66,12 @@ public class IntentEventEntity {
     @Column(precision = 36, scale=18)
     private BigDecimal quoteUsdRate;
     private Integer quoteSlippageBP;
+
+    /** payment **/
+    private String paymentMethod;
+    private String paymentAccount;
+    private String paymentQrCode;
+    private String paymentMemo;
 
     /** limit **/
     @Column(precision = 36, scale=18)
@@ -112,6 +119,7 @@ public class IntentEventEntity {
                              String symbol, String chain, String network, String address, BigDecimal amount, BigInteger chainId, String expireTime, BigDecimal tradedAmount,
                              String walletAddress, String domainVersion,String domainAppName, String contractAddress, String eip712Signature,
                              BigDecimal price, String currency, BigInteger quoteDeadline, String quoteSignature, BigDecimal usdRate, Integer slippageBP,
+                             String paymentMethod, String paymentAccount, String paymentQrCode, String paymentMemo,
                              BigDecimal lowLimit, BigDecimal upLimit,
                              String nonce, String permit2Sign, String payer, String spender,String permit2WalletAddress, String permit2DomainAppName, String permit2ContractAddress,
                              String signature, String eventId, Integer kind, Integer nip, Long createdAt, String content) {
@@ -146,6 +154,11 @@ public class IntentEventEntity {
         this.quoteSignature = quoteSignature;
         this.quoteUsdRate = usdRate;
         this.quoteSlippageBP = slippageBP;
+
+        this.paymentMethod = paymentMethod;
+        this.paymentAccount = paymentAccount;
+        this.paymentQrCode = paymentQrCode;
+        this.paymentMemo = paymentMemo;
 
         this.lowLimit = lowLimit;
         this.upLimit = upLimit;
@@ -187,6 +200,7 @@ public class IntentEventEntity {
         MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType, status==1? IntentStatus.OPEN:IntentStatus.CLOSED, feeRateBp, clientId, accumulatedUsd, completedRatioBp);
         TokenTag token = new TokenTag(symbol, chain, network, tokenAddress, amount.stripTrailingZeros(), chainId, expireTime, tradedAmount);
         QuoteTag quote = new QuoteTag(price, quoteCurrency, quoteUsdRate, quoteDeadline, quoteSignature, quoteSlippageBP);
+        PaymentTag payment = new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo);
         EIP712Tag eip712Tag = new EIP712Tag(eip712WalletAddress, eip712ContractAddress, eip712DomainAppName, eip712DomainVersion, eip712Signature);
         LimitTag limit = new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros());
         Permit2Tag permit2Tag = new Permit2Tag(permit2Nonce, permit2Sign, payer, permit2Spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName);
@@ -197,6 +211,7 @@ public class IntentEventEntity {
         tagList.add(permit2Tag);
         tagList.add(limit);
         tagList.add(eip712Tag);
+        tagList.add(payment);
 
         event.setTags(tagList);
 

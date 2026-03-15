@@ -197,7 +197,7 @@ public class IntentEventEntity {
         signature.setRawData(rawData);
         event.setSignature(signature);
 
-        List<BaseTag> tagList = new ArrayList<>(tags);
+        List<BaseTag> tagList = tags==null?new ArrayList<>():new ArrayList<>(tags);
         MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType, status==1? IntentStatus.OPEN:IntentStatus.CLOSED, feeRateBp, clientId, accumulatedUsd, completedRatioBp);
         TokenTag token = new TokenTag(symbol, chain, network, tokenAddress, amount.stripTrailingZeros(), chainId, expireTime, tradedAmount);
         QuoteTag quote = new QuoteTag(price, quoteCurrency, quoteUsdRate, quoteDeadline, quoteSignature, quoteSlippageBP);

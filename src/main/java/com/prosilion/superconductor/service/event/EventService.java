@@ -42,7 +42,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     private int nip05CacheMaxSize;
     @Value("${nip05.validator.cache.minutes:5}")
     private int nip05CacheMinutes;
-    @Value("${notice.lighter.im.pubkey:aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984}")
+    @Value("${notice.lighter.im.pubkey:3bdb98ca4ccf6c4498e07130b2010193a97de6781d56fa776cd5eb20e8686134}")
     private String noticePusherPubkey;
     @Value("${check.take:true}")
     private boolean isSkipCheckTake;
@@ -90,8 +90,11 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         textNoteEvent.setCreatedAt(event.getCreatedAt());
         textNoteEvent.setSignature(event.getSignature());
 
-        Long id = redisCache.saveEventEntity(event);
+        List<GenericEvent> refEventChanged= redisCache.saveEventEntity(event);
         notifierService.nostrEventHandler(new AddNostrEvent<>(event));
+        for (GenericEvent refEvent : refEventChanged) {
+            notifierService.nostrEventHandler(new AddNostrEvent<>(refEvent));
+        }
 
     }
 
@@ -145,6 +148,11 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                     CreatedByTag.builder().takeIntentEventId(takeIntent.getId()).nip05(createdBy.getNip05()).pubkey(createdBy.getPubkey())
                             .tradeId(createdBy.getTradeId()).build()
             );
+            if(TradeStatus.CreateEscrowEvent.equals(ledger.getTradeStatus())) {
+                    PaymentTag paymentTag = takeIntent.getPaymentTag();
+                    String paymentInfo = String.format("\nPayment Method: %s\nPayment Qrcode: %s\nPayment Account: %s\nPayment Memo: %s", paymentTag.getMethod(), paymentTag.getQrCode(), paymentTag.getAccount(), paymentTag.getMemo());
+                    tradeMessageEvent.setContent(tradeMessageEvent.getContent() + paymentInfo);
+            }
             log.info("reset1 trade message event: [{}]", tradeMessageEvent);
         }
         EIP712Tag eip712Tag = tradeMessageEvent.getEip712Tag();

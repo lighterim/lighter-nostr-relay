@@ -82,9 +82,9 @@ public class EventDto extends NIP01Event {
                 quote.getSlippageBP(),
 
                 payment.getMethod(),
-                payment.getAccount(),
-                payment.getQrCode(),
-                payment.getMemo(),
+                NostrSigner.encrypt(payment.getAccount()),
+                NostrSigner.encrypt(payment.getQrCode()),
+                NostrSigner.encrypt(payment.getMemo()),
 
                 limit == null || limit.getLowLimit() == null ? BigDecimal.ZERO : limit.getLowLimit(),
                 limit == null || limit.getUpLimit() == null ? BigDecimal.ZERO : limit.getUpLimit(),

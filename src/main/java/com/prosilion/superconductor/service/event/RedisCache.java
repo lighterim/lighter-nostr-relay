@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class RedisCache<T extends GenericEvent> {
     private final AccountMessageEntityService accountMessageEntityService;
     private final AddressBookMessageEntityService addressBookMessageEntityService;
     private final EventEntityService<T> eventEntityService;
-    @Value("${notice.lighter.im.pubkey:aaad79f81439ff794cf5ac5f7bff9121e257f399829e472c7a14d3e86fe76984}")
+    @Value("${notice.lighter.im.pubkey:3bdb98ca4ccf6c4498e07130b2010193a97de6781d56fa776cd5eb20e8686134}")
     private String noticePusherPubkey;
 
 
@@ -148,7 +149,8 @@ public class RedisCache<T extends GenericEvent> {
     }
 
     @Transactional
-    public Long saveEventEntity(@NonNull GenericEvent event) {
+    public List<GenericEvent> saveEventEntity(@NonNull GenericEvent event) {
+        List<GenericEvent> refEventChanged = new ArrayList<>();
         Kind kind = Kind.valueOf(event.getKind());
         Long id = switch (kind) {
             case SET_METADATA -> profileEntityService.saveEventEntity((MetadataEvent) event);
@@ -161,7 +163,7 @@ public class RedisCache<T extends GenericEvent> {
                 Long tradeId = takeIntentEvent.getTradeId();
                 String takerPubkey = event.getPubKey().toString();
                 if(takeIntentEvent.getTakeTag().getVisibleStatus()!=null) {
-                    //前端取消(takeTag.visibleState)take
+                    //前端取消(takeTag.visibleState被赋值)
                     if (tradeId == 0L){
                         log.warn("takeIntentEvent.takeTag.visibleStatus is null{} and tradeId is {}", takeIntentEvent.getId(), tradeId);
                         throw new IllegalArgumentException("takeIntentEvent.takeTag.visibleStatus and tradeId is 0");
@@ -177,13 +179,15 @@ public class RedisCache<T extends GenericEvent> {
                         );
                         throw new RuntimeException("No permission to set visibility");
                     }
-                    postEventEntityService.updateIntentStatus(dbTakeIntentEvent);
+                    // takeIntent被用户放弃，PostIntent释放状态和已成交数量
+                    refEventChanged.add(postEventEntityService.updateIntentStatus(dbTakeIntentEvent));
                     tradeEntityService.updateTradeStatus(takeIntentEventEntity, TradeStatus.DropEvent);
                 } else {
                     //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
                     tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
                     takeIntentEvent.setTradeId(tradeId);
-                    postEventEntityService.updateIntentStatus(takeIntentEvent);
+                    //takeIntent完成，占用PostIntent.
+                    refEventChanged.add(postEventEntityService.updateIntentStatus(takeIntentEvent));
 
                     EscrowTag escrowTag = getEscrowTag(takeIntentEvent);
                     takeIntentEvent.setEscrowTag(escrowTag);
@@ -194,17 +198,24 @@ public class RedisCache<T extends GenericEvent> {
 //                takeIntentEvent.setLimitTag(makerIntentEvent.getLimitTag());
                 yield tradeId;
             }
-            case TRADE_MESSAGE -> saveTradeMessageEntity((TradeMessageEvent) event);
+            case TRADE_MESSAGE -> {
+                TradeMessageEvent tradeMessageEvent = (TradeMessageEvent) event;
+                TakeIntentEvent tradeEvent = saveTradeMessageEntity(tradeMessageEvent);
+                if(tradeEvent != null) {
+                    refEventChanged.add(tradeEvent);
+                }
+                yield tradeMessageEvent.getCreatedByTag()==null?0L:tradeMessageEvent.getCreatedByTag().getTradeId();
+            }
             default -> eventEntityService.saveEventEntity(event);
         };
-        return id;
+        return refEventChanged;
     }
 
     public EscrowTag getEscrowTag(TakeIntentEvent takeIntentEvent) {
         return tradeEntityService.getEscrowTag(takeIntentEvent);
     }
 
-    private Long saveTradeMessageEntity(TradeMessageEvent event) {
+    private TakeIntentEvent saveTradeMessageEntity(TradeMessageEvent event) {
         boolean isNoticePusher = noticePusherPubkey.equals(event.getCreatedByTag().getPubkey());
         if (isNoticePusher && event.getLedgerTag() != null) {
             setEncryptContentForNoticePusher(event);
@@ -213,6 +224,7 @@ public class RedisCache<T extends GenericEvent> {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "createdByTag is null or CreatedByTag.TakeIntentEventId is null");
         }
         Long id = tradeMessageEntityService.saveEventEntity(event);
+        //TODO: return id????
         if (isNoticePusher && event.getLedgerTag() != null && event.getLedgerTag().getTradeStatus() != null) {
             TakeIntentEventEntity takeIntentEventEntity = tradeEntityService.getTakeIntentEventEntityById(event.getCreatedByTag().getTradeId());
             if(TradeStatus.CreateEscrowEvent.equals(event.getLedgerTag().getTradeStatus())) {
@@ -223,12 +235,14 @@ public class RedisCache<T extends GenericEvent> {
                     event.setContent(event.getContent() + paymentInfo);
                 }
                 tradeEntityService.updateTradeStatusAndEscrowHash(takeIntentEventEntity, event.getLedgerTag().getTradeStatus(), event.getLedgerTag().getEscrowHash());
+                return takeIntentEventEntity.convertEntityToDto();
             }
             else {
                 tradeEntityService.updateTradeStatus(takeIntentEventEntity, event.getLedgerTag().getTradeStatus());
+                return takeIntentEventEntity.convertEntityToDto();
             }
         }
-        return id;
+        return null;
     }
 
     private void setEncryptContentForNoticePusher(TradeMessageEvent event) {

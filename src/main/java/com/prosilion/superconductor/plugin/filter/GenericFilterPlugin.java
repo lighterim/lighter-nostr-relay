@@ -11,6 +11,7 @@ import nostr.event.query.CompositionQuery;
 import nostr.event.tag.TakeTag;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiPredicate;
 
@@ -58,7 +59,8 @@ public class GenericFilterPlugin<T extends GenericFiltersFilter> implements Filt
     }
 
     private boolean getBiPredicate(Filters filters, TradeMessageEvent tradeMessageEvent) {
-        return false;
+        List<String> refEvenIds = filters.getReferencedEvents() == null ? new ArrayList<>() : filters.getReferencedEvents().stream().map(GenericEvent::getId).toList();
+        return !refEvenIds.isEmpty() && tradeMessageEvent != null &&refEvenIds.contains(tradeMessageEvent.getId());
     }
 
     private boolean getBiPredicate(Filters filters, PostIntentEvent e) {

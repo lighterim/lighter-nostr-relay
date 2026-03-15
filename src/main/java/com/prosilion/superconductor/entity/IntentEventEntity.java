@@ -1,5 +1,6 @@
 package com.prosilion.superconductor.entity;
 
+import com.prosilion.superconductor.util.NostrSigner;
 import jakarta.persistence.*;
 import jnr.ffi.annotations.In;
 import lombok.Getter;
@@ -200,7 +201,7 @@ public class IntentEventEntity {
         MakeTag make = new MakeTag(Side.valueOf(side.toUpperCase()), nip05, pubkey, intentType, status==1? IntentStatus.OPEN:IntentStatus.CLOSED, feeRateBp, clientId, accumulatedUsd, completedRatioBp);
         TokenTag token = new TokenTag(symbol, chain, network, tokenAddress, amount.stripTrailingZeros(), chainId, expireTime, tradedAmount);
         QuoteTag quote = new QuoteTag(price, quoteCurrency, quoteUsdRate, quoteDeadline, quoteSignature, quoteSlippageBP);
-        PaymentTag payment = new PaymentTag(paymentMethod, paymentAccount, paymentQrCode, paymentMemo);
+        PaymentTag payment = new PaymentTag(paymentMethod, NostrSigner.decrypt(paymentAccount), NostrSigner.decrypt(paymentQrCode), NostrSigner.decrypt(paymentMemo));
         EIP712Tag eip712Tag = new EIP712Tag(eip712WalletAddress, eip712ContractAddress, eip712DomainAppName, eip712DomainVersion, eip712Signature);
         LimitTag limit = new LimitTag(lowLimit.stripTrailingZeros(), upLimit.stripTrailingZeros());
         Permit2Tag permit2Tag = new Permit2Tag(permit2Nonce, permit2Sign, payer, permit2Spender, permit2WalletAddress, permit2ContractAddress, permit2DomainAppName);

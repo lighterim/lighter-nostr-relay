@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.function.BiPredicate;
 
-@Component
+//@Component
 public class FilterReferencedEventPlugin<T extends GenericEvent> implements FilterPlugin<T> {
 
   @Override

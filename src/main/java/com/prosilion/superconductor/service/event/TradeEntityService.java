@@ -88,7 +88,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         this.concreteTagEntitiesService = concreteTagEntitiesService;
         this.genericTagEntitiesService = genericTagEntitiesService;
         this.takeEventEntityRepository = takeEventEntityRepository;
-        this.eventFieldNames = new HashSet<>(List.of(TAKE_TAG_CODE, TOKEN_TAG_CODE, PAYMENT_TAG_CODE, QUOTE_TAG_CODE, LIMIT_TAG_CODE, EIP712_TAG_CODE, PERMIT2_TAG_CODE, ESCROW_TAG_CODE));
+        this.eventFieldNames = new HashSet<>(List.of(TAKE_TAG_CODE, TOKEN_TAG_CODE, PAYMENT_TAG_CODE, QUOTE_TAG_CODE, LIMIT_TAG_CODE, EIP712_TAG_CODE, PERMIT2_TAG_CODE, ESCROW_TAG_CODE, TRADE_TAG_CODE));
     }
 
     @Override
@@ -116,7 +116,7 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         TokenTag tokenTag = takeIntentEvent.getTokenTag();
         EIP712Tag eip712Tag = takeIntentEvent.getEip712Tag();
         return EIP712Signer.getSignedEscrowTag(restClient, tokenTag, takeTag, quoteTag, permit2Tag, paymentTag, eip712Tag,
-                tokenConfig, takeIntentEvent.getTradeId());
+                tokenConfig, takeIntentEvent.getTradeTag().getId());
 //        String buyer;
 //        String seller;
 //        //the permit2Tag maybe is null when a buyer take bulk sell intent.

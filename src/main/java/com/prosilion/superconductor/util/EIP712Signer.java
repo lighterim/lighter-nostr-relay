@@ -117,12 +117,13 @@ public class EIP712Signer {
         QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
         PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
         EIP712Tag eip712Tag = takeIntentEvent.getEip712Tag();
+        TradeTag tradeTag = takeIntentEvent.getTradeTag();
         BigInteger chainId = tokenTag.getChainId();
 
         int tokenDecimals = tokenConfig.getDecimals(String.valueOf(chainId), tokenTag.getSymbol());
 
         String data = getSignEscrowData(
-                takeIntentEvent.getTradeId(),
+                tradeTag.getId(),
                 tokenTag.getAddress(),
                 takeTag.getVolume(),
                 quoteTag.getNumber(),
@@ -284,6 +285,7 @@ public class EIP712Signer {
         TokenTag tokenTag = takeIntentEvent.getTokenTag();
         QuoteTag quoteTag = takeIntentEvent.getQuoteTag();
         TakeTag takeTag = takeIntentEvent.getTakeTag();
+        TradeTag tradeTag = takeIntentEvent.getTradeTag();
         PaymentTag paymentTag = takeIntentEvent.getPaymentTag();
 
         String seller;
@@ -299,7 +301,7 @@ public class EIP712Signer {
                 eip712Tag.getDomainVersion(),
                 tokenTag.getChainId().intValue(),
                 eip712Tag.getContractAddress(),
-                takeIntentEvent.getTradeId(),
+                tradeTag.getId(),
                 tokenTag.getAddress(),
                 tokenTag.getAmount().multiply(BigDecimal.TEN.pow(tokenDecimals)),
                 quoteTag.getNumber().multiply(BigDecimal.TEN.pow(TokenConfig.PRICE_DECIMALS)),

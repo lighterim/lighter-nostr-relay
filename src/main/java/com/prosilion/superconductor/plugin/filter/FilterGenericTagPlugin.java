@@ -19,7 +19,7 @@ import java.util.function.BiPredicate;
 
 import static nostr.event.Kind.TEXT_NOTE;
 
-@Component
+//@Component
 public class FilterGenericTagPlugin<T extends GenericTagQuery> implements FilterPlugin<T> {
     private static boolean defaultPredicate(String tagName, List<String> value, GenericEvent event) {
         List<BaseTag> baseTags = event.getTags();

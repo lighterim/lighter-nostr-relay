@@ -6,10 +6,7 @@ import nostr.base.PublicKey;
 import nostr.base.Signature;
 import nostr.crypto.bech32.Bech32;
 import nostr.encryption.nip04.MessageCipher04;
-import nostr.event.BaseTag;
-import nostr.event.Kind;
-import nostr.event.NIP01Event;
-import nostr.event.Side;
+import nostr.event.*;
 import nostr.event.impl.*;
 import nostr.event.tag.*;
 import nostr.util.NostrException;
@@ -136,6 +133,7 @@ public class EventDto extends NIP01Event {
         LimitTag limitTag = event.getLimitTag();
         TradeKeyTag keyTag = event.getTradeKeyTag();
         BigDecimal volume = takeTag.getVolume();
+        TradeTag tradeTag = event.getTradeTag();
 
         String buyerId;
         String buyerPubKey;
@@ -171,14 +169,14 @@ public class EventDto extends NIP01Event {
                 quoteTag.getNumber(), quoteTag.getCurrency(), quoteTag.getUsdRate(), quoteTag.getSlippageBP(), quoteTag.getTimestamp(), quoteTag.getSignature(),
                 paymentTag.getMethod(), NostrSigner.encrypt(paymentTag.getAccount()), NostrSigner.encrypt(paymentTag.getQrCode()), NostrSigner.encrypt(paymentTag.getMemo()),
                 keyTag==null?"":keyTag.getKeyForBuyer(), keyTag==null?"":keyTag.getKeyForSeller(), keyTag==null?"":keyTag.getKeyForWitness(), keyTag==null?"":keyTag.getKeyForSomeone(), keyTag==null?"":keyTag.getPubkey(),
-                event.getTradeStatus(),
+                tradeTag==null? TradeStatus.TakeEvent.getValue():tradeTag.getStatus().getValue(),
                 event.getContent(),
                 event.getSignature().toString(),
                 event.getCreatedAt(),
                 limitTag.getLowLimit(), limitTag.getUpLimit(),
                 eip712Tag==null?"":eip712Tag.getWalletAddress(), eip712Tag==null?"":eip712Tag.getDomainVersion(), eip712Tag==null?"":eip712Tag.getDomainAppName(), eip712Tag==null?"":eip712Tag.getContractAddress(), eip712Tag==null?"":eip712Tag.getSign(),
                 permit2Tag==null?"":permit2Tag.getNonce(), permit2Tag==null?"":permit2Tag.getSignature(), permit2Tag==null?"":permit2Tag.getSpender(), permit2Tag==null?"":permit2Tag.getWalletAddress(), permit2Tag==null?"":permit2Tag.getContractAddress(), permit2Tag==null?"":permit2Tag.getDomainAppName(),
-                "", ""
+                "", tradeTag==null?"":tradeTag.getEscrowHash()
         );
     }
 

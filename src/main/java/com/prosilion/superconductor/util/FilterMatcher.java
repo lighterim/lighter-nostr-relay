@@ -5,6 +5,7 @@ import com.prosilion.superconductor.plugin.filter.FilterPlugin;
 import com.prosilion.superconductor.service.request.CachedSubscriberService;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import nostr.event.impl.Filters;
 import nostr.event.impl.GenericEvent;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import static java.util.Objects.nonNull;
 /**
  * matcher for filters
  */
+@Slf4j
 @Component
 public class FilterMatcher {
     private final List<FilterPlugin<AbstractFilterType>> filterPlugins;
@@ -54,6 +56,7 @@ public class FilterMatcher {
                     if(fList == null || fList.isEmpty()) {
                         return false;
                     }
+                    log.info("intersectFilterMatches: fList={}, filterPlugin:{},{}", fList, filterPlugin, filterPlugin.getClass());
                     return fList.stream().anyMatch(
                             filter -> filterPlugin.getBiPredicate().test(filter, eventToCheck)
                     );

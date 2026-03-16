@@ -160,7 +160,7 @@ public class RedisCache<T extends GenericEvent> {
             case TAKE_INTENT -> {
 
                 TakeIntentEvent takeIntentEvent = (TakeIntentEvent) event;
-                Long tradeId = takeIntentEvent.getTradeId();
+                Long tradeId = takeIntentEvent.getTradeTag()==null?0L:takeIntentEvent.getTradeTag().getId();
                 String takerPubkey = event.getPubKey().toString();
                 if(takeIntentEvent.getTakeTag().getVisibleStatus()!=null) {
                     //前端取消(takeTag.visibleState被赋值)
@@ -185,7 +185,9 @@ public class RedisCache<T extends GenericEvent> {
                 } else {
                     //takeIntentEvent.setTradeKeyTag(buildTradeKey(takeIntentEvent));
                     tradeId = tradeEntityService.saveEventEntity(takeIntentEvent);
-                    takeIntentEvent.setTradeId(tradeId);
+                    if(takeIntentEvent.getTradeTag() == null || takeIntentEvent.getTradeTag().getId()==0L){
+                        takeIntentEvent.setTradeTag(TradeTag.builder().id(tradeId).status(TradeStatus.TakeEvent).escrowHash("").build());
+                    }
                     //takeIntent完成，占用PostIntent.
                     refEventChanged.add(postEventEntityService.updateIntentStatus(takeIntentEvent));
 

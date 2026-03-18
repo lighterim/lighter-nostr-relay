@@ -51,6 +51,16 @@ public class LighterController<T extends BaseMessage> {
         return getAccount("tba", chainId, null, null, tba);
     }
 
+    @PostMapping("/lighter/verifierWebHook")
+    public Map<String, Object> verifierWebHook(@RequestBody String payload) {
+        log.info("payload: {}", payload);
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("status", "0");
+        return resp;
+    }
+
+
+
     @PostMapping("/lighter/pushTradeMessage")
     public Map<String, Object> pushTradeMessage(@RequestBody String json) {
         try {

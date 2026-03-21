@@ -69,11 +69,13 @@ public class GenericFilterPlugin<T extends GenericFiltersFilter> implements Filt
         List<String> symbols = filters.getSymbol();
         List<String> currencies = filters.getCurrency();
         List<String> paymentMethods = filters.getPaymentMethod();
+        List<String> createdBy =  filters.getCreatedBy();
         return matches(chainIds, e.getTokenTag().getChainId().intValue())
                 && matches(sides, e.getSideTag().getSide().getSide())
                 && matches(symbols, e.getTokenTag().getSymbol())
                 && matches(currencies, e.getQuoteTag().getCurrency())
-                && matches(paymentMethods, e.getPaymentTag().getMethod());
+                && matches(paymentMethods, e.getPaymentTag().getMethod())
+                && matches(createdBy, e.getSideTag().getMakerNip05());
     }
 
     private <D> boolean matches(List<D> values, D d){

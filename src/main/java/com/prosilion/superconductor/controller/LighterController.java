@@ -4,6 +4,8 @@ import com.prosilion.superconductor.entity.AccountMessageEntity;
 import com.prosilion.superconductor.service.event.AccountMessageEntityService;
 import com.prosilion.superconductor.service.event.EventServiceIF;
 import com.prosilion.superconductor.service.event.ProfileEntityService;
+import com.prosilion.superconductor.service.http.webhook.TlsnVerifierService;
+import jakarta.annotation.Resource;
 import jakarta.persistence.NoResultException;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.UserProfile;
@@ -36,6 +38,9 @@ public class LighterController<T extends BaseMessage> {
     @Autowired
     AccountMessageEntityService accountMessageEntityService;
 
+    @Resource
+    TlsnVerifierService tlsnVerifierService;
+
     @GetMapping("/lighter/account/{nostrPubkey}")
     public Map<String, Object> getAccountByPubkey(@PathVariable String nostrPubkey) {
         return getAccount("nostrPubkey", null, nostrPubkey, null, null);
@@ -54,12 +59,17 @@ public class LighterController<T extends BaseMessage> {
     @PostMapping("/lighter/verifierWebHook")
     public Map<String, Object> verifierWebHook(@RequestBody String payload) {
         log.info("payload: {}", payload);
+        BaseMessage message = tlsnVerifierService.verifyTlsnProof(payload);
+        if(message != null && message instanceof EventMessage eventMessage) {
+            eventService.processIncomingEvent(eventMessage);
+        }
+        else{
+            log.warn("verifyTlsnProof failure: {}", message);
+        }
         Map<String, Object> resp = new HashMap<>();
         resp.put("status", "0");
         return resp;
     }
-
-
 
     @PostMapping("/lighter/pushTradeMessage")
     public Map<String, Object> pushTradeMessage(@RequestBody String json) {

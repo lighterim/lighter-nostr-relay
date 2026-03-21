@@ -10,8 +10,13 @@ import nostr.base.PublicKey;
 import nostr.event.*;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
+import nostr.event.impl.TradeMessageEvent;
+import nostr.event.json.codec.BaseMessageDecoder;
+import nostr.event.message.EventMessage;
 import nostr.event.tag.*;
 import org.apache.commons.lang3.StringUtils;
+import org.identityconnectors.common.StringUtil;
+import org.jetbrains.annotations.NotNull;
 import org.web3j.crypto.*;
 import org.web3j.utils.Numeric;
 
@@ -94,7 +99,7 @@ public class EIP712Signer {
                 tokenTag.getSymbol()
         );
 
-        String sign = getRelayerSignature(restClient, data);
+        String sign = getRelayerSignature(restClient,"/signature/escrow", data);
         return new EscrowTag(tradeId,
                 tokenTag.getAddress(),
                 takeTag.getVolume(),
@@ -146,11 +151,11 @@ public class EIP712Signer {
                 tokenTag.getSymbol()
         );
 
-        return getRelayerSignature(restClient, data);
+        return getRelayerSignature(restClient,"/signature/escrow", data);
     }
 
-    private static String getRelayerSignature(RestClient restClient, String data) {
-        HttpResponse<String> response = restClient.post("/signature/escrow", data).join();
+    private static String getRelayerSignature(RestClient restClient, String path, String data) {
+        HttpResponse<String> response = restClient.post(path, data).join();
         if (response.statusCode() == 200) {
             String responseBody = response.body();
             JsonObject spotObj = JsonParser.parseString(responseBody).getAsJsonObject();
@@ -163,7 +168,118 @@ public class EIP712Signer {
         throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("signature op error code:%s", response.statusCode()));
     }
 
-    private static String getSignEscrowData(
+    public static EventMessage getTlsnProofEvent(RestClient restClient, TokenTag tokenTag, TakeTag takeTag,
+                                                      QuoteTag quoteTag, Permit2Tag permit2Tag, PaymentTag paymentTag,
+                                                      EIP712Tag eip712Tag, TlsnProofTag tlsnProofTag,
+                                                      TokenConfig tokenConfig, long tradeId) {
+        BigInteger chainId = tokenTag.getChainId();
+        String buyer;
+        String seller;
+        //the permit2Tag maybe is null when a buyer take bulk sell intent.
+        String payer = permit2Tag == null ? takeTag.getPayer() : permit2Tag.getPayer();
+
+        if (takeTag.getSide() == Side.BUY) {
+            buyer = takeTag.getTakerNip05();
+            seller = takeTag.getMakerNip05();
+        } else {
+            buyer = takeTag.getMakerNip05();
+            seller = takeTag.getTakerNip05();
+        }
+
+
+        int tokenDecimals = tokenConfig.getDecimals(String.valueOf(chainId), tokenTag.getSymbol());
+        String data = getSignTlsnData(
+                tradeId,
+                tokenTag.getAddress(),
+                takeTag.getVolume(),
+                quoteTag.getNumber(),
+                quoteTag.getUsdRate(),
+                payer,
+                seller,
+                takeTag.getSellerFeeRate(),
+                paymentTag.getMethod(),
+                quoteTag.getCurrency(),
+                paymentTag.getAccount(),
+                paymentTag.getQrCode(),
+                paymentTag.getMemo(),
+                buyer,
+                takeTag.getBuyerFeeRate(),
+                chainId,
+                eip712Tag.getDomainAppName(),
+                eip712Tag.getDomainVersion(),
+                eip712Tag.getContractAddress(),
+                tokenDecimals,
+                tokenTag.getSymbol(),
+                tlsnProofTag.getPaymentId(),
+                tlsnProofTag.getAmount(),
+                StringUtil.isNotBlank(tlsnProofTag.getConfirmationTs())?Long.parseLong(tlsnProofTag.getConfirmationTs()):0L
+        );
+        return new BaseMessageDecoder<EventMessage>().decode(data);
+    }
+
+    private static String getSignTlsnData(
+            long tradeId,
+            String tokenAddress,
+            BigDecimal volume,
+            BigDecimal price,
+            BigDecimal usdRate,
+            String payer,
+            String seller,
+            BigDecimal sellerFeeRate,
+            String bytes32PaymentMethod,
+            String bytes32Currency,
+            String account,
+            String qrCode,
+            String memo,
+            String buyer,
+            BigDecimal buyerFeeRate,
+            BigInteger intChainId,
+            String domainAppName,
+            String domainAppVersion,
+            String contractAddress,
+            int tokenDecimals,
+            String symbol,
+            String paymentId,
+            String targetAmount,
+            long confirmTimestamp
+    ){
+        List<List<String>> tags = getTags(tradeId, tokenAddress, volume, price, usdRate, payer, seller, sellerFeeRate,
+                bytes32PaymentMethod, bytes32Currency, account, qrCode, memo, buyer, buyerFeeRate, intChainId,
+                domainAppName, domainAppVersion, contractAddress, tokenDecimals, symbol
+        );
+        tags.add(getTlsnTag(paymentId, String.valueOf(tradeId), bytes32PaymentMethod, bytes32Currency, account,
+                "", "", targetAmount, confirmTimestamp));
+        return getTagsJson(tags);
+    }
+
+    private static List<String> getTlsnTag(String paymentId, String strTradeId, String bytes32PaymentMethod,
+                                           String bytes32Currency, String account, String account2, String account3,
+                                           String targetAmount, long confirmTimestamp) {
+        List<String> t =  new ArrayList<>();
+        t.add("tlsn_proof");
+        t.add(bytes32PaymentMethod);  //EIP712.params.0 bytes32
+        t.add(paymentId);  //EIP712.params.1 bytes32
+        t.add(account);   //EIP712.params.2 bytes32
+        t.add(account2);  //EIP712.params.3 可能为字符串空, bytes32
+        t.add(account3);  //EIP712.params.4 可能为字符串空 bytes32
+        t.add(targetAmount); //EIP712.params.5 uint256
+        t.add(bytes32Currency);  //EIP712.params.6 bytes32
+        t.add(""); //state
+        t.add(String.valueOf(confirmTimestamp));  //EIP712.params.7 uint64
+        t.add(strTradeId); // EIP712.params.8 uint256
+        t.add(""); //signature
+        return t;
+    }
+
+    @NotNull
+    private static String getTagsJson(List<List<String>> tags) {
+        Map<String, Object> jsonData = new HashMap<>();
+        jsonData.put("tags", tags);
+        Gson gson = new GsonBuilder().create();
+        return gson.toJson(jsonData);
+    }
+
+    private static List<List<String>> getTags(
             long tradeId,
             String tokenAddress,
             BigDecimal volume,
@@ -185,8 +301,7 @@ public class EIP712Signer {
             String contractAddress,
             int tokenDecimals,
             String symbol
-            ) {
-
+    ){
         String chainId = String.valueOf(intChainId);
         if(tokenDecimals==0) {
             log.warn("takeIntentEvent:{}, token: {},{}, decimals:0", tradeId, symbol, contractAddress);
@@ -221,12 +336,37 @@ public class EIP712Signer {
 
         tags.add(escrowParam);
         tags.add(eip712Param);
+        return tags;
+    }
 
-        Map<String, Object> jsonData = new HashMap<>();
-        jsonData.put("tags", tags);
-
-        Gson gson = new GsonBuilder().create();
-        return gson.toJson(jsonData);
+    private static String getSignEscrowData(
+            long tradeId,
+            String tokenAddress,
+            BigDecimal volume,
+            BigDecimal price,
+            BigDecimal usdRate,
+            String payer,
+            String seller,
+            BigDecimal sellerFeeRate,
+            String bytes32PaymentMethod,
+            String bytes32Currency,
+            String account,
+            String qrCode,
+            String memo,
+            String buyer,
+            BigDecimal buyerFeeRate,
+            BigInteger intChainId,
+            String domainAppName,
+            String domainAppVersion,
+            String contractAddress,
+            int tokenDecimals,
+            String symbol
+            ) {
+        List<List<String>> tags = getTags(tradeId, tokenAddress, volume, price, usdRate, payer, seller, sellerFeeRate,
+                bytes32PaymentMethod, bytes32Currency, account, qrCode, memo, buyer, buyerFeeRate, intChainId,
+                domainAppName, domainAppVersion, contractAddress, tokenDecimals, symbol
+        );
+        return getTagsJson(tags);
     }
 
     /**

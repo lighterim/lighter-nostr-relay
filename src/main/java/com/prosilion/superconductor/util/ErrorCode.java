@@ -15,6 +15,19 @@ public enum ErrorCode {
     PARAM_ERROR(1002, "参数错误"),
     TRADE_ID_NOT_FOUND(1003, "TradeId不存在"),
     SIG_SIGN_ERROR(1004, "Sig校验错误"),
+
+    WISE_VERIFIER_PAYMENT_FAIL(2001, "wise verifier payment fail status"),
+    WISE_VERIFIER_PAYMENT_ZERO_OR_REFUND(2002, "wise verifier payment zero or refund status"),
+    WISE_VERIFIER_DOUBLE_SPENT(2003, "wise verifier double spent"),
+    WISE_VERIFIER_REFERENCE_NONE(2004, "wise verifier reference none"),
+    WISE_VERIFIER_TRADE_NOT_FOUND_OR_STATUS_ERROR(2005, "wise verifier trade not found or status error"),
+    WISE_VERIFIER_PAYMENT_BEFORE_TRADE(2006, "wise verifier payment before trade"),
+    WISE_VERIFIER_PAYMENT_CURRENCY_INCORRECT(2007, "wise verifier currency incorrect"),
+    WISE_VERIFIER_PAYMENT_INSUFFICIENT(2008, "wise verifier insufficient"),
+    WISE_VERIFIER_RECIPIENT_NOT_FOUND(2009, "wise verifier recipient not found"),
+    WISE_VERIFIER_RECIPIENT_NOT_MATCH(2010, "wise verifier recipient not match"),
+
+
     ;
 
     private final int code;

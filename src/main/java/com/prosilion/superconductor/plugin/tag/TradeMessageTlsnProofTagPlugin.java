@@ -1,23 +1,17 @@
 package com.prosilion.superconductor.plugin.tag;
 
-import com.prosilion.superconductor.dto.classified.LedgerTagDto;
 import com.prosilion.superconductor.dto.classified.TlsnProofTagDto;
-import com.prosilion.superconductor.entity.join.classified.TradeMessageEntityLedgerTagEntity;
 import com.prosilion.superconductor.entity.join.classified.TradeMessageEntityTlsnProofTagEntity;
-import com.prosilion.superconductor.entity.standard.LedgerTagEntity;
 import com.prosilion.superconductor.entity.standard.TlsnProofTagEntity;
-import com.prosilion.superconductor.repository.classified.LedgerTagEntityRepository;
 import com.prosilion.superconductor.repository.classified.TlsnProofTagEntityRepository;
-import com.prosilion.superconductor.repository.join.classified.TradeMessageEntityLedgerTagEntityRepository;
 import com.prosilion.superconductor.repository.join.classified.TradeMessageEntityTlsnProofTagEntityRepository;
 import jakarta.annotation.Nonnull;
 import lombok.NonNull;
-import nostr.event.tag.LedgerTag;
 import nostr.event.tag.TlsnProofTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import static nostr.event.NIP77Event.LEDGER_TAG_CODE;
+import static nostr.event.NIP77Event.TLSN_PROOF_TAG_CODE;
 
 @Component
 public class TradeMessageTlsnProofTagPlugin<
@@ -39,7 +33,7 @@ public class TradeMessageTlsnProofTagPlugin<
 
   @Override
   public String getCode() {
-    return LEDGER_TAG_CODE;
+    return TLSN_PROOF_TAG_CODE;
   }
 
   @Override

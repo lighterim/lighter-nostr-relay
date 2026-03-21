@@ -28,7 +28,7 @@ public class AccountMapEntityService {
         return accountMapEntityRepository.findByDomainAndAccountName(domain, accountName).orElse(null);
     }
 
-    public AccountMapEntity findByDomainAndAccountNumber(String doman, String accountNumber){
-        return accountMapEntityRepository.findByDomainAndAccountNumber( doman, accountNumber).orElse(null);
+    public AccountMapEntity findByDomainAndAccountNumber(String domain, String accountNumber){
+        return accountMapEntityRepository.findByDomainAndAccountNumber( domain, accountNumber).orElse(null);
     }
 }

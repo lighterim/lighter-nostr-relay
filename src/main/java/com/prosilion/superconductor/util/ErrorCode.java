@@ -26,6 +26,8 @@ public enum ErrorCode {
     WISE_VERIFIER_PAYMENT_INSUFFICIENT(2008, "wise verifier insufficient"),
     WISE_VERIFIER_RECIPIENT_NOT_FOUND(2009, "wise verifier recipient not found"),
     WISE_VERIFIER_RECIPIENT_NOT_MATCH(2010, "wise verifier recipient not match"),
+    WISE_VERIFIER_PAYMENT_METHOD_NOT_MATCHE(2011, "wise verifier payment method not match"),
+    WISE_VERIFIER_ACTOR_INCORRECT(2012, "wise verifier actor incorrect"),
 
 
     ;

@@ -188,6 +188,7 @@ public class EIP712Signer {
 
 
         int tokenDecimals = tokenConfig.getDecimals(String.valueOf(chainId), tokenTag.getSymbol());
+        BigDecimal amount = new BigDecimal(tlsnProofTag.getAmount()).multiply(BigDecimal.TEN.pow(PRICE_DECIMALS+tokenDecimals));
         String data = getSignTlsnData(
                 tradeId,
                 tokenTag.getAddress(),
@@ -211,10 +212,11 @@ public class EIP712Signer {
                 tokenDecimals,
                 tokenTag.getSymbol(),
                 tlsnProofTag.getPaymentId(),
-                tlsnProofTag.getAmount(),
+                amount,
                 StringUtil.isNotBlank(tlsnProofTag.getConfirmationTs())?Long.parseLong(tlsnProofTag.getConfirmationTs()):0L
         );
-        return new BaseMessageDecoder<EventMessage>().decode(data);
+        String eventMessage = getRelayerSignature(restClient,"/signature/tlsn", data);
+        return new BaseMessageDecoder<EventMessage>().decode(eventMessage);
     }
 
     private static String getSignTlsnData(
@@ -226,8 +228,8 @@ public class EIP712Signer {
             String payer,
             String seller,
             BigDecimal sellerFeeRate,
-            String bytes32PaymentMethod,
-            String bytes32Currency,
+            String paymentMethod,
+            String currency,
             String account,
             String qrCode,
             String memo,
@@ -240,34 +242,33 @@ public class EIP712Signer {
             int tokenDecimals,
             String symbol,
             String paymentId,
-            String targetAmount,
+            BigDecimal targetAmount,
             long confirmTimestamp
     ){
         List<List<String>> tags = getTags(tradeId, tokenAddress, volume, price, usdRate, payer, seller, sellerFeeRate,
-                bytes32PaymentMethod, bytes32Currency, account, qrCode, memo, buyer, buyerFeeRate, intChainId,
+                paymentMethod, currency, account, qrCode, memo, buyer, buyerFeeRate, intChainId,
                 domainAppName, domainAppVersion, contractAddress, tokenDecimals, symbol
         );
-        tags.add(getTlsnTag(paymentId, String.valueOf(tradeId), bytes32PaymentMethod, bytes32Currency, account,
-                "", "", targetAmount, confirmTimestamp));
+        tags.add(getTlsnTag(paymentId, String.valueOf(tradeId), paymentMethod, currency, account,
+                qrCode, memo, targetAmount, confirmTimestamp));
         return getTagsJson(tags);
     }
 
-    private static List<String> getTlsnTag(String paymentId, String strTradeId, String bytes32PaymentMethod,
-                                           String bytes32Currency, String account, String account2, String account3,
-                                           String targetAmount, long confirmTimestamp) {
+    private static List<String> getTlsnTag(String paymentId, String strTradeId, String paymentMethod,
+                                           String currency, String account, String qrCode, String memo,
+                                           BigDecimal targetAmount, long confirmTimestamp) {
         List<String> t =  new ArrayList<>();
         t.add("tlsn_proof");
-        t.add(bytes32PaymentMethod);  //EIP712.params.0 bytes32
+        t.add(paymentMethod);  //EIP712.params.0 bytes32
         t.add(paymentId);  //EIP712.params.1 bytes32
         t.add(account);   //EIP712.params.2 bytes32
-        t.add(account2);  //EIP712.params.3 可能为字符串空, bytes32
-        t.add(account3);  //EIP712.params.4 可能为字符串空 bytes32
-        t.add(targetAmount); //EIP712.params.5 uint256
-        t.add(bytes32Currency);  //EIP712.params.6 bytes32
-        t.add(""); //state
+        t.add(qrCode);  //EIP712.params.3 可能为字符串空, bytes32
+        t.add(memo);  //EIP712.params.4 可能为字符串空 bytes32
+        t.add(targetAmount.stripTrailingZeros().toPlainString()); //EIP712.params.5 uint256
+        t.add(currency);  //EIP712.params.6 bytes32
         t.add(String.valueOf(confirmTimestamp));  //EIP712.params.7 uint64
         t.add(strTradeId); // EIP712.params.8 uint256
-        t.add(""); //signature
+//        t.add(""); //signature
         return t;
     }
 

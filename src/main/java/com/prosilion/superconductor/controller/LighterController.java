@@ -60,7 +60,7 @@ public class LighterController<T extends BaseMessage> {
     public Map<String, Object> verifierWebHook(@RequestBody String payload) {
         log.info("payload: {}", payload);
         BaseMessage message = tlsnVerifierService.verifyTlsnProof(payload);
-        if(message != null && message instanceof EventMessage eventMessage) {
+        if(message instanceof EventMessage eventMessage) {
             eventService.processIncomingEvent(eventMessage);
         }
         else{

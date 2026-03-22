@@ -12,6 +12,7 @@ import com.prosilion.superconductor.util.EIP712Signer;
 import com.prosilion.superconductor.util.ErrorCode;
 import com.prosilion.superconductor.util.RestClient;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseMessage;
 import nostr.event.Kind;
 import nostr.event.TradeStatus;
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
+@Slf4j
 @Service
 public class TlsnVerifierService {
 
@@ -62,10 +64,14 @@ public class TlsnVerifierService {
                     String targetCurrency = getStringFieldValue(root, "targetCurrency");
                     String state = getStringFieldValue(root, "state");
                     String userId = getStringFieldValue(root, "userId");
+                    String actor = getStringFieldValue(root, "actor");
                     String profileId = getStringFieldValue(root, "profileId");
                     String confirmTimestamp = getConfirmTimestamp(root.get("stateHistory"));
 
-                    return verifyWiseTlsnProof(strTradeId, paymentId, targetRecipientId, refundRecipientId, targetAmount, targetCurrency, state, userId, profileId, confirmTimestamp);
+                    return verifyWiseTlsnProof(
+                            actor, strTradeId, paymentId, targetRecipientId, refundRecipientId, targetAmount,
+                            targetCurrency, state, userId, profileId, confirmTimestamp
+                    );
                 }
                 return null;
 
@@ -88,9 +94,10 @@ public class TlsnVerifierService {
         for (JsonNode node : stateHistoryArray) {
             if (node.hasNonNull("state") && WISE_STATE_OUTGOING_PAYMENT_SENT.equals(node.get("state").asText())) {
                 String millis =  node.get("date").asText();
-                if(millis.length() > 11){
-                    return String.valueOf(Long.parseLong(millis) / 1000);
+                if(millis.length() == 11){
+                    return millis; //second
                 }
+                return String.valueOf(Long.parseLong(millis) / 1000);
             }
         }
         return null;
@@ -167,24 +174,34 @@ public class TlsnVerifierService {
      * @param confirmTimestamp --> .stateHistory[-1].OUTGOING_PAYMENT_SENT
      * @return
      */
-    private BaseMessage verifyWiseTlsnProof(String strTradeId, String paymentId, String targetRecipientId, String refundRecipientId,
-                                            String targetAmount,  String targetCurrency, String state, String userId, String profileId,
-                                            String confirmTimestamp) {
-        ErrorCode result = validateWiseTlsnProof(strTradeId, paymentId, targetRecipientId, refundRecipientId, targetAmount, targetCurrency, state, confirmTimestamp);
+    private BaseMessage verifyWiseTlsnProof(String actor, String strTradeId, String paymentId, String targetRecipientId,
+                                            String refundRecipientId, String targetAmount,  String targetCurrency,
+                                            String state, String userId, String profileId, String confirmTimestamp) {
+        ErrorCode result = validateWiseTlsnProof(actor, strTradeId, paymentId, targetRecipientId, refundRecipientId, targetAmount, targetCurrency, state, confirmTimestamp);
         if(result != ErrorCode.SUCCESS) {
+            log.warn("verifyWiseTlsnProof fail: {}, {}", result.getCode(), result.getMessage());
             return null;
         }
 
         long tradeId = Long.parseLong(strTradeId);
         TakeIntentEvent e = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, tradeId);
+        PaymentTag paymentTag = e.getPaymentTag();
         TlsnProofTag tlsnProof = TlsnProofTag.builder()
-                .paymentId(paymentId).tradeId(strTradeId).account1(e.getPaymentTag().getAccount()).amount(targetAmount)
+                .paymentId(paymentId).tradeId(strTradeId).amount(targetAmount)
                 .currency(targetCurrency).confirmationTs(StringUtils.isNotBlank(confirmTimestamp)?confirmTimestamp:"")
-                .build();
-        return EIP712Signer.getTlsnProofEvent(restClient, e.getTokenTag(), e.getTakeTag(), e.getQuoteTag(), e.getPermit2Tag(), e.getPaymentTag(), e.getEip712Tag(), tlsnProof, tokenConfig, tradeId);
+                .paymentMethod(paymentTag.getMethod()).build();
+        return EIP712Signer.getTlsnProofEvent(
+                restClient, e.getTokenTag(), e.getTakeTag(), e.getQuoteTag(), e.getPermit2Tag(), paymentTag,
+                e.getEip712Tag(), tlsnProof, tokenConfig, tradeId
+        );
     }
 
-    private ErrorCode validateWiseTlsnProof(String strTradeId, String paymentId, String targetRecipientId, String refundRecipientId, String targetAmount, String targetCurrency, String state, String confirmTimestamp) {
+    private ErrorCode validateWiseTlsnProof(String actor, String strTradeId, String paymentId, String targetRecipientId,
+                                            String refundRecipientId, String targetAmount, String targetCurrency,
+                                            String state, String confirmTimestamp) {
+        if(!WISE_SENDER_ACTOR.equals(actor)){
+            return ErrorCode.WISE_VERIFIER_ACTOR_INCORRECT;
+        }
         if(!WISE_STATE_OUTGOING_PAYMENT_SENT.equals(state)){
             return ErrorCode.WISE_VERIFIER_PAYMENT_FAIL;
         }
@@ -203,11 +220,14 @@ public class TlsnVerifierService {
         if(tradeEvent == null || (tradeEvent.getTradeTag().getStatus() != TradeStatus.CreateEscrowEvent && tradeEvent.getTradeTag().getStatus() != TradeStatus.BuyerPaidEvent)){
             return ErrorCode.WISE_VERIFIER_TRADE_NOT_FOUND_OR_STATUS_ERROR;
         }
+        if(WISE_PAYMENT_METHOD.equalsIgnoreCase(tradeEvent.getPaymentTag().getMethod())){
+            return ErrorCode.WISE_VERIFIER_PAYMENT_METHOD_NOT_MATCHE;
+        }
         long targetTimestamp = 0L;
         if(StringUtils.isNotBlank(confirmTimestamp)){
             targetTimestamp = Long.parseLong(confirmTimestamp);
         }
-        if(targetTimestamp > 0 && tradeEvent.getCreatedAt() >= targetTimestamp){
+        if(targetTimestamp > 0 && targetTimestamp < tradeEvent.getCreatedAt()){
             return ErrorCode.WISE_VERIFIER_PAYMENT_BEFORE_TRADE;
         }
         PaymentTag paymentTag = tradeEvent.getPaymentTag();
@@ -217,7 +237,7 @@ public class TlsnVerifierService {
             return ErrorCode.WISE_VERIFIER_PAYMENT_CURRENCY_INCORRECT;
         }
         BigDecimal amount = quoteTag.getNumber().multiply(takeTag.getVolume());
-        if(amount.compareTo(transferAmount) < 0){
+        if(transferAmount.compareTo(amount) < 0){
             return ErrorCode.WISE_VERIFIER_PAYMENT_INSUFFICIENT;
         }
 
@@ -226,17 +246,19 @@ public class TlsnVerifierService {
             return ErrorCode.WISE_VERIFIER_RECIPIENT_NOT_FOUND;
         }
         String payeeAcct = paymentTag.getAccount();
-        if(payeeAcct == null || StringUtils.isBlank(accountMapEntity.getAccountName()) || payeeAcct.equalsIgnoreCase(accountMapEntity.getAccountName())){
+        if(payeeAcct == null || StringUtils.isBlank(accountMapEntity.getAccountName()) || !payeeAcct.equalsIgnoreCase(accountMapEntity.getAccountName())){
             return ErrorCode.WISE_VERIFIER_RECIPIENT_NOT_MATCH;
         }
         return ErrorCode.SUCCESS;
     }
 
+    //TODO://
     private boolean alreadyVerify(String server, String paymentId) {
         return false;
     }
 
-
+    final static String WISE_SENDER_ACTOR = "SENDER";
+    final static String WISE_PAYMENT_METHOD = "wise";
     final static String WISE = "wise.com";
     final static String WISE_STATE_OUTGOING_PAYMENT_SENT = "OUTGOING_PAYMENT_SENT";
 }

@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TlsnProofTagEntityRepository<T extends TlsnProofTagEntity> extends AbstractTagEntityRepository<T> {
+
+
 }

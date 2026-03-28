@@ -1,7 +1,6 @@
 package com.prosilion.superconductor.entity.standard;
 
 import com.prosilion.superconductor.dto.AbstractTagDto;
-import com.prosilion.superconductor.dto.classified.LedgerTagDto;
 import com.prosilion.superconductor.dto.classified.TlsnProofTagDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import jakarta.persistence.Entity;
@@ -11,13 +10,10 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 import nostr.event.BaseTag;
-import nostr.event.TradeStatus;
-import nostr.event.tag.LedgerTag;
 import nostr.event.tag.TlsnProofTag;
 
 import java.util.Objects;
 
-import static nostr.event.NIP77Event.LEDGER_TAG_CODE;
 import static nostr.event.NIP77Event.TLSN_PROOF_TAG_CODE;
 
 @Setter
@@ -36,6 +32,7 @@ public class TlsnProofTagEntity extends AbstractTagEntity {
     private String confirmationTs;
     private String tradeId;
     private String signature;
+    private int status = 0;
 
     public TlsnProofTagEntity(@NonNull TlsnProofTag t){
         this.paymentMethod = t.getPaymentMethod();

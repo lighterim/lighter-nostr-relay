@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosilion.superconductor.config.TlsnProofVerifierConfig;
 import com.prosilion.superconductor.config.TokenConfig;
 import com.prosilion.superconductor.entity.AccountMapEntity;
 import com.prosilion.superconductor.entity.AccountMapEntityService;
@@ -18,10 +19,7 @@ import nostr.event.Kind;
 import nostr.event.TradeStatus;
 import nostr.event.impl.GenericEvent;
 import nostr.event.impl.TakeIntentEvent;
-import nostr.event.tag.PaymentTag;
-import nostr.event.tag.QuoteTag;
-import nostr.event.tag.TakeTag;
-import nostr.event.tag.TlsnProofTag;
+import nostr.event.tag.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +35,9 @@ public class TlsnVerifierService {
 //    private TradeEntityService  tradeEntityService;
     @Resource
     private AccountMapEntityService accountMapEntityService;
+
+    @Resource
+    private TlsnProofVerifierConfig tlsnProofVerifierConfig;
 
     @Resource
     RestClient restClient;
@@ -190,9 +191,14 @@ public class TlsnVerifierService {
                 .paymentId(paymentId).tradeId(strTradeId).amount(targetAmount)
                 .currency(targetCurrency).confirmationTs(StringUtils.isNotBlank(confirmTimestamp)?confirmTimestamp:"")
                 .paymentMethod(paymentTag.getMethod()).build();
+        TokenTag tokenTag = e.getTokenTag();
+        TlsnProofVerifierConfig.Eip712Domain eip712Domain = tlsnProofVerifierConfig.getEip712Domain(tokenTag.getChainId(), paymentTag.getMethod());
+        EIP712Tag tlsnProofVerifierEip = EIP712Tag.builder()
+                .contractAddress(eip712Domain.getAddress()).domainVersion(eip712Domain.getVersion()).domainAppName(eip712Domain.getName())
+                .build();
         return EIP712Signer.getTlsnProofEvent(
-                restClient, e.getTokenTag(), e.getTakeTag(), e.getQuoteTag(), e.getPermit2Tag(), paymentTag,
-                e.getEip712Tag(), tlsnProof, tokenConfig, tradeId
+                restClient, tokenTag, e.getTakeTag(), e.getQuoteTag(), e.getPermit2Tag(), paymentTag,
+                tlsnProofVerifierEip, tlsnProof, tokenConfig, tradeId
         );
     }
 
@@ -220,7 +226,7 @@ public class TlsnVerifierService {
         if(tradeEvent == null || (tradeEvent.getTradeTag().getStatus() != TradeStatus.CreateEscrowEvent && tradeEvent.getTradeTag().getStatus() != TradeStatus.BuyerPaidEvent)){
             return ErrorCode.WISE_VERIFIER_TRADE_NOT_FOUND_OR_STATUS_ERROR;
         }
-        if(WISE_PAYMENT_METHOD.equalsIgnoreCase(tradeEvent.getPaymentTag().getMethod())){
+        if(!WISE_PAYMENT_METHOD.equalsIgnoreCase(tradeEvent.getPaymentTag().getMethod())){
             return ErrorCode.WISE_VERIFIER_PAYMENT_METHOD_NOT_MATCHE;
         }
         long targetTimestamp = 0L;
@@ -228,6 +234,7 @@ public class TlsnVerifierService {
             targetTimestamp = Long.parseLong(confirmTimestamp);
         }
         if(targetTimestamp > 0 && targetTimestamp < tradeEvent.getCreatedAt()){
+            log.warn("targetTimestamp, createdAt: {}, {}", targetTimestamp, tradeEvent.getCreatedAt());
             return ErrorCode.WISE_VERIFIER_PAYMENT_BEFORE_TRADE;
         }
         PaymentTag paymentTag = tradeEvent.getPaymentTag();

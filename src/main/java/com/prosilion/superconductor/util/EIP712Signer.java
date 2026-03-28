@@ -1,9 +1,6 @@
 package com.prosilion.superconductor.util;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.prosilion.superconductor.config.TokenConfig;
 import lombok.extern.slf4j.Slf4j;
 import nostr.base.PublicKey;
@@ -163,7 +160,11 @@ public class EIP712Signer {
             if(code!=0) {
                 throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("signature error code:%s", code));
             }
-            return spotObj.get("data").getAsString();
+            JsonElement jsonData = spotObj.get("data");
+            if(jsonData.isJsonArray()) {
+                return jsonData.toString();
+            }
+            return jsonData.getAsString();
         }
         throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("signature op error code:%s", response.statusCode()));
     }
@@ -215,6 +216,7 @@ public class EIP712Signer {
                 amount,
                 StringUtil.isNotBlank(tlsnProofTag.getConfirmationTs())?Long.parseLong(tlsnProofTag.getConfirmationTs()):0L
         );
+        log.debug("data: {}", data);
         String eventMessage = getRelayerSignature(restClient,"/signature/tlsn", data);
         return new BaseMessageDecoder<EventMessage>().decode(eventMessage);
     }

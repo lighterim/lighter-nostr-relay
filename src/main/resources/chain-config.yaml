@@ -1,5 +1,15 @@
 blockchain:
   networks:
+    "1":
+      usdc:
+        address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        decimals: 6
+      usdt:
+        address: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        decimals: 6
+      paxg:
+        address: "0x45804880de22913dafe09f4980848ece6ecbaf78"
+        decimals: 18
     "11155111": # Sepolia
       usdc:
         address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"
@@ -7,6 +17,9 @@ blockchain:
       usdt:
         address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7239"
         decimals: 6
+      paxg:
+        address: "0x603AF59949f15449d0288497e40391ED16eDAC60"
+        decimals: 18
     "8453": # Base Mainnet
       usdc:
         address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
@@ -23,3 +36,19 @@ blockchain:
       usdc:
         address: "0x070040A826B586b58569750ED43cb5979b171e8d"
         decimals: 6
+
+verifier:
+  methods:
+    wise:
+      "1":
+        address: "0x"
+        name: "PaymentTlsnProofVerifier"
+        version: "1"
+      "11155111":
+        address: "0x7d7cab848C8F7298e16784389df2475E9A461cAa"
+        name: "PaymentTlsnProofVerifier"
+        version: "1"
+      "8453":
+        address: "0x"
+        name: "PaymentTlsnProofVerifier"
+        version: "1"

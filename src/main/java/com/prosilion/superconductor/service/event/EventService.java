@@ -129,6 +129,8 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         }
 
         LedgerTag ledger = tradeMessageEvent.getLedgerTag();
+        ArbitrationTag arbitrationTag = tradeMessageEvent.getArbitrationTag();
+        TlsnProofTag tlsnProofTag = tradeMessageEvent.getTlsnProofTag();
         TakeIntentEvent takeIntent = null;
         log.info("trade message event: [{}]", tradeMessageEvent);
         //push service/notice@lighter.im
@@ -141,14 +143,19 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
          * eip712Tag=null, escrowTag=null)]
          */
         log.info("createdBy.getPubkey().equals(noticePusherPubkey):{}, StringUtils.hasText(createdBy.getTakeIntentEventId()):{},  createdBy.getTradeId():{}", createdBy.getPubkey().equals(noticePusherPubkey), StringUtils.hasText(createdBy.getTakeIntentEventId()), createdBy.getTradeId() > 0L);
-        if (ledger != null && createdBy.getPubkey().equals(noticePusherPubkey) && !StringUtils.hasText(createdBy.getTakeIntentEventId()) && createdBy.getTradeId() > 0L) {
+        if (
+                (ledger != null || arbitrationTag!=null || tlsnProofTag!=null )
+                        && createdBy.getPubkey().equals(noticePusherPubkey)
+                        && !StringUtils.hasText(createdBy.getTakeIntentEventId())
+                        && createdBy.getTradeId() > 0L
+        ) {
             takeIntent = (TakeIntentEvent) redisCache.getEventEntityById(Kind.TAKE_INTENT, createdBy.getTradeId());
             log.info("reset trade message: takeIntent event: [{}]", takeIntent);
             tradeMessageEvent.setCreatedByTag(
                     CreatedByTag.builder().takeIntentEventId(takeIntent.getId()).nip05(createdBy.getNip05()).pubkey(createdBy.getPubkey())
                             .tradeId(createdBy.getTradeId()).build()
             );
-            if(TradeStatus.CreateEscrowEvent.equals(ledger.getTradeStatus())) {
+            if(ledger != null && TradeStatus.CreateEscrowEvent.equals(ledger.getTradeStatus())) {
                     PaymentTag paymentTag = takeIntent.getPaymentTag();
                     String paymentInfo = String.format("\nPayment Method: %s\nPayment Qrcode: %s\nPayment Account: %s\nPayment Memo: %s", paymentTag.getMethod(), paymentTag.getQrCode(), paymentTag.getAccount(), paymentTag.getMemo());
                     tradeMessageEvent.setContent(tradeMessageEvent.getContent() + paymentInfo);

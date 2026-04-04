@@ -1,9 +1,5 @@
 package com.prosilion.superconductor.service.request;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Sets;
-import com.google.common.hash.Hashing;
 import com.prosilion.superconductor.entity.Subscriber;
 import com.prosilion.superconductor.entity.join.subscriber.SubscriberFilter;
 import com.prosilion.superconductor.service.request.pubsub.TerminatedSocket;
@@ -22,28 +18,26 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 
 @Slf4j
-//@Service
-public class CachedSubscriberService extends AbstractSubscriberService {
+@Service
+public class MemorySubscriberService extends AbstractSubscriberService {
 
-    private final Map<Long, List<Combo>> subscriberSessionHashComboMap = new ConcurrentHashMap<>();
+    /** subscriberSessionHash-->List&lt;Filters&gt; **/
+    private final Map<Long, Combo> subscriberSessionHashComboMap = new ConcurrentHashMap<>();
 
-//    private final Map<Integer, Set<Long>> kindIndex = new ConcurrentHashMap<>();
-
-//    private final Map<String, Set<Long>> authorIndex = new ConcurrentHashMap<>();
-
+    /** sessionId --> subscriberSessionHash */
     private final Map<String, Set<Long>> sessionToSub = new ConcurrentHashMap<>();
 
 
-//    @Autowired
-    public CachedSubscriberService(ApplicationEventPublisher publisher) {
+    @Autowired
+    public MemorySubscriberService(ApplicationEventPublisher publisher) {
         super(publisher);
     }
 
@@ -52,41 +46,26 @@ public class CachedSubscriberService extends AbstractSubscriberService {
 
         long subscriberSessionHash = subscriber.getSubscriberSessionHash();
         sessionToSub.computeIfAbsent(subscriber.getSessionId(), k -> new CopyOnWriteArraySet<>()).add(subscriberSessionHash);
-        for (Filters f : filtersList) {
-//            if (f.getKinds() != null) {
-//                f.getKinds().forEach(kind ->
-//                        kindIndex.computeIfAbsent(kind.getValue(), k -> new CopyOnWriteArraySet<>()).add(subscriberSessionHash));
-//            }
-//
-//            if (f.getAuthors() != null) {
-//                f.getAuthors().forEach(pubkey ->
-//                        authorIndex.computeIfAbsent(pubkey.toString(), k -> new CopyOnWriteArraySet<>()).add(subscriberSessionHash));
-//            }
-            Combo combo = new Combo(
-                    subscriber,
-                    new SubscriberFilter(
-                            subscriberSessionHash,
-                            f.getSince(),
-                            f.getUntil(),
-                            f.getLimit()
-                    ),
-                    f
-            );
-            subscriberSessionHashComboMap.computeIfAbsent(subscriberSessionHash, k->new ArrayList<>(List.of(combo))).add(combo);
-        }
+        // upsert filters by subscriberSessionHash
+        subscriberSessionHashComboMap.put(subscriberSessionHash, new Combo(subscriber, filtersList));
+        return subscriberSessionHash;
+    }
+
+    public Long save(String sessionId, String subscriberId, List<Filters> filtersList) throws EmptyFiltersException {
+        Subscriber subscriber = new Subscriber(subscriberId, sessionId, true);
+        Long subscriberSessionHash = subscriber.getSubscriberSessionHash();
+        subscriberSessionHashComboMap.put(subscriberSessionHash, new Combo(subscriber, filtersList));
+        Objects.requireNonNull(sessionToSub.computeIfAbsent(sessionId, k->new CopyOnWriteArraySet<>())).add(subscriberSessionHash);
         return subscriberSessionHash;
     }
 
     @Override
-    public Long save(String sessionId, String subscriberId, List<Filters> filtersList) throws EmptyFiltersException {
-        return 0L;
-    }
-
-    @Override
     public Map<Long, List<Filters>> getAllFiltersOfAllSubscribers() {
-        Map<Long, List<Filters>> map = new HashMap<>();
-        subscriberSessionHashComboMap.forEach((k, v) -> map.put(k, v.stream().map(Combo::getFilters).toList()));
-        return map;
+        return subscriberSessionHashComboMap.entrySet().stream()
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().filters
+                ));
     }
 
     public Set<Long> findMatchingSubscribers(GenericEvent event) {
@@ -117,12 +96,12 @@ public class CachedSubscriberService extends AbstractSubscriberService {
     //  @Cacheable("subscriber")
     @Override
     public Subscriber get(@NonNull Long subscriberSessionHash) {
-        return subscriberSessionHashComboMap.get(subscriberSessionHash).getFirst().getSubscriber();
+        return subscriberSessionHashComboMap.get(subscriberSessionHash).getSubscriber();
     }
 
     @Override
     public List<Filters> getFiltersList(@NonNull Long subscriberSessionHash) {
-        return subscriberSessionHashComboMap.get(subscriberSessionHash).stream().map(Combo::getFilters).toList();
+        return subscriberSessionHashComboMap.get(subscriberSessionHash).getFilters();
     }
 
     @EventListener
@@ -135,10 +114,8 @@ public class CachedSubscriberService extends AbstractSubscriberService {
         Set<Long> subHashSet = sessionToSub.remove(sessionId);
         if(subHashSet != null) {
             subHashSet.forEach(hash -> {
-                List<Combo> list =  subscriberSessionHashComboMap.remove(hash);
-                log.info("remove subscriber by session id " + sessionId + " from hash " + hash + "combo: " + list);
-//                kindIndex.values().forEach(set -> set.remove(hash));
-//                authorIndex.values().forEach(set -> set.remove(hash));
+                Combo combo = subscriberSessionHashComboMap.remove(hash);
+                log.info("remove subscriber by session id " + sessionId + " from hash " + hash + "combo: " + combo);
             });
             return new ArrayList<>(subHashSet);
         }
@@ -149,22 +126,19 @@ public class CachedSubscriberService extends AbstractSubscriberService {
     public Long removeSubscriberBySubscriberId(@NonNull String subscriberId, @NonNull String sessionId) {
         log.info("removeSubscriberBySubscriberId " + subscriberId);
         Long hash = new Subscriber(subscriberId, sessionId, true).getSubscriberSessionHash();
-        List<Combo> list =  subscriberSessionHashComboMap.remove(hash);
-        log.info("removeSubscriberBySubscriberId " + sessionId + " from hash " + hash + "combo: " + list);
+        Combo combo = subscriberSessionHashComboMap.remove(hash);
+        log.info("remove subscriber by session id " + sessionId + " from hash " + hash + "combo: " + combo);
         return hash;
     }
 
     @Getter
     private static class Combo {
         private final Subscriber subscriber;
-        private final SubscriberFilter subscriberFilter;
-        private final Filters filters;
+//        private final SubscriberFilter subscriberFilter;
+        private final List<Filters> filters;
 
-        public Combo(Subscriber subscriber, SubscriberFilter subscriberFilter, Filters filters) throws EmptyFiltersException {
+        public Combo(Subscriber subscriber, /*SubscriberFilter subscriberFilter,*/ List<Filters> filters) throws EmptyFiltersException {
             this.subscriber = subscriber;
-            if (!checkMinimallyPopulatedFilters(subscriberFilter, filters))
-                throw new EmptyFiltersException(String.format("invalid: empty filters encountered for subscriber [%s]", subscriber.getSubscriberId()));
-            this.subscriberFilter = subscriberFilter;
             this.filters = filters;
         }
 
@@ -172,19 +146,18 @@ public class CachedSubscriberService extends AbstractSubscriberService {
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) return false;
             Combo combo = (Combo) o;
-            return Objects.equals(subscriber, combo.subscriber) && Objects.equals(subscriberFilter, combo.subscriberFilter) && Objects.equals(filters, combo.filters);
+            return Objects.equals(subscriber, combo.subscriber)  && Objects.equals(filters, combo.filters);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(subscriber, subscriberFilter, filters);
+            return Objects.hash(subscriber, filters);
         }
 
         @Override
         public String toString() {
             return "Combo{" +
                     "subscriber=" + subscriber +
-                    ", subscriberFilter=" + subscriberFilter +
                     ", filters=" + filters +
                     '}';
         }

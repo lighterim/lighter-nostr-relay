@@ -15,6 +15,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
+import nostr.event.impl.GenericEvent;
 import nostr.event.impl.TradeMessageEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -89,5 +90,12 @@ public class TradeMessageEntityService implements EventEntityServiceIF<TradeMess
     @Override
     public TradeMessageEvent getEventByEventIdString(@NonNull String eventIdString) {
         return populateTradeMessageEntity(tradeMessageEntityRepository.findByEventIdString(eventIdString).orElseThrow(NoResultException::new)).convertEntityToDto();
+    }
+
+    public List<? extends GenericEvent> getTradeMessageByTakeIntentIds(List<String> takeIntentEventIds) {
+        return tradeMessageEntityRepository.findByTakeIntentEventIdIn(takeIntentEventIds).stream()
+                .map(this::populateTradeMessageEntity)
+                .map((java.util.function.Function<? super TradeMessageEntity, ? extends GenericEvent>) TradeMessageEntity::convertEntityToDto)
+                .toList();
     }
 }

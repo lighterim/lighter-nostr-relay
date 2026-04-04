@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import nostr.event.BaseTag;
 import nostr.event.Kind;
 import nostr.event.TradeStatus;
+import nostr.event.impl.GenericEvent;
 import nostr.event.impl.GenericTag;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
@@ -212,5 +213,12 @@ public class TradeEntityService implements EventEntityServiceIF<TakeIntentEvent>
         TakeIntentEventEntity entity = opt.get();
         entity.setEscrowSignature(sign);
         entityManager.merge(entity);
+    }
+
+    public List<? extends  GenericEvent> getEventByPubkey(String pubkey) {
+        return takeEventEntityRepository.findByBuyerPubKeyOrSellerPubKey(pubkey, pubkey).stream()
+                .map(this::populateEventEntity)
+                .map((java.util.function.Function<? super TakeIntentEventEntity, ? extends GenericEvent>) TakeIntentEventEntity::convertEntityToDto)
+                .toList();
     }
 }

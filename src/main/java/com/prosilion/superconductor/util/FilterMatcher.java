@@ -2,6 +2,7 @@ package com.prosilion.superconductor.util;
 
 import com.prosilion.superconductor.entity.join.subscriber.AbstractFilterType;
 import com.prosilion.superconductor.plugin.filter.FilterPlugin;
+import com.prosilion.superconductor.service.request.AbstractSubscriberService;
 import com.prosilion.superconductor.service.request.CachedSubscriberService;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
 import lombok.Getter;
@@ -24,10 +25,10 @@ import static java.util.Objects.nonNull;
 @Component
 public class FilterMatcher {
     private final List<FilterPlugin<AbstractFilterType>> filterPlugins;
-    private final CachedSubscriberService cachedSubscriberService;
+    private final AbstractSubscriberService cachedSubscriberService;
 
     @Autowired
-    public FilterMatcher(List<FilterPlugin<AbstractFilterType>> filterPlugins, CachedSubscriberService cachedSubscriberService) {
+    public FilterMatcher(List<FilterPlugin<AbstractFilterType>> filterPlugins, AbstractSubscriberService cachedSubscriberService) {
         this.filterPlugins = filterPlugins;
         this.cachedSubscriberService = cachedSubscriberService;
     }

@@ -3,12 +3,16 @@ package com.prosilion.superconductor.service.request;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
 import com.prosilion.superconductor.service.request.pubsub.EoseNotice;
 import com.prosilion.superconductor.service.request.pubsub.FireNostrEvent;
+import com.prosilion.superconductor.util.EmptyFiltersException;
 import com.prosilion.superconductor.util.FilterMatcher;
 import lombok.NonNull;
 import lombok.SneakyThrows;
+import nostr.event.impl.Filters;
 import nostr.event.impl.GenericEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class SubscriberNotifierService<T extends GenericEvent> {
@@ -38,6 +42,10 @@ public class SubscriberNotifierService<T extends GenericEvent> {
      */
     protected void newSubscriptionHandler(@NonNull Long subscriberSessionHash, @NonNull AddNostrEvent<T> addNostrEvent) {
         eventHandler(subscriberSessionHash, addNostrEvent);
+    }
+
+    protected void newSubscriptionHandler(@NonNull String sessionId, @NonNull String subscriberid, @NonNull List<Filters> filters) throws EmptyFiltersException {
+        abstractSubscriberService.save(sessionId, subscriberid, filters);
     }
 
     private void eventHandler(@NonNull Long subscriberSessionHash, @NonNull AddNostrEvent<T> addNostrEvent) {

@@ -20,6 +20,7 @@ public interface SubscriberService {
      */
     Long save(@NonNull Subscriber subscriber, @NonNull List<Filters> filtersList) throws EmptyFiltersException;
 
+    Long save(String sessionId, String subscriberId, List<Filters> filtersList) throws EmptyFiltersException;
 
   List<Long> removeSubscriberBySessionId(@NonNull String sessionId);
 

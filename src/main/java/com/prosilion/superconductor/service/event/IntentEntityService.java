@@ -16,12 +16,15 @@ import nostr.event.BaseTag;
 import nostr.event.IntentType;
 import nostr.event.Kind;
 import nostr.event.Side;
+import nostr.event.impl.GenericEvent;
 import nostr.event.impl.PostIntentEvent;
 import nostr.event.impl.TakeIntentEvent;
 import nostr.event.tag.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -144,5 +147,33 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
     @Override
     public PostIntentEvent getEventByEventIdString(@NonNull String eventIdString) {
         return populateEventEntity(postEventEntityRepository.findByEventIdString(eventIdString).orElseThrow(NoResultException::new)).convertEntityToDto();
+    }
+
+    public List<? extends GenericEvent> getEventByFilters(Integer chainId, String strSide, String symbol, String currency, String paymentMethod, String createdBy) {
+        IntentEventEntity probe = new IntentEventEntity();
+        probe.setId(null);
+        probe.setChainId(BigInteger.valueOf(chainId));
+        if(strSide != null) {
+            probe.setSide(strSide.toLowerCase());
+        }
+        if(symbol != null) {
+            probe.setSymbol(symbol);
+        }
+        if(currency != null) {
+            probe.setQuoteCurrency(currency);
+        }
+        if(paymentMethod != null) {
+            probe.setPaymentMethod(paymentMethod);
+        }
+        if(createdBy != null) {
+            probe.setPubkey(createdBy);
+        }
+
+        List<IntentEventEntity> list = postEventEntityRepository.findAll(Example.of(probe));
+        log.info("Found {} events for probe {}", list.size(), probe);
+        return list.stream()
+                .map(this::populateEventEntity)
+                .map((java.util.function.Function<? super IntentEventEntity, ? extends GenericEvent>) IntentEventEntity::convertEntityToDto)
+                .toList();
     }
 }

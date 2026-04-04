@@ -15,4 +15,6 @@ public interface TakeEventEntityRepository extends JpaRepository<TakeIntentEvent
     Optional<TakeIntentEventEntity> findByEventIdString(String eventIdString);
 
     List<TakeIntentEventEntity> findByStatusIn(Collection<String> statusList);
+
+    List<TakeIntentEventEntity> findByBuyerPubKeyOrSellerPubKey(String makerPubkey, String takerPubkey);
 }

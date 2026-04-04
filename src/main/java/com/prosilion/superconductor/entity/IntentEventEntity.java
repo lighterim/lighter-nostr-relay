@@ -35,7 +35,7 @@ public class IntentEventEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     /** make **/
     private String side;
@@ -217,5 +217,61 @@ public class IntentEventEntity {
         event.setTags(tagList);
 
         return (T)event;
+    }
+
+    @Override
+    public String toString() {
+        return "IntentEventEntity{" +
+                "id=" + id +
+                ", side='" + side + '\'' +
+                ", nip05='" + nip05 + '\'' +
+                ", pubkey='" + pubkey + '\'' +
+                ", intentType=" + intentType +
+                ", status=" + status +
+                ", feeRateBp=" + feeRateBp +
+                ", clientId='" + clientId + '\'' +
+                ", accumulatedUsd=" + accumulatedUsd +
+                ", completedRatioBp=" + completedRatioBp +
+                ", symbol='" + symbol + '\'' +
+                ", chain='" + chain + '\'' +
+                ", network='" + network + '\'' +
+                ", tokenAddress='" + tokenAddress + '\'' +
+                ", amount=" + amount +
+                ", chainId=" + chainId +
+                ", expireTime='" + expireTime + '\'' +
+                ", price=" + price +
+                ", quoteCurrency='" + quoteCurrency + '\'' +
+                ", quoteDeadline=" + quoteDeadline +
+                ", quoteSignature='" + quoteSignature + '\'' +
+                ", quoteUsdRate=" + quoteUsdRate +
+                ", quoteSlippageBP=" + quoteSlippageBP +
+                ", paymentMethod='" + paymentMethod + '\'' +
+                ", paymentAccount='" + paymentAccount + '\'' +
+                ", paymentQrCode='" + paymentQrCode + '\'' +
+                ", paymentMemo='" + paymentMemo + '\'' +
+                ", lowLimit=" + lowLimit +
+                ", upLimit=" + upLimit +
+                ", eip712WalletAddress='" + eip712WalletAddress + '\'' +
+                ", eip712DomainVersion='" + eip712DomainVersion + '\'' +
+                ", eip712DomainAppName='" + eip712DomainAppName + '\'' +
+                ", eip712ContractAddress='" + eip712ContractAddress + '\'' +
+                ", eip712Signature='" + eip712Signature + '\'' +
+                ", permit2Nonce='" + permit2Nonce + '\'' +
+                ", permit2Sign='" + permit2Sign + '\'' +
+                ", payer='" + payer + '\'' +
+                ", permit2Spender='" + permit2Spender + '\'' +
+                ", permit2WalletAddress='" + permit2WalletAddress + '\'' +
+                ", permit2DomainAppName='" + permit2DomainAppName + '\'' +
+                ", permit2ContractAddress='" + permit2ContractAddress + '\'' +
+                ", content='" + content + '\'' +
+                ", signature='" + signature + '\'' +
+                ", eventIdString='" + eventIdString + '\'' +
+                ", kind=" + kind +
+                ", nip=" + nip +
+                ", createdAt=" + createdAt +
+                ", tradedAmount=" + tradedAmount +
+                ", tags=" + tags +
+                ", version=" + version +
+                '}';
     }
 }

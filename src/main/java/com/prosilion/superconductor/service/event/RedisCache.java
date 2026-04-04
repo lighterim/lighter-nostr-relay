@@ -1,6 +1,7 @@
 package com.prosilion.superconductor.service.event;
 
 import com.prosilion.superconductor.entity.TakeIntentEventEntity;
+import com.prosilion.superconductor.repository.TakeEventEntityRepository;
 import com.prosilion.superconductor.util.BusinessException;
 import com.prosilion.superconductor.util.ErrorCode;
 import jakarta.transaction.Transactional;
@@ -38,12 +39,13 @@ public class RedisCache<T extends GenericEvent> {
     private final AccountMessageEntityService accountMessageEntityService;
     private final AddressBookMessageEntityService addressBookMessageEntityService;
     private final EventEntityService<T> eventEntityService;
+    private final TakeEventEntityRepository takeEventEntityRepository;
     @Value("${notice.lighter.im.pubkey:3bdb98ca4ccf6c4498e07130b2010193a97de6781d56fa776cd5eb20e8686134}")
     private String noticePusherPubkey;
 
 
     @Autowired
-    public RedisCache(List<EventEntityServiceIF<T>> eventEntityServiceList) {
+    public RedisCache(List<EventEntityServiceIF<T>> eventEntityServiceList, TakeEventEntityRepository takeEventEntityRepository) {
 //    this.eventEntityService = eventEntityService;
         eventEntityServiceMap = eventEntityServiceList.stream().collect(
                 Collectors.toMap(EventEntityServiceIF<T>::getKind, Function.identity())
@@ -55,6 +57,7 @@ public class RedisCache<T extends GenericEvent> {
         eventEntityService = (EventEntityService<T>) eventEntityServiceMap.get(Kind.TEXT_NOTE);
         accountMessageEntityService = (AccountMessageEntityService) eventEntityServiceMap.get(Kind.ACCOUNT_INTENT);
         addressBookMessageEntityService = (AddressBookMessageEntityService) eventEntityServiceMap.get(Kind.ADDRESS_BOOK_INTENT);
+        this.takeEventEntityRepository = takeEventEntityRepository;
     }
 
 //  public Map<Kind, Map<Long, T>> getAll() {
@@ -281,5 +284,21 @@ public class RedisCache<T extends GenericEvent> {
 
         };
         return (T) event;
+    }
+
+    public List<GenericEvent> getIntentEvent(Integer chainId, String strSide, String symbol, String currency, String paymentMethod, String createdBy) {
+        return (List<GenericEvent>) postEventEntityService.getEventByFilters(chainId, strSide, symbol, currency, paymentMethod, createdBy);
+    }
+
+    public List<GenericEvent> getTakeIntentEvent(String pubkey) {
+        return (List<GenericEvent>) tradeEntityService.getEventByPubkey(pubkey);
+    }
+
+    public List<GenericEvent> getTradeMessageByTakeIntentIds(List<String> takeIntentEventIds) {
+        return (List<GenericEvent>) tradeMessageEntityService.getTradeMessageByTakeIntentIds(takeIntentEventIds);
+    }
+
+    public List<String> getMyTakeIntentIdsByPubKey(String pubkey, List<String> takeIntentEventIds) {
+        return null;
     }
 }

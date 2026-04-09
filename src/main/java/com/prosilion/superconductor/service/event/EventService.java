@@ -4,6 +4,8 @@ package com.prosilion.superconductor.service.event;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.prosilion.superconductor.config.TokenConfig;
 import com.prosilion.superconductor.service.request.NotifierService;
 import com.prosilion.superconductor.service.request.pubsub.AddNostrEvent;
@@ -28,6 +30,7 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -258,7 +261,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             PaymentTag takePayment = takeIntentEvent.getPaymentTag();
             PaymentTag makePaymentTag = postIntentEvent.getPaymentTag();
             String method = makePaymentTag.getMethod();
-            if (!method.equalsIgnoreCase(takePayment.getMethod())) {
+            if (!method.equals(takePayment.getMethod())) {
                 String msg = String.format("take payment{%s} does not matches: %s", takePayment.getMethod(), method);
                 log.warn(msg);
                 throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
@@ -288,9 +291,9 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                     log.warn(msg);
                     throw new BusinessException(ErrorCode.PARAM_ERROR, msg);
                 }
-                //设置成低的那个价格
-                if(makerQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0
-                        && takePrice.compareTo(makerQuoteTag.getNumber()) > 0) {
+
+                if(makerQuoteTag.getNumber().compareTo(BigDecimal.ZERO) > 0  && takePrice.compareTo(makerQuoteTag.getNumber()) > 0) {
+                    //taker.price > maker.price, 设置成低的那个价格
                     takeQuoteTag.setNumber(makerQuoteTag.getNumber());
                 }
                 //4. the maker is seller.
@@ -330,6 +333,10 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                     log.warn("price verification failed: {} msg:{}, signature: {}", takeIntentEvent.getId(),  msg, takeQuoteTag.getSignature());
                     throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("Spot API makerPrice verify fail. msg: %s eventId: %s", msg, makeEventId));
                 }
+            }
+            else{
+                //限价单，补充正确的法币/美元汇率
+                takeQuoteTag.setUsdRate(getUsdRateForLimitPrice(takeQuoteTag.getCurrency()));
             }
             //well done
             return;
@@ -381,6 +388,37 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         } catch (Throwable ex) {
             log.warn("unknown validate post intent error: {}", ex.getMessage(), ex);
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("validate intent event error:%s", ex.getMessage()));
+        }
+    }
+
+    private BigDecimal getUsdRateForLimitPrice(String currency){
+        if("USD".equalsIgnoreCase(currency)){
+            return BigDecimal.ONE;
+        }
+        try {
+            String path = String.format("/api/forex/%s", currency);
+            HttpResponse<String> response = restClient.get(path).join();
+            if (response.statusCode() == 200) {
+                String responseBody = response.body();
+                JsonObject spotObj = JsonParser.parseString(responseBody).getAsJsonObject();
+                int code = spotObj.get("code").getAsInt();
+                if (code != 0) {
+                    throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("usdRate error code:%s", code));
+                }
+                // {"code":0,"usd_rate":6.828701,"timestamp":1775749033}
+                BigDecimal usdRate = spotObj.get("usd_rate").getAsBigDecimal();
+                long timestamp = spotObj.get("timestamp").getAsLong();
+                long nowSec = System.currentTimeMillis() / 1000;
+                if (Math.abs(nowSec - timestamp) > 10) {
+                    throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("usdRate expire:%s vs %s", nowSec, timestamp));
+                }
+                return usdRate;
+            }
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("usdRate network error.%s", response.statusCode()));
+        }
+        catch (Throwable ex) {
+            log.warn("unknown usdRate error: {}", ex.getMessage(), ex);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, String.format("usdRate network error.%s", ex.getMessage()));
         }
     }
 }

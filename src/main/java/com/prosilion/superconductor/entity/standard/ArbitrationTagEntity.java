@@ -2,7 +2,6 @@ package com.prosilion.superconductor.entity.standard;
 
 import com.prosilion.superconductor.dto.AbstractTagDto;
 import com.prosilion.superconductor.dto.classified.ArbitrationTagDto;
-import com.prosilion.superconductor.dto.classified.TlsnProofTagDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -12,7 +11,6 @@ import lombok.NonNull;
 import lombok.Setter;
 import nostr.event.BaseTag;
 import nostr.event.tag.ArbitrationTag;
-import nostr.event.tag.TlsnProofTag;
 
 import java.util.Objects;
 
@@ -27,13 +25,15 @@ public class ArbitrationTagEntity extends AbstractTagEntity {
 
     private String arbitrator;
     private Integer buyerThresholdBp;
-    private Integer no;
+    private Integer nonce;
+    private String resolutionTs;
     private String signature;
 
     public ArbitrationTagEntity(@NonNull ArbitrationTag t){
         this.arbitrator = t.getArbitrator();
         this.buyerThresholdBp = t.getBuyerThresholdBp();
-        this.no = t.getNo();
+        this.nonce = t.getNonce();
+        this.resolutionTs = t.getResolutionTs();
         this.signature = t.getSignature();
     }
 
@@ -45,14 +45,14 @@ public class ArbitrationTagEntity extends AbstractTagEntity {
     @Override
     public AbstractTagDto convertEntityToDto() {
         return new ArbitrationTagDto(ArbitrationTag.builder()
-        .arbitrator(arbitrator).buyerThresholdBp(buyerThresholdBp).no(no).signature(signature)
+        .arbitrator(arbitrator).buyerThresholdBp(buyerThresholdBp).nonce(nonce).resolutionTs(resolutionTs).signature(signature)
                 .build());
     }
 
     @Override
     public BaseTag getAsBaseTag() {
         return ArbitrationTag.builder()
-                .arbitrator(arbitrator).buyerThresholdBp(buyerThresholdBp).no(no).signature(signature)
+                .arbitrator(arbitrator).buyerThresholdBp(buyerThresholdBp).nonce(nonce).resolutionTs(resolutionTs).signature(signature)
                 .build();
     }
 
@@ -62,11 +62,12 @@ public class ArbitrationTagEntity extends AbstractTagEntity {
         if (o == null || getClass() != o.getClass()) return false;
         ArbitrationTagEntity that = (ArbitrationTagEntity) o;
         return Objects.equals(arbitrator, that.arbitrator) && Objects.equals(buyerThresholdBp, that.buyerThresholdBp)
-                && Objects.equals(no, that.no) && Objects.equals(signature, that.signature);
+                && Objects.equals(nonce, that.nonce) && Objects.equals(resolutionTs, that.resolutionTs)
+                && Objects.equals(signature, that.signature);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(arbitrator, buyerThresholdBp, no, signature);
+        return Objects.hash(arbitrator, buyerThresholdBp, nonce, resolutionTs, signature);
     }
 }

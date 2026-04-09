@@ -1,5 +1,7 @@
 package com.prosilion.superconductor.service.event;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.prosilion.superconductor.entity.TakeIntentEventEntity;
 import com.prosilion.superconductor.repository.TakeEventEntityRepository;
 import com.prosilion.superconductor.util.BusinessException;
@@ -19,10 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,13 +38,12 @@ public class RedisCache<T extends GenericEvent> {
     private final AccountMessageEntityService accountMessageEntityService;
     private final AddressBookMessageEntityService addressBookMessageEntityService;
     private final EventEntityService<T> eventEntityService;
-    private final TakeEventEntityRepository takeEventEntityRepository;
     @Value("${notice.lighter.im.pubkey:3bdb98ca4ccf6c4498e07130b2010193a97de6781d56fa776cd5eb20e8686134}")
     private String noticePusherPubkey;
 
 
     @Autowired
-    public RedisCache(List<EventEntityServiceIF<T>> eventEntityServiceList, TakeEventEntityRepository takeEventEntityRepository) {
+    public RedisCache(List<EventEntityServiceIF<T>> eventEntityServiceList) {
 //    this.eventEntityService = eventEntityService;
         eventEntityServiceMap = eventEntityServiceList.stream().collect(
                 Collectors.toMap(EventEntityServiceIF<T>::getKind, Function.identity())
@@ -57,7 +55,6 @@ public class RedisCache<T extends GenericEvent> {
         eventEntityService = (EventEntityService<T>) eventEntityServiceMap.get(Kind.TEXT_NOTE);
         accountMessageEntityService = (AccountMessageEntityService) eventEntityServiceMap.get(Kind.ACCOUNT_INTENT);
         addressBookMessageEntityService = (AddressBookMessageEntityService) eventEntityServiceMap.get(Kind.ADDRESS_BOOK_INTENT);
-        this.takeEventEntityRepository = takeEventEntityRepository;
     }
 
 //  public Map<Kind, Map<Long, T>> getAll() {
@@ -299,6 +296,8 @@ public class RedisCache<T extends GenericEvent> {
     }
 
     public List<String> getMyTakeIntentIdsByPubKey(String pubkey, List<String> takeIntentEventIds) {
-        return null;
+        List<GenericEvent> myTradeList = (List<GenericEvent>) tradeEntityService.getEventByPubkey(pubkey);
+        List<String> myTakeIntentIds = myTradeList.stream().map(GenericEvent::getId).toList();
+        return Lists.newArrayList(Sets.intersection(new HashSet<>(myTakeIntentIds), new HashSet<>(takeIntentEventIds)));
     }
 }

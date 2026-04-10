@@ -70,12 +70,16 @@ public class RestClient {
 
     // GET请求
     public CompletableFuture<HttpResponse<String>> get(String endpoint) {
-        return get(endpoint, null);
+        return get(baseUrl, endpoint, null);
     }
 
-    public CompletableFuture<HttpResponse<String>> get(String endpoint, Map<String, String> headers) {
+    public CompletableFuture<HttpResponse<String>> get(String base, String endpoint) {
+        return get(base, endpoint, null);
+    }
+
+    public CompletableFuture<HttpResponse<String>> get(String base, String endpoint, Map<String, String> headers) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                .uri(buildUri(endpoint))
+                .uri(buildUri(base, endpoint))
                 .GET();
 
         addHeaders(requestBuilder, headers);
@@ -127,11 +131,15 @@ public class RestClient {
         return sendRequest(requestBuilder.build());
     }
 
-    private URI buildUri(String endpoint) {
-        if (baseUrl != null && !baseUrl.isEmpty()) {
-            return URI.create(baseUrl + endpoint);
+    private URI buildUri(String base, String endpoint) {
+        if (base != null && !base.isEmpty()) {
+            return URI.create(base + endpoint);
         }
         return URI.create(endpoint);
+    }
+
+    private URI buildUri(String endpoint) {
+        return buildUri(baseUrl, endpoint);
     }
 
     private void addHeaders(HttpRequest.Builder requestBuilder, Map<String, String> headers) {
@@ -150,7 +158,7 @@ public class RestClient {
     }
 
     public HttpResponse<String> getSync(String endpoint, Map<String, String> headers) throws Exception {
-        return get(endpoint, headers).get();
+        return get(baseUrl, endpoint, headers).get();
     }
 
     public HttpResponse<String> postSync(String endpoint, String body) throws Exception {

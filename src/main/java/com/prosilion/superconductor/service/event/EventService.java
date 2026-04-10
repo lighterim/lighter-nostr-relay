@@ -49,6 +49,8 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     private String noticePusherPubkey;
     @Value("${check.take:true}")
     private boolean isSkipCheckTake;
+    @Value("${spot.base.url:https://spot.lighter.im}")
+    private String spotBaseUrl;
     @Resource
     private TokenConfig tokenConfig;
 
@@ -336,7 +338,10 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
             }
             else{
                 //限价单，补充正确的法币/美元汇率
-                takeQuoteTag.setUsdRate(getUsdRateForLimitPrice(takeQuoteTag.getCurrency()));
+                String currency = takeQuoteTag.getCurrency().toUpperCase();
+                BigDecimal usdRateForLimitPrice = getUsdRateForLimitPrice(currency);
+                log.info("setUsdRate: {}, {}, {}", takeIntentEvent.getId(), currency, usdRateForLimitPrice);
+                takeQuoteTag.setUsdRate(usdRateForLimitPrice);
             }
             //well done
             return;
@@ -397,7 +402,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
         }
         try {
             String path = String.format("/api/forex/%s", currency);
-            HttpResponse<String> response = restClient.get(path).join();
+            HttpResponse<String> response = restClient.get(spotBaseUrl, path).join();
             if (response.statusCode() == 200) {
                 String responseBody = response.body();
                 JsonObject spotObj = JsonParser.parseString(responseBody).getAsJsonObject();

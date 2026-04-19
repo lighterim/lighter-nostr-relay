@@ -346,7 +346,7 @@
     <profile>
       <id>prod</id>
       <properties>
-        <spring.profiles.active>local</spring.profiles.active>
+        <spring.profiles.active>prod</spring.profiles.active>
       </properties>
     </profile>
   </profiles>

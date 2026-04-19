@@ -47,7 +47,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     private int nip05CacheMinutes;
     @Value("${notice.lighter.im.pubkey:3bdb98ca4ccf6c4498e07130b2010193a97de6781d56fa776cd5eb20e8686134}")
     private String noticePusherPubkey;
-    @Value("${spot.signer.pubkey:ea9f2eb5dc66d7ce2338e728c0bb79aad08125464029ed4b2de04aa498c02de7}")
+    @Value("${spot.signer.pubkey:f15d9273678644e281334962c759341c8258b9616518b646beb7261f845ee946}")
     private String spotSignerPubkey;
     @Value("${check.take:true}")
     private boolean isSkipCheckTake;

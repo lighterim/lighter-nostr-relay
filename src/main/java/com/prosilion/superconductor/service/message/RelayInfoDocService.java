@@ -67,7 +67,7 @@ public class RelayInfoDocService {
   public RelayInfoDocService(
       @Value("${nostr.relay.description}") String descriptionValue,
       @Value("${nostr.relay.name}") String relayNameValue,
-      @Value("${nostr.relay.pubkey}") String pubKeyValue,
+      @Value("${nostr.relay.public.key}") String pubKeyValue,
       @Value("${nostr.relay.software}") String softwareKeyValue,
       @Value("${nostr.relay.supported_nips}") String supportedNipsValue,
       @Value("${nostr.relay.version}") String versionValue,

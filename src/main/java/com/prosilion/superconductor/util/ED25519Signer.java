@@ -48,6 +48,10 @@ public class ED25519Signer {
         signature = "c951b1221aaab4d417abe2ff12dd58055ef37dfa6c777b3934d964ac81e4ed9edf7059290c149b6b8b53560fb3d3af909dfdb93aeb9013a3587f35e6f8ca8f0f";
         System.out.println(verify(message1,signature, publicKeyHex));
         System.out.println(verify(message2,signature, publicKeyHex));
+
+        message1 = "265140xdf7108f8b10f9b9ec1aba01cca057268cbf86b6c17765916636.848950SELL";
+        signature = "8f8653d043f51b2d4be34e3a1dad00b0638f08c0c0f0d35fe091951ee902bdc91462dd0821be5fb0156714c3fd1e2f879295e888dcbe3d9770ab8d71293e2b0f";
+        System.out.println(verify(message1,signature, "f15d9273678644e281334962c759341c8258b9616518b646beb7261f845ee946"));
     }
 
 }

@@ -47,6 +47,8 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
     private int nip05CacheMinutes;
     @Value("${notice.lighter.im.pubkey:3bdb98ca4ccf6c4498e07130b2010193a97de6781d56fa776cd5eb20e8686134}")
     private String noticePusherPubkey;
+    @Value("${spot.signer.pubkey:ea9f2eb5dc66d7ce2338e728c0bb79aad08125464029ed4b2de04aa498c02de7}")
+    private String spotSignerPubkey;
     @Value("${check.take:true}")
     private boolean isSkipCheckTake;
     @Value("${spot.base.url:https://spot.lighter.im}")
@@ -330,7 +332,7 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 BigInteger chainId = makerTokenTag.getChainId();
                 String tokenAddress = makerTokenTag.getAddress();
                 String msg = String.format("%d%s%s%s%d%s", chainId, tokenAddress.toLowerCase(), quoteDeadline, takePrice.toPlainString(), makerQuoteTag.getSlippageBP(), postIntentEvent.getSideTag().getSide().getSide().toUpperCase());
-                boolean verify = ED25519Signer.verify(msg, takeQuoteTag.getSignature());
+                boolean verify = ED25519Signer.verify(msg, takeQuoteTag.getSignature(), spotSignerPubkey);
                 if(!verify) {
                     log.warn("price verification failed: {} msg:{}, signature: {}", takeIntentEvent.getId(),  msg, takeQuoteTag.getSignature());
                     throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("Spot API makerPrice verify fail. msg: %s eventId: %s", msg, makeEventId));

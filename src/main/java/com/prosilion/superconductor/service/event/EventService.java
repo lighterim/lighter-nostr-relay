@@ -328,10 +328,19 @@ public class EventService<T extends EventMessage> implements EventServiceIF<T> {
                 if(quoteDeadline.longValue() < (System.currentTimeMillis() / 1000)) {
                     throw new BusinessException(ErrorCode.PARAM_ERROR, String.format("QuoteTag makerPrice timestamp has expired. eventId: %s", makeEventId));
                 }
+                BigDecimal usdRate = takeQuoteTag.getUsdRate();
                 TokenTag makerTokenTag = postIntentEvent.getTokenTag();
                 BigInteger chainId = makerTokenTag.getChainId();
                 String tokenAddress = makerTokenTag.getAddress();
-                String msg = String.format("%d%s%s%s%d%s", chainId, tokenAddress.toLowerCase(), quoteDeadline, takePrice.toPlainString(), makerQuoteTag.getSlippageBP(), postIntentEvent.getSideTag().getSide().getSide().toUpperCase());
+                String msg = String.format("%d%s%s%s%d%s%s",
+                        chainId,
+                        tokenAddress.toLowerCase(),
+                        quoteDeadline,
+                        takePrice.toPlainString(),
+                        makerQuoteTag.getSlippageBP(),
+                        postIntentEvent.getSideTag().getSide().getSide().toUpperCase(),
+                        usdRate.toPlainString()
+                );
                 boolean verify = ED25519Signer.verify(msg, takeQuoteTag.getSignature(), spotSignerPubkey);
                 if(!verify) {
                     log.warn("price verification failed: {} msg:{}, signature: {}", takeIntentEvent.getId(),  msg, takeQuoteTag.getSignature());

@@ -34,7 +34,7 @@ blockchain:
         decimals: 6
     "26514": #horizen mainnet
       usdc:
-        address: "0x070040A826B586b58569750ED43cb5979b171e8d"
+        address: "0xDF7108f8B10F9b9eC1aba01CCa057268cbf86B6c"
         decimals: 6
 
 verifier:
@@ -50,5 +50,13 @@ verifier:
         version: "1"
       "8453":
         address: "0x"
+        name: "PaymentTlsnProofVerifier"
+        version: "1"
+      "2651420":
+        address: "0xDDc1a3Fad22bEF1B73Ef596Bf5cC8219Ec34B693"
+        name: "PaymentTlsnProofVerifier"
+        version: "1"
+      "26514":
+        address: "0x1a68328BBaf63e391097D460Ec856406e0434DB2"
         name: "PaymentTlsnProofVerifier"
         version: "1"

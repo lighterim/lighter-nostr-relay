@@ -96,7 +96,7 @@ public class IntentEventEntity {
     private String permit2DomainAppName;
     private String permit2ContractAddress;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String content;
     private String signature;
     private String eventIdString;

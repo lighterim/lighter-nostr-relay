@@ -35,7 +35,7 @@ public class TradeMessageEntity {
     private String takeIntentEventId;
     private String nip05;
     private String pubKey;
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String content;
     private String signature;
     private Long createAt;

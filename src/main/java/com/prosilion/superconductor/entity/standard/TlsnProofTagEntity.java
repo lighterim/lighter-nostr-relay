@@ -4,6 +4,7 @@ import com.prosilion.superconductor.dto.AbstractTagDto;
 import com.prosilion.superconductor.dto.classified.TlsnProofTagDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,7 +21,9 @@ import static nostr.event.NIP77Event.TLSN_PROOF_TAG_CODE;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "trade_message_tlsn_proof_tag")
+@Table(name = "trade_message_tlsn_proof_tag", indexes={
+        @Index(name = "IX_TRADE_MESSAGE_TLSN_PROOF_TAG_TRADE_ID", columnList = "tradeId")
+})
 public class TlsnProofTagEntity extends AbstractTagEntity {
 
     private String paymentMethod;

@@ -3,6 +3,7 @@ package com.prosilion.superconductor.entity.standard;
 import com.prosilion.superconductor.dto.AbstractTagDto;
 import com.prosilion.superconductor.dto.classified.LedgerTagDto;
 import com.prosilion.superconductor.entity.AbstractTagEntity;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -27,6 +28,7 @@ public class LedgerTagEntity extends AbstractTagEntity {
     private String chain;
     private String network;
     private String txId;
+    @Column(columnDefinition = "TEXT", length = 1024)
     private String txUrl;
     private String tradeStatus;
     private String escrowHash;

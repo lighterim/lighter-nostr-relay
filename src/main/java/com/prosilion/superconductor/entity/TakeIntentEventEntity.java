@@ -107,6 +107,7 @@ public class TakeIntentEventEntity {
     private Integer kind;
     private Integer nip;
     private String eventIdString;
+    @Column(columnDefinition = "TEXT")
     private String content;
     private String signature;
     private Long createAt;

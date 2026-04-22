@@ -153,6 +153,7 @@ public class IntentEntityService implements EventEntityServiceIF<PostIntentEvent
         IntentEventEntity probe = new IntentEventEntity();
         probe.setId(null);
         probe.setChainId(BigInteger.valueOf(chainId));
+        probe.setStatus(1);
         if(strSide != null) {
             probe.setSide(strSide.toLowerCase());
         }

@@ -56,7 +56,8 @@ public class TlsnVerifierService {
         try {
             JsonNode root = mapper.readTree(payload);
             if (!root.isArray() && root.hasNonNull("server_name")) {
-                if (root.get("server_name").asText().equals(WISE)) {
+                String serverName = root.get("server_name").asText();
+                if (serverName.equals(WISE)) {
                     JsonNode results = root.get("results");
                     String strTradeId = findTargetFieldValue(mapper, results, "paymentReference");
                     String paymentId = findTargetFieldValue(mapper, results, "id");
@@ -71,12 +72,13 @@ public class TlsnVerifierService {
                     String confirmTimestamp = getConfirmTimestamp(mapper, results);
                     ErrorCode result = validateWiseTlsnProof(actor, strTradeId, paymentId, targetRecipientId, refundRecipientId, targetAmount, targetCurrency, state, confirmTimestamp);
                     if(result != ErrorCode.SUCCESS) {
-                        log.warn("verifyWiseTlsnProof fail: {}, {}", result.getCode(), result.getMessage());
+                        log.warn("verifyWiseTlsnProof fail, not signing: {}, {}", result.getCode(), result.getMessage());
                         return null;
                     }
 
                     return getTlsnProofEvent(strTradeId, paymentId, targetAmount, targetCurrency, confirmTimestamp);
                 }
+                log.info("verifyTlsnProof skip, not signing, server_name={}", serverName);
             }
         }
         catch (Exception ex){
@@ -255,8 +257,9 @@ public class TlsnVerifierService {
         if(!WISE_STATE_OUTGOING_PAYMENT_SENT.equals(state)){
             return ErrorCode.WISE_VERIFIER_PAYMENT_FAIL;
         }
-        BigDecimal transferAmount = new BigDecimal(targetAmount);
-        if(transferAmount.compareTo(BigDecimal.ZERO) <= 0 || StringUtils.isNotBlank(refundRecipientId)){
+        // Wise amount: BigDecimal, never strip '.' from the string ("100.00" is 100, not 10000).
+        BigDecimal transferAmount = parseWiseAmount(targetAmount);
+        if(transferAmount == null || transferAmount.compareTo(BigDecimal.ZERO) <= 0 || isWiseRefund(refundRecipientId)){
             return ErrorCode.WISE_VERIFIER_PAYMENT_ZERO_OR_REFUND;
         }
         if(alreadyVerify(WISE, paymentId)){
@@ -305,10 +308,29 @@ public class TlsnVerifierService {
     }
 
     /**
-     * TODO: 当前支付凭证是否已经使用过。 需要在释放后更新（或记录）凭证信息。
-     * @param server
-     * @param paymentId
-     * @return
+     * Parse a Wise targetAmount fragment as a major-unit decimal.
+     * "500.0", "500.00", and "500" are all 500. Do not delete the decimal point.
+     */
+    public static BigDecimal parseWiseAmount(String raw) {
+        if (StringUtils.isBlank(raw)) {
+            return null;
+        }
+        try {
+            return new BigDecimal(raw.trim());
+        } catch (NumberFormatException ex) {
+            log.warn("wise amount is not a decimal: {}", raw);
+            return null;
+        }
+    }
+
+    /** JSON null and the literal "null" both mean no refund. */
+    static boolean isWiseRefund(String refundRecipientId) {
+        return StringUtils.isNotBlank(refundRecipientId) && !"null".equalsIgnoreCase(refundRecipientId.trim());
+    }
+
+    /**
+     * TODO: persist gateway:paymentId after a successful sign.
+     * Until then this stays false. Chain paymentId nullifier is the final dedup.
      */
     private boolean alreadyVerify(String server, String paymentId) {
         return false;

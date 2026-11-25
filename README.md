@@ -53,43 +53,97 @@
     - used by [Barchetta](https://github.com/avlo/barchetta) Smart-Contract Negotiation Protocol (in progress) atop [Bitcoin](https://en.wikipedia.org/wiki/Bitcoin) [Lightning-Network](https://en.wikipedia.org/wiki/Lightning_Network) [RGB](https://rgb.tech/)
     
 ----
-### Normal/Production Mode (for most users) Instructions:
-#### Confirm minimal docker requirements
+### Production deployment (lighter-nostr-relay)
 
-    $ docker --version
->     Docker version 27.0.3
-    $ docker compose version
->     Docker Compose version v2.28.1
+Uses [docker-compose.yaml](docker-compose.yaml): runs only the app container and connects to an **external MySQL** (e.g. a MySQL container already published on the host, such as `10.0.0.2:3306`). Database credentials come from environment variables.
 
-(Download links for the above)
-- [Docker](https://hub.docker.com/_/docker) 27.0.3
-- [Docker Compose](https://docs.docker.com/compose/install/) v2.28.1
+#### Requirements
+
+- Java 22 + Maven (or `./mvnw`) to package the app
+- [Docker](https://docs.docker.com/get-docker/) + [Docker Compose](https://docs.docker.com/compose/install/) v2
+
+```bash
+docker --version
+docker compose version
+java -version   # 22+
+```
+
+#### 1. Package the application
+
+This project ships a thin jar plus dependencies under `target/lib` (see `pom.xml`). Build them before creating the image:
+
+```bash
+./mvnw clean package -DskipTests
+```
+
+Confirm artifacts exist:
+
+```bash
+ls target/superconductor-1.7.4.jar target/lib
+```
+
+#### 2. Build the Docker image
+
+Default image tag: `superconductor:1.7.4` (override with `APP_IMAGE`).
+
+```bash
+docker compose build
+# equivalent:
+# docker build -t superconductor:1.7.4 .
+```
+
+#### 3. Configure environment
+
+Set datasource variables (shell export or a `.env` file next to `docker-compose.yaml`):
+
+```bash
+export SPRING_DATASOURCE_URL='jdbc:mysql://10.0.0.2:3306/lighterim?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&allowPublicKeyRetrieval=true'
+export SPRING_DATASOURCE_USERNAME='lighter_im'
+export SPRING_DATASOURCE_PASSWORD='your-password'
+# optional:
+# export APP_IMAGE=superconductor:1.7.4
+# export APP_PORT=5555
+# export SUPERCONDUCTOR_AUTH_ACTIVE=false
+```
+
+Use the MySQL publish address from `docker ps` (e.g. `10.0.0.2:3306->3306/tcp`), not `localhost` inside the app container.
+
+#### 4. Run
+
+```bash
+docker compose up -d
+```
+
+Relay endpoint: `ws://<host>:5555`
+
+#### Stop / remove
+
+```bash
+docker compose stop
+docker compose down --remove-orphans
+```
+
+#### Rebuild after code changes
+
+```bash
+./mvnw clean package -DskipTests
+docker compose build --no-cache
+docker compose up -d
+```
 
 ----
 
-#### Download Superconductor Docker Image from [hub.docker](https://hub.docker.com/repository/docker/avlo/superconductor-app/tags)
-    $ docker pull avlo/superconductor:1.7.4
+<details>
+<summary>Legacy compose (bundled MySQL + prebuilt hub image)</summary>
 
-----
+[docker-compose-prod.yml](docker-compose-prod.yml) still pulls `avlo/superconductor:1.7.4` and starts an in-compose MySQL. Prefer [docker-compose.yaml](docker-compose.yaml) for this project’s production layout.
 
-#### Download Docker-Compose configuration file _(and optionally [edit various parameters](docker-compose-prod.yml?plain=1#L10,32,L36-L37) as desired)_:
+```bash
+docker pull avlo/superconductor:1.7.4
+docker compose -f docker-compose-prod.yml up -d
+```
 
-[docker-compose-prod.yml](docker-compose-prod.yml)
-
-----
-
-#### Run SuperConductor
-    $ docker compose -f /<path>/<to>/docker-compose-prod.yml up -d
-
-Superconductor is now ready to use.
-
-----
-
-##### Stop docker containers
-    $ docker compose -f docker-compose-prod.yml stop superconductor superconductor-db
-
-##### Remove docker containers
-    $ docker compose -f docker-compose-prod.yml down --remove-orphans
+</details>
 
 <hr style="border:2px solid grey">
 

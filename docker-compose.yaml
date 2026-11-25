@@ -1,0 +1,21 @@
+services:
+  superconductor:
+    container_name: superconductor-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_VERSION: "1.7.4"
+    image: ${APP_IMAGE:-superconductor:1.7.4}
+    ports:
+      - "${APP_PORT:-5555}:5555"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: ${LIGHTER_IM_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${LIGHTER_IM_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${LIGHTER_IM_DB_PASSWORD}
+      superconductor.auth.active: ${SUPERCONDUCTOR_AUTH_ACTIVE:-false}
+    # Optional helper for host-published ports; prefer the MySQL publish IP (e.g. 10.0.0.2) in SPRING_DATASOURCE_URL
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

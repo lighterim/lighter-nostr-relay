@@ -1,8 +1,12 @@
 .mvn
 .idea
 .project
+.env
+.DS_Store
+.dockerignore
 
 superconductor.iml
 target/
+*.tar.gz
 
 pom.xml.versionsBackup
